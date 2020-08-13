@@ -8,8 +8,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Lumen\Auth\Authorizable;
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
-{
+class User extends Model implements AuthenticatableContract, AuthorizableContract{
     use Authenticatable, Authorizable;
 
     /**
@@ -17,8 +16,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      *
      * @var array
      */
+    protected $table = 'accounts';
     protected $fillable = [
-        'name', 'email',
+        'nick', 'password', 'picture', 'names', 'surname_pat', 'surname_mat', '_wp_principal', '_rol', 'change_password'
     ];
 
     /**
@@ -27,6 +27,43 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [
-        'password',
+        'password', '_rol', '_wp_principal', 'remember_token', 'created_at', 'updated_at'
     ];
+
+    protected $attributes = [
+        'change_password' => true
+    ];
+
+    public function log(){
+        return $this->belongsToMany('App\AccountLogTypes', 'account_log', '_accto', '_log_type')
+                    ->withPivot(['details'])
+                    ->withTimestamps();
+    }
+
+    public function wp_principal(){
+        return $this->belongsTo('App\WorkPoint', '_wp_principal');
+    }
+
+    public function rol(){
+        return $this->belongsTo('App\Roles', '_rol');
+    }
+
+    public function workpoints(){
+        return $this->belongsToMany('App\WorkPoint', 'account_workpoints', '_account', '_workpoint')
+                    ->using('App\Account')
+                    ->withPivot(['_status', '_rol', 'id']);
+    }
+
+    /** Mutators */
+    public function setNamesAttribute($value){
+        $this->attributes['names'] = ucfirst($value);
+    }
+
+    public function setSurnamePatAttribute($value){
+        $this->attributes['surname_pat'] = ucfirst($value);
+    }
+
+    public function setSurnameMatAttribute($value){
+        $this->attributes['surname_mat'] = ucfirst($value);
+    }
 }
