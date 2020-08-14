@@ -19,4 +19,9 @@ $router->get('/', function () use ($router) {
 
 $router->group(['prefix' => 'account'], function () use ($router){
     $router->post('/', 'AccountController@create');
+    $router->post('/auth', 'AuthController@login');
+});
+
+$router->group(['prefix' => 'workpoint'], function () use ($router){
+    $router->post('/join', 'AuthController@joinWorkpoint');
 });
