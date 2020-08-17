@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\User as UserResource;
+use App\Http\Resources\Account as AccountResource;
 
 class AuthController extends Controller{
     /**
@@ -33,18 +35,16 @@ class AuthController extends Controller{
         ], $msg);
 
         $credentials = $request->only(['nick', 'password']);
-        if (! $token = auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Usuario o contraseña'], 200);
+        if (! $token = Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Usuario o contraseña incorrecta'], 200);
         }
-        $user = Auth::user();
-        $workpoints = $user->workpoints;
-        if(count($workpoints) == 1){
-            $token =  Auth::claims(['workpoint' => $workpoint[0]->pivot])->tokenById($user->id);
-        }else{
-            $token =  Auth::claims(['workpoint' => null])->tokenById($user->id);
-        }
+        $payload = Auth::payload();
+        $workpoints = Auth::user()->workpoints;
+        $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id));
+        $account->token = $token;
         return response()->json([
-            'token' => $token,
+            'account' => $account,
+            'workpoints' => AccountResource::collection($workpoints)
         ]);
     }
     /**

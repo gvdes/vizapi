@@ -21,6 +21,9 @@ class User extends JsonResource{
             'surname_mat' => $this->surname_mat,
             'change_password' => $this->change_password,
             'rol' => $this->whenLoaded('rol'),
+            'token' => $this->when($this->token, function(){
+                return $this->token;
+            }),
             'wp_principal' => $this->whenLoaded('wp_principal'),
             'workpoints' => Account::collection($this->whenLoaded('workpoints')),
             'log' => Log::collection($this->whenLoaded('log'))

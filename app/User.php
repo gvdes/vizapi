@@ -92,6 +92,12 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @return array
      */
     public function getJWTCustomClaims(){
-        return [];
+        $workpoint = $this->workpoints->filter(function($workpoint){
+            return $workpoint->id == env('ID_ENV');
+        })->values()->all();
+        if(count($workpoint)>0){
+            return ["workpoint" => $workpoint[0]->pivot];
+        }
+        return ["workpoint" => null];
     }
 }
