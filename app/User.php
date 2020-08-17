@@ -35,6 +35,15 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'change_password' => true
     ];
 
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'change_password' => 'boolean',
+    ];
+
     public function log(){
         return $this->belongsToMany('App\AccountLogTypes', 'account_log', '_accto', '_log_type')
                     ->withPivot(['details'])

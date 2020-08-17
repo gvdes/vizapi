@@ -15,6 +15,7 @@ class CreateAccountLogTable extends Migration {
             $table->increments('id');
             $table->unsignedTinyInteger('_log_type');
             $table->unsignedInteger('_accto');
+            $table->json('details');
             $table->timestamps();
 
             $table->foreign('_log_type')->references('id')->on('account_log_types')->onDelete('cascade');

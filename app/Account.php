@@ -11,14 +11,22 @@ class Account extends Pivot{
     protected $fillable = ['_account', '_workpoint', '_status', '_rol'];
 
     public function status(){
-        return $this->belongsTo('App\Status', '_status');
+        return $this->belongsTo('App\AccountStatus', '_status');
     }
 
     public function rol(){
-        return $this->belongsTo('App\Rol', '_rol');
+        return $this->belongsTo('App\Roles', '_rol');
     }
 
     public function permissions(){
         return $this->belongsToMany('App\Permission', 'account_permissions', '_account', '_permission');
+    }
+    
+    public function workpoint(){
+        return $this->belongsTo('App\WorkPoint', '_workpoint');
+    }
+
+    public function user(){
+        return $this->belongsTo('App\User', '_account');
     }
 }

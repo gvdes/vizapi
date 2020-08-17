@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\User as UserResource;
+use App\Http\Resources\Account as AccountResource;
+use Illuminate\Support\Facades\Auth;
 use App\User;
 
 class AccountController extends Controller{
@@ -92,5 +95,10 @@ class AccountController extends Controller{
         return response()->json([
             'success' => $id
         ]);
+    }
+
+    public function me(Request $request){
+        $payload = Auth::payload();
+        return response()->json(new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id)));
     }
 }
