@@ -148,4 +148,36 @@ class AccountController extends Controller{
             return response()->json(['message' => 'No se ha podido cambiar la contraseña']);
         }
     }
+
+    public function updateInfo(Request $request){
+        try{
+            $user = Auth::user();
+            $user->picture = $request->picture ? $request->picture : $user->picture;
+            $user->names = $request->names ? $request->names : $user->names;
+            $user->surname_pat = $request->surname_pat ? $request->surname_pat : $user->surname_pat;
+            $user->surname_mat = $request->surname_mat ? $request->surname_mat : $user->surname_mat;
+            $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
+            $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
+            $save = $user->save();
+            return response()->json(["sucess" => $save]);
+        }catch(\Exception $e){
+            return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
+        }
+    }
+
+    public function updateProfile(Request $request, $id){
+        try{
+            $user = User::find($id);
+            $user->picture = $request->picture ? $request->picture : $user->picture;
+            $user->names = $request->names ? $request->names : $user->names;
+            $user->surname_pat = $request->surname_pat ? $request->surname_pat : $user->surname_pat;
+            $user->surname_mat = $request->surname_mat ? $request->surname_mat : $user->surname_mat;
+            $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
+            $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
+            $save = $user->save();
+            return response()->json(["sucess" => $save]);
+        }catch(\Exception $e){
+            return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
+        }
+    }
 }

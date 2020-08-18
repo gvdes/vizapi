@@ -24,6 +24,8 @@ $router->group(['prefix' => 'account'], function () use ($router){
     $router->post('/auth', 'AuthController@login');
     $router->put('/status', 'AccountController@updateStatus');
     $router->put('/password', 'AccountController@updatePassword');
+    $router->put('/profile/{id}', 'AccountController@updateProfile');
+    $router->put('/profile', 'AccountController@updateInfo');
 });
 
 $router->group(['prefix' => 'workpoint'], function () use ($router){
