@@ -43,7 +43,9 @@ class Account extends JsonResource{
                 return $this->pivot->_workpoint;
             }),
             'workpoint' => $this->whenLoaded('workpoint'),
-            'modules' => $this->whenLoaded('permissions'),
+            'modules' => $this->whenLoaded('permissions', function(){
+                return new ModulesCollection($this->permissions);
+            }),
             'token' => $this->when($this->token, function(){
                 return $this->token;
             })
