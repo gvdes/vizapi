@@ -108,6 +108,12 @@ class AccountController extends Controller{
         return response()->json(new UserResource($user->fresh('rol','wp_principal','log', 'workpoints')));
     }
 
+    /**
+     * Create user account
+     * @param object request
+     * @param string request[]._status //Nuevo status a poner en la sucursal
+     */
+
     public function updateStatus(Request $request){
         $payload = Auth::payload();
         $account = Account::find($payload['workpoint']->id);
@@ -116,5 +122,30 @@ class AccountController extends Controller{
         return response()->json([
             'success' => $success
         ]);
+    }
+    /**
+     * Create user account
+     * @param object request
+     * @param string request[].password //Contraseña actual
+     * @param string request[].new_password //Contraseña que se desea poner
+     */
+    public function updatePassword(Request $request){
+        try{
+            $user = Auth::user();
+            if(app('hash')->check($request->password, $user->password)){
+                if(app('hash')->check($request->new_password, $user->password)){
+                    return response()->json(['message' => 'La nueva contraseña es igual a la antigua']);
+                }else{
+                    $user->password = app('hash')->make($request->new_password);
+                    $user->change_password = false;
+                    $save = $user->save();
+                    return response()->json(["success" => $save]);
+                }
+            }else{
+                return response()->json(['message' => 'La contraseña actual no es correcta']);    
+            }
+        }catch(\Exception $e){
+            return response()->json(['message' => 'No se ha podido cambiar la contraseña']);
+        }
     }
 }
