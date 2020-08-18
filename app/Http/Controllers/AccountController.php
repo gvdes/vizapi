@@ -108,6 +108,9 @@ class AccountController extends Controller{
         return response()->json(new UserResource($user->fresh('rol','wp_principal','log', 'workpoints')));
     }
 
+    /*********************
+     ** ACTUALICACIONES **
+     *********************/
     /**
      * Create user account
      * @param object request
@@ -149,6 +152,18 @@ class AccountController extends Controller{
         }
     }
 
+    /**
+     * Create user account
+     * @param object request
+     * @param string request[].nick - null
+     * @param file request[].picture - null
+     * @param string request[].names - null
+     * @param string request[].surname_pat - null
+     * @param string request[].surname_mat - null
+     * @param int request[]._wp_principal - null
+     * @param int request[]._rol - null
+     */
+
     public function updateInfo(Request $request){
         try{
             $user = Auth::user();
@@ -164,6 +179,18 @@ class AccountController extends Controller{
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
     }
+
+    /**
+     * Create user account
+     * @param object request
+     * @param string request[].nick - null
+     * @param file request[].picture - null
+     * @param string request[].names - null
+     * @param string request[].surname_pat - null
+     * @param string request[].surname_mat - null
+     * @param int request[]._wp_principal - null
+     * @param int request[]._rol - null
+     */
 
     public function updateProfile(Request $request, $id){
         try{
