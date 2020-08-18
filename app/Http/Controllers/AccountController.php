@@ -8,6 +8,7 @@ use App\Http\Resources\User as UserResource;
 use App\Http\Resources\Account as AccountResource;
 use Illuminate\Support\Facades\Auth;
 use App\User;
+use App\Account;
 
 class AccountController extends Controller{
     /**
@@ -97,8 +98,23 @@ class AccountController extends Controller{
         ]);
     }
 
-    public function me(Request $request){
+    public function me(){
         $payload = Auth::payload();
         return response()->json(new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id)));
+    }
+
+    public function profile(){
+        $user = Auth::user();
+        return response()->json(new UserResource($user->fresh('rol','wp_principal','log', 'workpoints')));
+    }
+
+    public function updateStatus(Request $request){
+        $payload = Auth::payload();
+        $account = Account::find($payload['workpoint']->id);
+        $account->_status = $request->_status;
+        $success = $account->save();
+        return response()->json([
+            'success' => $success
+        ]);
     }
 }
