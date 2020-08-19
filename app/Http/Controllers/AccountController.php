@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\User as UserResource;
 use App\Http\Resources\Account as AccountResource;
+use App\Http\Resources\Module as ModuleCollection;
 use Illuminate\Support\Facades\Auth;
 use App\User;
 use App\Account;
@@ -101,6 +102,18 @@ class AccountController extends Controller{
     /*********************
      ***** CONSULTAS *****
      *********************/
+
+    public function dataToCreateUser(){
+        $workpoints = \App\WorkPoint::all();
+        $modules = new ModuleCollection(\App\Module::all());
+        $roles = \App\Roles::all();
+        return response()->json([
+            'workpoints' => $workpoints,
+            'roles' => $roles,
+            'modules' => $modules
+        ]);
+    }
+
     public function me(){
         $payload = Auth::payload();
         return response()->json(new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id)));
