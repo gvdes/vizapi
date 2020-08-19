@@ -98,9 +98,24 @@ class AccountController extends Controller{
         ]);
     }
 
+    /*********************
+     ***** CONSULTAS *****
+     *********************/
     public function me(){
         $payload = Auth::payload();
         return response()->json(new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id)));
+    }
+
+    public function getAccounts(){
+        $payload = Auth::payload();
+        $session = $payload['workpoint'];
+        $accounts = Account::with('rol', 'status', 'workpoint', 'user')->where('_workpoint',$session->_workpoint)->get();
+        return response()->json(AccountResource::collection($accounts));
+    }
+
+    public function getAllUsers(){
+        $users = User::with('rol', 'wp_principal')->get();
+        return response()->json(UserResource::collection($users));
     }
 
     public function profile(){
