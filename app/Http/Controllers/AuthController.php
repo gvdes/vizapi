@@ -40,12 +40,21 @@ class AuthController extends Controller{
         }
         $payload = Auth::payload();
         $workpoints = Auth::user()->workpoints;
-        $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id));
-        $account->token = $token;
-        return response()->json([
-            'account' => $account,
-            'workpoints' => AccountResource::collection($workpoints)
-        ]);
+        $workpoint = $payload['workpoint']->id;
+        if($workpoint){
+            $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($workpoint));
+            $account->token = $token;
+            return response()->json([
+                'account' => $account,
+                'workpoints' => AccountResource::collection($workpoints)
+            ]);
+        }else{
+            return response()->json([
+                'message' => 'No tiene acceso a esta tienda',
+                'token' => $token,
+                'workpoints' => AccountResource::collection($workpoints)
+            ]);
+        }
     }
     /**
      * Join user to workpoint
