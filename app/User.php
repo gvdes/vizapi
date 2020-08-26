@@ -64,6 +64,22 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                     ->withPivot(['_status', '_rol', 'id']);
     }
 
+    public function tickets(){
+        return $this->belongsToMany('App\CatalogReport', 'ticket', '_responsable', '_report')
+                    ->using('App\Ticket')
+                    ->withPivot(['id','details','pictue','_status','_created_by']);
+    }
+
+    public function ticketsDone(){
+        return $this->hasMany('App\Ticket', '_created_by', 'id');
+    }
+
+    public function workTeam(){
+        return $this->belongsToMany('App\WorkTeam', 'group_member', '_account', '_work_team')
+                    ->using('App\GroupMember')
+                    ->withPivot(['id','_rol']);
+    }
+
     /** Mutators */
     public function setNamesAttribute($value){
         $this->attributes['names'] = ucfirst($value);
