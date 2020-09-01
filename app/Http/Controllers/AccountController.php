@@ -235,4 +235,25 @@ class AccountController extends Controller{
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
     }
+
+    /**
+     * Create user account
+     * @param object request
+     * @param int request[]._status - null
+     * @param int request[]._rol - null
+     * @param object request[].permissions[] - null
+     */
+    public function updateAccount(Request $request, $id){
+        try{
+            $account = Account::find($id);
+            $account->_status = $request->_status ? $request->_status : $account->_status;
+            $account->_rol = $request->_rol ? $request->_rol : $account->_rol;
+            $permissions = $request->permissions ? $request->permissions : $account->permissions;
+            $account->permissions()->sync($permissions);
+            $save = $account->save();
+            return response()->json(['sucess' => $save]);
+        }else{
+            return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
+        }
+    }
 }
