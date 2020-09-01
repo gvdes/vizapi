@@ -48,6 +48,12 @@ class AuthController extends Controller{
                 'workpoints' => AccountResource::collection($workpoints)
             ]);
         }
+        /**LOG 2 = INICIO DE SESIÓN */
+        Auth::user()->log()->attach(4,[
+            'details' => json_encode([
+                '_accfrom' => $payload['workpoint']->_account
+            ])
+        ]);
         if($workpoint){
             $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($workpoint));
             $account->token = $token;

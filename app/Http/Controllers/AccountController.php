@@ -89,6 +89,14 @@ class AccountController extends Controller{
                     })->toArray();
                     $account->permissions()->attach($insert);
                 }
+                /**LOG 1 = CREACIÓN DE CUENTA */
+                $payload = Auth::payload();
+                $user->log()->attach(1,[
+                    'details' => json_encode([
+                        '_accfrom' => $payload['workpoint']->_account,
+                        'data' => $request
+                    ]);
+                ]);
                 return $user->id;
             }catch(\Exception $e){
                 return false;
@@ -142,14 +150,24 @@ class AccountController extends Controller{
     /**
      * Create user account
      * @param object request
-     * @param string request[]._status //Nuevo status a poner en la sucursal
+     * @param string request[].id //id De la cuenta
+     *  @param string request[]._status //Nuevo status a poner en la sucursal
      */
 
     public function updateStatus(Request $request){
         $payload = Auth::payload();
-        $account = Account::find($payload['workpoint']->id);
+        $account = Account::find($request->id);
         $account->_status = $request->_status;
         $success = $account->save();
+        /**LOG 6 = CAMBIO DE STATUS */
+        $payload = Auth::payload();
+        $user->log()->attach(6,[
+            'details' => json_encode([
+                '_accfrom' => $payload['workpoint']->_account,
+                'status' => $request->_status,
+                'workpoint' => $account->_workpoint
+            ]);
+        ]);
         return response()->json([
             'success' => $success
         ]);
@@ -170,6 +188,13 @@ class AccountController extends Controller{
                     $user->password = app('hash')->make($request->new_password);
                     $user->change_password = false;
                     $save = $user->save();
+                    /**LOG 3 = CAMBIO DE CONTRASEÑA */
+                    $payload = Auth::payload();
+                    $user->log()->attach(3,[
+                        'details' => json_encode([
+                            '_accfrom' => $payload['workpoint']->_account,
+                        ]);
+                    ]);
                     return response()->json(["success" => $save]);
                 }
             }else{
@@ -202,6 +227,14 @@ class AccountController extends Controller{
             $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
             $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
             $save = $user->save();
+            /**LOG 2 = ACTUALIZACIÓN DE DATOS */
+            $payload = Auth::payload();
+            $user->log()->attach(2,[
+                'details' => json_encode([
+                    '_accfrom' => $payload['workpoint']->_account,
+                    'data' => $request
+                ]);
+            ]);
             return response()->json(["sucess" => $save]);
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
@@ -230,6 +263,14 @@ class AccountController extends Controller{
             $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
             $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
             $save = $user->save();
+            /**LOG 2 = ACTUALIZACIÓN DE DATOS */
+            $payload = Auth::payload();
+            $user->log()->attach(2,[
+                'details' => json_encode([
+                    '_accfrom' => $payload['workpoint']->_account,
+                    'data' => $request
+                ]);
+            ]);
             return response()->json(["sucess" => $save]);
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
@@ -251,6 +292,14 @@ class AccountController extends Controller{
             $permissions = $request->permissions ? $request->permissions : $account->permissions;
             $account->permissions()->sync($permissions);
             $save = $account->save();
+            /**LOG 2 = ACTUALIZACIÓN DE DATOS */
+            $payload = Auth::payload();
+            $user->log()->attach(2,[
+                'details' => json_encode([
+                    '_accfrom' => $payload['workpoint']->_account,
+                    'data' => $request
+                ]);
+            ]);
             return response()->json(['sucess' => $save]);
         }else{
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);

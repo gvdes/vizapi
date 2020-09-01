@@ -44,13 +44,14 @@ class InitSeeder extends Seeder{
             ['id'=> 3, 'name'=> 'Cambio de contraseña'],
             ['id'=> 4, 'name'=> 'Inicio de sesión'],
             ['id'=> 5, 'name'=> 'Sesión cerrada'],
-            ['id'=> 6, 'name'=> 'Sesión bloqueada'],
-            ['id'=> 7, 'name'=> 'Sesión re-activada'],
-            ['id'=> 8, 'name'=> 'Se ha otorgado acceso a una nueva sucursal'],
-            ['id'=> 9, 'name'=> 'Se ha quitado acceso a una nueva sucursal'],
-            ['id'=> 10, 'name'=> 'Se ha cambiado el rol'],
-            ['id'=> 11, 'name'=> 'Asignación de permisos'],
-            ['id'=> 12, 'name'=> 'Restricción de permisos']
+            ['id'=> 6, 'name'=> 'Cambio de status'],
+            /* ['id'=> 6, 'name'=> 'Sesión bloqueada'],
+            ['id'=> 7, 'name'=> 'Sesión re-activada'], */
+            ['id'=> 7, 'name'=> 'Se ha otorgado acceso a una nueva sucursal'],
+            ['id'=> 8, 'name'=> 'Se ha quitado acceso a una nueva sucursal'],
+            ['id'=> 9, 'name'=> 'Se ha cambiado el rol'],
+            ['id'=> 10, 'name'=> 'Cambio de permisos'],
+            /* ['id'=> 12, 'name'=> 'Restricción de permisos'] */
         ]);
 
         DB::table('roles')->insert([
