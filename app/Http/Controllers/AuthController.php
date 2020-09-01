@@ -41,6 +41,13 @@ class AuthController extends Controller{
         $payload = Auth::payload();
         $workpoints = Auth::user()->workpoints;
         $workpoint = $payload['workpoint']->id;
+        if($payload['workpoint']->_status==4){
+            return response()->json([
+                'message' => 'La cuenta esta bloqueada',
+                'token' => $token,
+                'workpoints' => AccountResource::collection($workpoints)
+            ]);
+        }
         if($workpoint){
             $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($workpoint));
             $account->token = $token;
