@@ -12,7 +12,8 @@ class InitSeeder extends Seeder{
     public function run(){
         DB::table('workpoints_types')->insert([
             ['id'=> 1, 'name'=> 'CEDIS'],
-            ['id'=> 2, 'name'=> 'Sucursal']
+            ['id'=> 2, 'name'=> 'Sucursal'],
+            ['id' =>3, 'name' => 'Cluster']
         ]);
 
         DB::table('workpoints')->insert([
@@ -28,7 +29,8 @@ class InitSeeder extends Seeder{
             ['id' => 10, 'name' => 'Ramon Corona Dos', 'alias' => 'RC2', '_type' => 2],
             ['id' => 11, 'name' => 'Brasil Uno', 'alias' => 'BRA1', '_type' => 2],
             ['id' => 12, 'name' => 'Brasil Dos', 'alias' => 'BRA2', '_type' => 2],
-            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2]
+            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2],
+            ['id' => 404, 'name' => 'Clouster', 'alias' => 'VIZ', '_type' => 3],
         ]);
 
         DB::table('account_status')->insert([
@@ -45,13 +47,10 @@ class InitSeeder extends Seeder{
             ['id'=> 4, 'name'=> 'Inicio de sesión'],
             ['id'=> 5, 'name'=> 'Sesión cerrada'],
             ['id'=> 6, 'name'=> 'Cambio de status'],
-            /* ['id'=> 6, 'name'=> 'Sesión bloqueada'],
-            ['id'=> 7, 'name'=> 'Sesión re-activada'], */
             ['id'=> 7, 'name'=> 'Se ha otorgado acceso a una nueva sucursal'],
             ['id'=> 8, 'name'=> 'Se ha quitado acceso a una nueva sucursal'],
             ['id'=> 9, 'name'=> 'Se ha cambiado el rol'],
             ['id'=> 10, 'name'=> 'Cambio de permisos'],
-            /* ['id'=> 12, 'name'=> 'Restricción de permisos'] */
         ]);
 
         DB::table('roles')->insert([
