@@ -95,7 +95,7 @@ class AccountController extends Controller{
                     'details' => json_encode([
                         '_accfrom' => $payload['workpoint']->_account,
                         'data' => $request
-                    ]);
+                    ])
                 ]);
                 return $user->id;
             }catch(\Exception $e){
@@ -166,7 +166,7 @@ class AccountController extends Controller{
                 '_accfrom' => $payload['workpoint']->_account,
                 'status' => $request->_status,
                 'workpoint' => $account->_workpoint
-            ]);
+            ])
         ]);
         return response()->json([
             'success' => $success
@@ -193,7 +193,7 @@ class AccountController extends Controller{
                     $user->log()->attach(3,[
                         'details' => json_encode([
                             '_accfrom' => $payload['workpoint']->_account,
-                        ]);
+                        ])
                     ]);
                     return response()->json(["success" => $save]);
                 }
@@ -233,7 +233,7 @@ class AccountController extends Controller{
                 'details' => json_encode([
                     '_accfrom' => $payload['workpoint']->_account,
                     'data' => $request
-                ]);
+                ])
             ]);
             return response()->json(["sucess" => $save]);
         }catch(\Exception $e){
@@ -269,7 +269,7 @@ class AccountController extends Controller{
                 'details' => json_encode([
                     '_accfrom' => $payload['workpoint']->_account,
                     'data' => $request
-                ]);
+                ])
             ]);
             return response()->json(["sucess" => $save]);
         }catch(\Exception $e){
@@ -298,10 +298,10 @@ class AccountController extends Controller{
                 'details' => json_encode([
                     '_accfrom' => $payload['workpoint']->_account,
                     'data' => $request
-                ]);
+                ])
             ]);
             return response()->json(['sucess' => $save]);
-        }else{
+        }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
     }
