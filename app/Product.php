@@ -1,0 +1,50 @@
+<?php 
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model{
+    
+    protected $table = 'products';
+    protected $fillable = ['code', 'name', 'description', 'stock', '_category', '_status', '_unit', 'provider', 'pieces', 'dimensions', 'weight'];
+    public $timestamps = false;
+    
+    /*****************
+     * Relationships *
+     *****************/
+    public function prices(){
+        return $this->belongsToMany('App\PriceList', 'product_prices', '_product', 'type')
+                    ->withPivot(['price']);
+    }
+
+    public function log(){
+        return $this->belongsToMany('App\ProductAction', 'product_log', '_product', '_action')
+                    ->withPivot(['details'])
+                    ->withTimestamps();
+    }
+
+    public function kits(){
+        return $this->belongsToMany('App\Kits', 'product_kit', '_product', '_kit')
+                    ->withPivot(['price']);
+    }
+
+    public function status(){
+        return $this->belongsTo('App\ProductStatus', '_status');
+    }
+
+    public function provider(){
+        return $this->belongsTo('App\Provider', '_provider');
+    }
+
+    public function units(){
+        return $this->belongsTo('App\ProductUnit', '_unit');
+    }
+
+    public function category(){
+        return $this->belongsTo('App\ProductCategory', '_category');
+    }
+
+    public function variants(){
+        return $this->hasMany('App\ProductVarian', '_product', 'id');
+    }
+}
