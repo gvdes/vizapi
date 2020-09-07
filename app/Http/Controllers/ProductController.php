@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use App\Product;
+use Illuminate\Support\Facades\DB;
+
 class ProductController extends Controller{
     /**
      * Create a new controller instance.
