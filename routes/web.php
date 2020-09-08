@@ -34,3 +34,10 @@ $router->group(['prefix' => 'account'], function () use ($router){
 $router->group(['prefix' => 'workpoint'], function () use ($router){
     $router->post('/join', 'AuthController@joinWorkpoint');
 });
+
+$router->group(['prefix' => 'products'], function () use ($router){
+    $router->post('/seeder', 'ProductController@getProductsFromAccess');
+    $router->post('/seederproviders', 'ProductController@getProvidersFromAccess');
+    $router->post('/seederkits', 'ProductController@getKitsFromAccess');
+    $router->post('/seederprices', 'ProductController@setPrices');
+});

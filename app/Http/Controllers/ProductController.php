@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Product;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller{
     /**
@@ -14,27 +15,97 @@ class ProductController extends Controller{
         //
     }
 
-    public function getAllFromAccess(){
-        $access = new \App\Access();
-        $items_from_access = collect($access->getProducts());
+    public function getProductsFromAccess(Request $request){
+        /* $access = new \App\Access();
+        $items_from_access = collect($access->getProducts()); */
+        $items_from_access = collect($request->products);
         $products = $items_from_access->map(function($product){
             return [
-                "code" => mb_convert_encoding((string)$product['CODART'], "UTF-8", "Windows-1252"),
-                "name" => (string)$product['CCOART'],
-                "description" => mb_convert_encoding($product['DLAART'], "UTF-8", "Windows-1252"),
+                /* "code" => mb_convert_encoding((string)$product['CODART'], "UTF-8", "Windows-1252"), */
+                "code" => $product['CODART'],
+                "name" => $product['CCOART'],
+                "description" => $product['DLAART'],
+                /* "description" => mb_convert_encoding($product['DLAART'], "UTF-8", "Windows-1252"), */
                 "pieces" => explode(" ", $product['CP3ART'])[0] ? intval(explode(" ", $product['CP3ART'])[0]) : 0,
-                "_category" => getCategory($product['FAMART']),
-                "_status" => $product['NPUART'],
+                "_category" => $this->getCategory($product['FAMART']) ? $this->getCategory($product['FAMART']) : 404,
+                "_status" => 1,
                 "_provider" => ($product['PHAART']<139 || $product['PHAART'] == 1000) ? $product['PHAART'] : 404,
                 "_unit" => 1
             ];
         })->toArray();
-        $success = DB::table('products')->insert($products);
+        foreach (array_chunk($products,1000) as $t) {
+            $success = DB::table('products')->insert($t);
+        }
 
         return response()->json([
             "sucess" => $success,
             "products" => count($products)
         ]);
+    }
+
+    public function getProvidersFromAccess(Request $request){
+        /* $access = new \App\Access();
+        $items_from_access = collect($access->getProviders()); */
+        $items_from_access = collect($request->providers);
+        $providers = $items_from_access->map(function($provider){
+            return [
+                "id" => (string)$provider['CODPRO'],
+                "rfc" => (string)$provider['NIFPRO'],
+                "name" => mb_convert_encoding((string)$provider['NOFPRO'], "UTF-8", "Windows-1252"),
+                "alias" => mb_convert_encoding((string)$provider['NOCPRO'], "UTF-8", "Windows-1252"),
+                "description" => '',
+                "adress" => json_encode([
+                    'calle' => mb_convert_encoding((string)$provider['DOMPRO'], "UTF-8", "Windows-1252"),
+                    'municipio' => mb_convert_encoding((string)$provider['PROPRO'], "UTF-8", "Windows-1252")
+                ]),
+                "phone" => (string)$provider['TELPRO'],
+            ];
+        })->toArray();
+        $success = DB::table('providers')->insert($providers);
+
+        return response()->json([
+            "sucess" => $success,
+            "products" => count($providers)
+        ]);
+    }
+
+    public function getKitsFromAccess(Request $request){
+        $items_from_access = collect($request->kits);
+        $kits = $items_from_access->groupBy('CODCOM');
+        $code_err = [];
+        foreach($kits as $code => $kit){
+            $KIT = \App\Kits::create([
+                'code' => $code
+            ]);
+            foreach($kit as $el){
+                $product = \App\Product::where('code', $el['ARTCOM'])->first();
+                if($product){
+                    $KIT->products()->attach($product->id, ["price"=>$el['COSCOM']]);
+                }else{
+                    array_push($code_err, $el);
+                }
+            }
+        }
+        return response()->json($code_err);
+    }
+
+    public function setPrices(Request $request){
+        $prices = collect($request->prices)->groupBy('ARTLTA');
+        foreach ($prices as $code => $price) {
+            $product = \App\Product::where('code', $code)->first();
+            if($product){
+                foreach($price as $p){
+                    if($p['TARLTA'] == 4){
+                        $price_list = 3;
+                    }elseif($p['TARLTA'] > 3){
+                        $price_list = $p['TARLTA']+1;
+                    }else{
+                        $price_list = $p['TARLTA'];
+                    }
+                    $product->prices()->attach($price_list, ['price' => $p['PRELTA']]);
+                }
+            }
+        }
     }
 
     public function getCategory($family){

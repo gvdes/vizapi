@@ -13,7 +13,7 @@ class Product extends Model{
      * Relationships *
      *****************/
     public function prices(){
-        return $this->belongsToMany('App\PriceList', 'product_prices', '_product', 'type')
+        return $this->belongsToMany('App\PriceList', 'product_prices', '_product', '_type')
                     ->withPivot(['price']);
     }
 
@@ -24,7 +24,7 @@ class Product extends Model{
     }
 
     public function kits(){
-        return $this->belongsToMany('App\Kits', 'product_kit', '_product', '_kit')
+        return $this->belongsToMany('App\Kits', 'product_kits', '_product', '_kit')
                     ->withPivot(['price']);
     }
 
