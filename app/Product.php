@@ -47,4 +47,8 @@ class Product extends Model{
     public function variants(){
         return $this->hasMany('App\ProductVarian', '_product', 'id');
     }
+
+    public function locations(){
+        return $this->belongsToMany('App\CellerSection', 'product_location', '_product', '_location');
+    }
 }
