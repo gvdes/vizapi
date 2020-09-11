@@ -42,3 +42,9 @@ $router->group(['prefix' => 'access'], function () use ($router){
     $router->get('/products', 'AccessController@getProducts');
     $router->get('/providers', 'AccessController@getProviders');
 });
+
+$router->group(['prefix' => 'location'], function () use ($router){
+    $router->get('/cellers', 'LocationController@getCellers');
+    $router->get('/sections', 'LocationController@getSections');
+    $router->get('/product', 'LocationController@getproduct');
+});
