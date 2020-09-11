@@ -15,7 +15,10 @@ class ProductSeeder extends Seeder{
             ['id' => 2, 'name' => 'Mayoreo', 'alias' => 'MAY'],
             ['id' => 3, 'name' => 'Docena', 'alias' => 'DOC'],
             ['id' => 4, 'name' => 'Media caja', 'alias' => 'MED'],
-            ['id' => 5, 'name' => 'Caja', 'alias' => 'CAJ']
+            ['id' => 5, 'name' => 'Caja', 'alias' => 'CAJ'],
+            ['id' => 6, 'name' => 'Especial', 'alias' => 'ESP'],
+            ['id' => 7, 'name' => 'Centro', 'alias' => 'CEN'],
+            ['id' => 8, 'name' => 'Costo', 'alias' => 'COS']
         ]);
         
         DB::table('product_actions')->insert([

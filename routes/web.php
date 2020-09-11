@@ -36,8 +36,9 @@ $router->group(['prefix' => 'workpoint'], function () use ($router){
 });
 
 $router->group(['prefix' => 'products'], function () use ($router){
-    $router->post('/seeder', 'ProductController@getProductsFromAccess');
-    $router->post('/seederproviders', 'ProductController@getProvidersFromAccess');
-    $router->post('/seederkits', 'ProductController@getKitsFromAccess');
-    $router->post('/seederprices', 'ProductController@setPrices');
+});
+
+$router->group(['prefix' => 'access'], function () use ($router){
+    $router->get('/products', 'AccessController@getProducts');
+    $router->get('/providers', 'AccessController@getProviders');
 });
