@@ -70,9 +70,12 @@ class LocationController extends Controller{
      */
     public function getSections(Request $request){
         $celler = $request->_celler ? $request->_celler : null;
-        $section = $request->section ? \App\CellerSection::find($request->section) : null;
+        $section = $request->_section ? \App\CellerSection::find($request->_section) : null;
         if($celler && !$section){
-            $sections = \App\CellerSection::where('_celler', $celler)->get();
+            $sections = \App\CellerSection::where([
+                ['_celler', '=' ,$celler],
+                ['deep', '=' ,0],
+            ])->get();
             $res = $sections->map(function($section){
                 $section->sections = \App\CellerSection::where('root', $section->id)->get();
                 return $section;
@@ -114,10 +117,16 @@ class LocationController extends Controller{
      * @param object request
      * @param int request[].code
      */
-    public function getproduct(Request $request){
+    public function getProduct(Request $request){
         $code = $request->code;
-        $product = \App\Product::with('locations', 'category', 'status')->where('code', $code)->orWhere('name', $code)->first();
-        return response()->json($product);
+        $product = \App\Product::with('locations', 'category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
+        if($product){
+            $product->stock = AccessController::getStock($product->code);
+            return response()->json($product);
+        }
+        return response()->json([
+            "msg" => "Producto no encontrado"
+        ]);
     }
 
     /**
@@ -128,16 +137,18 @@ class LocationController extends Controller{
      * @param int product._section
      */
     public function setLocations(Request $request){
-        $products = collect($request->products);
+        $products = $request->products;
         $res = DB::transaction( function () use ($products){
             try{
                 foreach($products as $item){
-                    $product = \App\Product::find($item->$_product);
-                    $product->locations()->attach($item->$_section);
+                    $product = \App\Product::where('code', $item['_product'])->first();
+                    if($product){
+                        $product->locations()->attach($item['_section']);
+                    }
                 }
                 return true;
             }catch(\Exception $e){
-                return false;
+                return $i;
             }
         });
         return response()->json([
@@ -164,5 +175,59 @@ class LocationController extends Controller{
         return response()->json([
             'success' => $success
         ]);
+    }
+
+    public function getReport(Request $request){
+        $report = $request->report ?  $request->report : 'WithLocation';
+        switch ($report){
+            case 'WithLocation':
+                return response()->json($this->ProductsWithoutStock());
+            break;
+            case 'WithoutLocation':
+                return response()->json($this->ProductsWithoutLocation());
+        }
+        
+    }
+
+    public function ProductsWithoutLocation(){
+        $products = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get()->toArray();
+        $stocks = collect(AccessController::getProductWithStock());
+        $res = $stocks->map(function($product) use ($products){
+            $index = array_search($product['code'], array_column($products, 'code'));
+            if($index){
+                return [
+                    'id' => $products[$index]['id'],
+                    'code' => $product['code'],
+                    'description' => $products[$index]['description'],
+                    'stock' => intval($product['stock'])
+                ];
+            }else{
+                return null;
+            }
+        })->filter(function($product){
+            return !is_null($product);
+        })->values()->all();
+        return $res;
+    }
+
+    public function ProductsWithoutStock(){
+        $products = \App\Product::has('locations', '>', 0)->select('id','code', 'description')->get()->toArray();
+        $stocks = collect(AccessController::getProductWithoutStock());
+        $res = $stocks->map(function($product) use ($products){
+            $index = array_search($product['code'], array_column($products, 'code'));
+            if($index){
+                return [
+                    'id' => $products[$index]['id'],
+                    'code' => $product['code'],
+                    'description' => $products[$index]['description'],
+                    'stock' => intval($product['stock'])
+                ];
+            }else{
+                return null;
+            }
+        })->filter(function($product){
+            return !is_null($product);
+        })->values()->all();
+        return $res;
     }
 }

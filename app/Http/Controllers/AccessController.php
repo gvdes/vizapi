@@ -192,4 +192,49 @@ class AccessController extends Controller{
             return 404;
         }
     }
+
+    public static function getStock($code){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "SELECT ACTSTO FROM F_STO WHERE ARTSTO = '$code'";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            $stock = array_reduce($rows,function($res, $row){
+                return $res + $row['ACTSTO'];
+            },0);
+            return $stock;
+        }catch(\PDOException $e){
+            die($e->getMessage());
+        }
+    }
+
+    public static function getProductWithStock(){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "SELECT ARTSTO AS code, ACTSTO AS stock FROM F_STO WHERE ACTSTO > 0 AND ALMSTO = 'GEN'";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            return $rows;
+        }catch(\PDOException $e){
+            die($e->getMessage());
+        }
+    }
+
+    public static function getProductWithoutStock(){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "SELECT ARTSTO AS code, ACTSTO AS stock FROM F_STO WHERE ACTSTO < 1 AND ALMSTO = 'GEN'";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            return $rows;
+        }catch(\PDOException $e){
+            die($e->getMessage());
+        }
+    }
 }

@@ -46,5 +46,8 @@ $router->group(['prefix' => 'access'], function () use ($router){
 $router->group(['prefix' => 'location'], function () use ($router){
     $router->get('/cellers', 'LocationController@getCellers');
     $router->get('/sections', 'LocationController@getSections');
-    $router->get('/product', 'LocationController@getproduct');
+    $router->get('/product', 'LocationController@getProduct');
+    $router->get('/report', 'LocationController@getReport');
+    $router->post('/set', 'LocationController@setLocations');
+    $router->post('/remove', 'LocationController@deleteLocations');
 });
