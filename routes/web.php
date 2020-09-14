@@ -48,6 +48,5 @@ $router->group(['prefix' => 'location'], function () use ($router){
     $router->get('/sections', 'LocationController@getSections');
     $router->get('/product', 'LocationController@getProduct');
     $router->get('/report', 'LocationController@getReport');
-    $router->post('/set', 'LocationController@setLocations');
-    $router->post('/remove', 'LocationController@deleteLocations');
+    $router->post('/toggle', 'LocationController@setLocation');
 });

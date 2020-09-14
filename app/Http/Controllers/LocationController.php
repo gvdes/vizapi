@@ -132,51 +132,21 @@ class LocationController extends Controller{
     /**
      * Set locations to multiples products
      * @param object request
-     * @param array request[].products
-     * @param int product._product
-     * @param int product._section
+     * @param int request._product
+     * @param int request._section
      */
-    public function setLocations(Request $request){
-        $products = $request->products;
-        $res = DB::transaction( function () use ($products){
-            try{
-                foreach($products as $item){
-                    $product = \App\Product::where('code', $item['_product'])->first();
-                    if($product){
-                        $product->locations()->attach($item['_section']);
-                    }
-                }
-                return true;
-            }catch(\Exception $e){
-                return $i;
-            }
-        });
+    public function setLocation(Request $request){
+        $product = \App\Product::find($request->_product);
+        if($product){
+            return response()->json([
+                'success' => $product->locations()->toggle($request->_section)
+            ]);            
+        }
         return response()->json([
-            'success' => $res
+            'msg' => "Código no válido"
         ]);
     }
     
-    /**
-     * Delete locations to product
-     * @param object request
-     * @param int request[]._products
-     * @param int product._location
-     */
-    public function deleteLocations(Request $request){
-        $product = \App\Product::find($request->$_product);
-        $section = $request->$_location;
-        if($product){
-            $success = $product->locations()->detach($section);
-        }else{
-            return response()->json([
-                'msg' => "El producto no existe"
-            ]);
-        }
-        return response()->json([
-            'success' => $success
-        ]);
-    }
-
     public function getReport(Request $request){
         $report = $request->report ?  $request->report : 'WithLocation';
         switch ($report){
