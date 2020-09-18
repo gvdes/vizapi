@@ -200,4 +200,38 @@ class LocationController extends Controller{
         })->values()->all();
         return $res;
     }
+
+    public function index(){
+        $productsWithoutLocation = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get();
+        $productsWithLocation = \App\Product::has('locations', '>', 0)->select('id','code', 'description')->get();
+
+        $withStocks = AccessController::getProductWithStock();
+        $withoutStocks = AccessController::getProductWithoutStock();
+
+        $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($withStocks){
+            return array_search($product['code'], array_column($withStocks, 'code'));
+        })->count();
+        
+        $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($withStocks){
+            return array_search($product['code'], array_column($withStocks, 'code'));
+        })->count();
+
+        $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($withoutStocks){
+            return array_search($product['code'], array_column($withoutStocks, 'code'));
+        })->count();
+
+
+        return response()->json([
+            "withStock" => [
+                "stock" => count($withStocks),
+                "withLocation" => $withLocationWithStockCounter,
+                "withoutLocation" => $withoutLocationWithStockCounter
+            ],
+            "withoutStock" => [
+                "stock" => count($withoutStocks),
+                "withLocation" => $withLocationWithoutStockCounter
+            ]
+        ]);
+    }
+
 }
