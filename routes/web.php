@@ -51,5 +51,5 @@ $router->group(['prefix' => 'location'], function () use ($router){
     $router->get('/report', 'LocationController@getReport');
     $router->post('/toggle', 'LocationController@setLocation');
     $router->get('/index', 'LocationController@index');
-    $router->get('/index2', 'LocationController@index2');
+    $router->post('/maximos', 'LocationController@setMax');
 });

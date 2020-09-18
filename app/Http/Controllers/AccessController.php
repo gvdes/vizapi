@@ -230,6 +230,21 @@ class AccessController extends Controller{
         }
     }
 
+    public static function setMinMax($code, $min, $max){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "UPDATE F_STO SET MINSTO = ?, MAXSTO = ? WHERE ARTSTO = ? AND ALMSTO = 'GEN'";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $exec->execute([$min, $max, $code]);
+            return true;
+        }catch(\PDOException $e){
+            return false;
+            /* die($e->getMessage()); */
+        }
+    }
+
     public static function getStock($code){
         $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
         $query = "SELECT ACTSTO FROM F_STO WHERE ARTSTO = '$code'";
@@ -246,6 +261,7 @@ class AccessController extends Controller{
             die($e->getMessage());
         }
     }
+
 
     public static function getProductWithStock(){
         $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";

@@ -158,6 +158,18 @@ class LocationController extends Controller{
             'msg' => "Código no válido"
         ]);
     }
+
+    /**
+     * Set min and max to products
+     * @param object request
+     * @param int request.code
+     * @param int request.min
+     * @param int request.max
+     */
+    public function setMax(Request $request){
+        $res = AccessController::setMinMax($request->code, $request->min, $request->max); 
+        return response()->json(["success" => $res]);
+    }
     
     public function getReport(Request $request){
         $report = $request->report ?  $request->report : 'WithLocation';
