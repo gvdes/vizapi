@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductVariant extends Model{
     
-    protected $table = 'product_variant';
+    protected $table = 'product_variants';
     protected $fillable = ['barcode', 'stock', 'stocking_time', '_product'];
     public $timestamps = false;
     

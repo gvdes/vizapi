@@ -106,6 +106,29 @@ class AccessController extends Controller{
         }
     }
 
+    public function getRelatedCodes(){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "SELECT ARTEAN, EANEAN FROM F_EAN";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            DB::transaction( function() use($rows){
+                $items_from_access = collect($rows);
+                foreach($items_from_access as $relatedCode){
+                    $product = \App\Product::where('code', $relatedCode['ARTEAN'])->first();
+                    if($product){
+                        $variant = new \App\ProductVariant(['barcode'=> $relatedCode['EANEAN'], "stock" => 0]);
+                        $product->variants()->save($variant);
+                    }
+                }
+            });
+        }catch(\PDOException $e){
+            die($e->getMessage());
+        }
+    }
+
     public function getCategory($family){
         $categories = [
             "ACC"=>94, //Accesorios
