@@ -216,6 +216,20 @@ class AccessController extends Controller{
         }
     }
 
+    public static function getMinMax($code){
+        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        $query = "SELECT ACTSTO, MINSTO, MAXSTO FROM F_STO WHERE ARTSTO = '$code' AND ALMSTO = 'GEN'";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $exec = $db->prepare($query);
+            $exec->execute();
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            return $rows[0];
+        }catch(\PDOException $e){
+            die($e->getMessage());
+        }
+    }
+
     public static function getStock($code){
         $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
         $query = "SELECT ACTSTO FROM F_STO WHERE ARTSTO = '$code'";

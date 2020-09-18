@@ -121,12 +121,19 @@ class LocationController extends Controller{
         $code = $request->code;
         $product = \App\Product::with('locations', 'category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
         if($product){
-            $product->stock = AccessController::getStock($product->code);
+            //$product->stock = AccessController::getStock($product->code);
+            $access = AccessController::getMinMax($product->code);
+            $product->stock = intval($access['ACTSTO']);
+            $product->min = intval($access['MINSTO']);
+            $product->max = intval($access['MAXSTO']);
             return response()->json($product);
         }else{
             $product = \App\ProductVariant::where('barcode', $code)->first()->product;
             $product = $product->fresh('locations', 'category', 'status', 'units');
-            $product->stock = AccessController::getStock($product->code);
+            $access = AccessController::getMinMax($product->code);
+            $product->stock = intval($access['ACTSTO']);
+            $product->min = intval($access['MINSTO']);
+            $product->max = intval($access['MAXSTO']);
             return response()->json($product);
         }
         return response()->json([
