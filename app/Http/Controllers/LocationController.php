@@ -123,6 +123,11 @@ class LocationController extends Controller{
         if($product){
             $product->stock = AccessController::getStock($product->code);
             return response()->json($product);
+        }else{
+            $product = \App\ProductVariant::where('barcode', $code)->first()->product;
+            $product = $product->fresh('locations', 'category', 'status', 'units');
+            $product->stock = AccessController::getStock($product->code);
+            return response()->json($product);
         }
         return response()->json([
             "msg" => "Producto no encontrado"
