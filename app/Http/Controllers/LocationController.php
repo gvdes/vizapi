@@ -246,6 +246,7 @@ class LocationController extends Controller{
     }
 
     public function index(){
+        $counterProducts = \App\Product::count();
         $productsWithoutLocation = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get();
         $productsWithLocation = \App\Product::has('locations', '>', 0)->select('id','code', 'description')->get();
 
@@ -274,7 +275,8 @@ class LocationController extends Controller{
             "withoutStock" => [
                 "stock" => count($withoutStocks),
                 "withLocation" => $withLocationWithoutStockCounter
-            ]
+            ],
+            "products" => $counterProducts
         ]);
     }
 
