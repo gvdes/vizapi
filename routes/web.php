@@ -52,4 +52,5 @@ $router->group(['prefix' => 'location'], function () use ($router){
     $router->post('/toggle', 'LocationController@setLocation');
     $router->get('/index', 'LocationController@index');
     $router->post('/maximos', 'LocationController@setMax');
+    $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
 });

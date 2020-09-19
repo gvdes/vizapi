@@ -71,20 +71,40 @@ class LocationController extends Controller{
     public function getSections(Request $request){
         $celler = $request->_celler ? $request->_celler : null;
         $section = $request->_section ? \App\CellerSection::find($request->_section) : null;
+        $products = [];
+        $paginate = $request->paginate ? $request->paginate : 20;
         if($celler && !$section){
-            $sections = \App\CellerSection::where([
+            $section = \App\CellerSection::where([
                 ['_celler', '=' ,$celler],
                 ['deep', '=' ,0],
-            ])->get();
-            $res = $sections->map(function($section){
+            ])->get()->map(function($section){
                 $section->sections = \App\CellerSection::where('root', $section->id)->get();
                 return $section;
             });
+            if($request->products){
+                $sections = \App\CellerSection::where([
+                    ['_celler', '=' ,$celler],
+                ])->get()->reduce(function($res, $section){
+                    array_push($res, $section->id);
+                    return $res;
+                },[]);
+                $products = \App\Product::whereHas('locations', function($query) use ($sections){
+                    return $query->whereIn('_location', $sections);
+                })->with('locations')->paginate($paginate);
+            }
         }else{
             $section->sections = \App\CellerSection::where('root', $section->id)->get();
-            $res = $section;
+            if($request->products){
+                $sections = $this->getSectionsChildren($section->id);
+                $products = \App\Product::whereHas('locations', function($query) use ($sections){
+                    return $query->whereIn('_location', $sections);
+                })->with('locations')->paginate($paginate);
+            }
         }
-        return response()->json($res);
+        return response()->json([
+            "sections" => $section,
+            "products" => $products
+        ]);
     }
 
     /**
@@ -256,6 +276,22 @@ class LocationController extends Controller{
                 "withLocation" => $withLocationWithoutStockCounter
             ]
         ]);
+    }
+
+    public function getSectionsChildren($id){
+        $sections = \App\CellerSection::where('root', $id)->get();
+        if(count($sections)>0){
+            $res = $sections->map(function($section){
+                $children = $this->getSectionsChildren($section->id);
+                return $children;
+            })->reduce(function($res, $section){
+                return array_merge($res, $section);
+            }, []);
+            array_push($res,$id);
+            return $res;
+        }else {
+            return [$id];
+        }
     }
 
 }
