@@ -59,7 +59,8 @@ class InitSeeder extends Seeder{
             ['id'=> 3, 'name'=> 'Administrador sucursal'],
             ['id'=> 4, 'name'=> 'Vendedor'],
             ['id'=> 5, 'name'=> 'Cajero'],
-            ['id'=> 6, 'name'=> 'Bodeguero']
+            ['id'=> 6, 'name'=> 'Administrador de almacenes'],
+            ['id'=> 7, 'name'=> 'Bodeguero']
         ]);
 
         DB::table('modules_app')->insert([
@@ -75,6 +76,10 @@ class InitSeeder extends Seeder{
             ['id'=> 10, 'name'=> 'Preventa - Caja/Salida', 'deep'=> 1, 'root'=> 4, 'path'=> 'caja/salida'],
             ['id'=> 11, 'name'=> 'Preventa - Configuracion', 'deep'=> 1, 'root'=> 4, 'path'=> 'configuracion'],
             ['id'=> 12, 'name'=> 'Preventa - Reportes', 'deep'=> 1, 'root'=> 4, 'path'=> 'reportes'],
+            ['id'=> 13, 'name'=> 'Almacenes', 'deep'=> 0, 'root'=> 0, 'path'=> 'almacenes'],
+            ['id'=> 14, 'name'=> 'Contador', 'deep'=> 1, 'root'=> 13, 'path'=> 'contador'],
+            ['id'=> 15, 'name'=> 'Ubicador', 'deep'=> 1, 'root'=> 13, 'path'=> 'ubicador'],
+            ['id'=> 16, 'name'=> 'Mínimos y máximos', 'deep'=> 1, 'root'=> 13, 'path'=> 'minymax'],
             /* ['id'=> 4, 'name'=> 'Pedidos CEDIS', 'deep'=> 0 , 'root'=> 0],
             ['id'=> 5, 'name'=> 'Generación pedidos CEDIS', 'deep'=> 1 , 'root'=> 4],
             ['id'=> 6, 'name'=> 'Dashboard pedidos CEDIS', 'deep'=> 1 , 'root'=> 4],
@@ -101,6 +106,12 @@ class InitSeeder extends Seeder{
             ['id'=> 17, '_module'=> 10, 'name'=> 'Acceso'],
             ['id'=> 18, '_module'=> 11, 'name'=> 'Acceso'],
             ['id'=> 19, '_module'=> 12, 'name'=> 'Acceso'],
+            ['id'=> 21, '_module'=> 13, 'name'=> 'Acceso'],
+            ['id'=> 22, '_module'=> 14, 'name'=> 'Acceso'],
+            ['id'=> 23, '_module'=> 15, 'name'=> 'Acceso'],
+            ['id'=> 24, '_module'=> 15, 'name'=> 'Iniciar conteo'],
+            ['id'=> 25, '_module'=> 15, 'name'=> 'Finalizar conteo'],
+            ['id'=> 26, '_module'=> 16, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
             ['id'=> 12, '_module'=> 4, 'name'=> 'Creación de pedido autostock'],
             ['id'=> 13, '_module'=> 4, 'name'=> 'Visualización genérica de pedidos'],

@@ -54,3 +54,7 @@ $router->group(['prefix' => 'location'], function () use ($router){
     $router->post('/maximos', 'LocationController@setMax');
     $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
 });
+
+$router->group(['prefix' => 'mail'], function () use ($router){
+    $router->get('/', 'MailController@welcome');
+});
