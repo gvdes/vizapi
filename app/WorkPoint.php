@@ -28,4 +28,8 @@ class WorkPoint extends Model{
     public function orders(){
         return $this->hasMany('App\Order', '_workpoint', 'id');
     }
+
+    public function cyclecounts(){
+        return $this->hasMany('App\CycleCount', '_workpount', 'id');
+    }
 }

@@ -80,6 +80,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                     ->withPivot(['id','_rol']);
     }
 
+    public function cyclecounts(){
+        return $this->hasMany('App\CycleCount', '_created_by', 'id');
+    }
+
     /** Mutators */
     public function setNamesAttribute($value){
         $this->attributes['names'] = ucfirst($value);

@@ -51,4 +51,9 @@ class Product extends Model{
     public function locations(){
         return $this->belongsToMany('App\CellerSection', 'product_location', '_product', '_location');
     }
+
+    public function cyclecounts(){
+        return $this->belongsToMany('App\CycleCount', 'cyclecount_body', '_product', '_cycle_count')
+                    ->withPivot(['stock', 'stock_acc', 'details']);
+    }
 }
