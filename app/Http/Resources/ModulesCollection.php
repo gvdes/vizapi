@@ -39,15 +39,20 @@ class ModulesCollection extends ResourceCollection{
     }
     
     public function getRoots( $modules){
+        $modules_arr = $modules->toArray();
         $roots = $modules->map( function($root){
             if($root->deep>0){
                 $module = \App\Module::find($root->root);
                 $module->permissions = [];
                 return $module;
             }
-        })->unique()->toArray();
-        $modules = $modules->toArray();
+        })->filter(function($module){
+            return !is_null($module);
+        })->unique()->filter(function($module) use ($modules_arr){
+            return array_search(array_column((array)$module,'id'),$modules_arr);
+        })->toArray();
+        /* return $roots; */
         
-        return array_merge( $modules, $roots);
+        return array_merge( $modules_arr, $roots);
     }
 }

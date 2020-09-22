@@ -58,49 +58,49 @@ class AccountController extends Controller{
     public function create(Request $request){
         $this->checkData($request);
         $id = DB::transaction( function() use ($request){
-            try{
-                $user = User::create([
-                    'nick'=> $request->nick,
-                    'password'=> $request->password ? app('hash')->make($request->password) : app('hash')->make($request->nick),
-                    'picture'=> $request->picture ? $request->picture : '',
-                    'names'=> $request->names,
-                    'surname_pat'=> $request->surname_pat,
-                    'surname_mat'=> $request->surname_mat ? $request->surname_mat : '',
-                    '_wp_principal'=> $request->_wp_principal,
-                    '_rol'=> $request->_rol
+            $user = User::create([
+                'nick'=> $request->nick,
+                'password'=> $request->password ? app('hash')->make($request->password) : app('hash')->make($request->nick),
+                'picture'=> $request->picture ? $request->picture : '',
+                'names'=> $request->names,
+                'surname_pat'=> $request->surname_pat,
+                'surname_mat'=> $request->surname_mat ? $request->surname_mat : '',
+                '_wp_principal'=> $request->_wp_principal,
+                '_rol'=> $request->_rol
+            ]);
+            if($user->_rol==1){
+                $workpoints = \App\WorkPoint::all();
+            }else{
+                $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
+            }
+            foreach($workpoints as $workpoint){
+                $account = \App\Account::create([
+                    '_account' => $user->id,
+                    '_workpoint' => $workpoint['id'],
+                    '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
+                    '_status' => 1,
                 ]);
-                if($user->_rol==1){
-                    $workpoints = \App\WorkPoint::all();
-                }else{
-                    $workpoints = $request->workpoints ? (object)$request->workpoints : (object)['_workpoint' => $user->_wp_principal, '_rol' => $user->rol];
-                }
-                foreach($workpoints as $workpoint){
-                    $account = \App\Account::create([
-                        '_account' => $user->id,
-                        '_workpoint' => $workpoint->id,
-                        '_status' => 1,
-                        '_rol' => $user->_rol == 1 ? 1 :$workpoint->_rol
-                    ]);
-                    $permissions = $workpoint->permissions ? (object)$workpoint->permissions : \App\Roles::with('permissions_default')->find($account->_rol);
-                    //Asociar permisos con cuentas
-                    $permissions_default = collect($permissions->permissions_default);
-                    $insert = $permissions_default->map(function($permission){
-                        return $permission->id;
-                    })->toArray();
-                    $account->permissions()->attach($insert);
-                }
-                /**LOG 1 = CREACIÓN DE CUENTA */
-                $payload = Auth::payload();
-                $user->log()->attach(1,[
-                    'details' => json_encode([
-                        '_accfrom' => $payload['workpoint']->_account,
-                        'data' => $request
-                    ])
-                ]);
-                return $user->id;
+                $permissions = isset($workpoint['permissions']) ? (object)$workpoint['permissions'] : \App\Roles::with('permissions_default')->find($account->_rol);
+                //Asociar permisos con cuentas
+                $permissions_default = collect($permissions->permissions_default);
+                $insert = $permissions_default->map(function($permission){
+                    return $permission->id;
+                })->toArray();
+                $account->permissions()->attach($insert);
+            }
+            /**LOG 1 = CREACIÓN DE CUENTA */
+            /* $payload = Auth::payload();
+            $user->log()->attach(1,[
+                'details' => json_encode([
+                    '_accfrom' => $payload['workpoint']->_account,
+                    'data' => $request
+                ])
+            ]); */
+            return $user->id;
+            /* try{
             }catch(\Exception $e){
                 return false;
-            }
+            } */
         });
         return response()->json([
             'success' => $id
