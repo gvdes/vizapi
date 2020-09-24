@@ -49,7 +49,7 @@ class ModulesCollection extends ResourceCollection{
         })->filter(function($module){
             return !is_null($module);
         })->unique()->filter(function($module) use ($modules_arr){
-            return array_search(array_column((array)$module,'id'),$modules_arr);
+            return !array_search(array_column((array)$module,'id'),$modules_arr);
         })->toArray();
         /* return $roots; */
         

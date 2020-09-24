@@ -46,8 +46,8 @@ class AuthController extends Controller{
                 'message' => 'La cuenta esta bloqueada',
                 'token' => $token,
                 'workpoints' => AccountResource::collection($workpoints)
-            ]);
-        }
+                ]);
+            }
         /**LOG 2 = INICIO DE SESIÓN */
         Auth::user()->log()->attach(4,[
             'details' => json_encode([
@@ -55,17 +55,23 @@ class AuthController extends Controller{
             ])
         ]);
         if($workpoint){
+            $res = $workpoints->map(function($workpoint){
+                //return new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint')->find($workpoint['id']));
+                return \App\Account::with('status', 'rol', 'permissions', 'workpoint')->find($workpoint['id']);
+            })->filter(function($workpoint){
+                return !is_null($workpoint);
+            });
             $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($workpoint));
             $account->token = $token;
             return response()->json([
                 'account' => $account,
-                'workpoints' => AccountResource::collection($workpoints)
+                'workpoints' => AccountResource::collection($res)
             ]);
         }else{
             return response()->json([
                 'message' => 'No tiene acceso a esta tienda',
                 'token' => $token,
-                'workpoints' => AccountResource::collection($workpoints)
+                'workpoints' => $res
             ]);
         }
     }
