@@ -24,24 +24,25 @@ class Account extends JsonResource{
         }); */
 
         return [
-            'id' => $this->when(!$this->workpoint, function(){
+            /* 'id' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->id;
             }),
             '_account' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->_account;
-            }),
-            'me' => $this->whenLoaded('user', new User($this->user)),
+            }), */
+            //new User($this->user)
+            'me' => $this->whenLoaded('user'),
             'status' => $this->whenLoaded('status'),
-            '_status' => $this->when(!$this->workpoint, function(){
+            /* '_status' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->_status;
-            }),
+            }), */
             'rol' => $this->whenLoaded('rol'),
-            '_rol' => $this->when(!$this->workpoint, function(){
+            /* '_rol' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->_rol;
             }),
             '_workpoint' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->_workpoint;
-            }),
+            }), */
             'workpoint' => $this->whenLoaded('workpoint'),
             'modules' => $this->whenLoaded('permissions', function(){
                 return new ModulesCollection($this->permissions);

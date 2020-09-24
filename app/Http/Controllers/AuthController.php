@@ -39,41 +39,27 @@ class AuthController extends Controller{
             return response()->json(['message' => 'Usuario o contraseña incorrecta'], 200);
         }
         $payload = Auth::payload();
-        $workpoints = Auth::user()->workpoints;
-        $workpoint = $payload['workpoint']->id;
-        if($payload['workpoint']->_status==4){
-            return response()->json([
-                'message' => 'La cuenta esta bloqueada',
-                'token' => $token,
-                'workpoints' => AccountResource::collection($workpoints)
-                ]);
-            }
-        /**LOG 2 = INICIO DE SESIÓN */
+        $workpoints = \App\Account::with('status', 'rol', 'permissions', 'workpoint')->where('_account', Auth::user()->id)->get();
+        /**LOG 4 = INICIO DE SESIÓN */
+        $workpoint = $payload['workpoint'];
         Auth::user()->log()->attach(4,[
             'details' => json_encode([
                 '_accfrom' => $payload['workpoint']->_account
             ])
         ]);
-        if($workpoint){
-            $res = $workpoints->map(function($workpoint){
-                //return new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint')->find($workpoint['id']));
-                return \App\Account::with('status', 'rol', 'permissions', 'workpoint')->find($workpoint['id']);
-            })->filter(function($workpoint){
-                return !is_null($workpoint);
-            });
-            $account = new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($workpoint));
-            $account->token = $token;
+        $account = new AccountResource(\App\Account::with('workpoint', 'user')->find($workpoint->id));
+        $account->token = $token;
+        if($payload['workpoint']->_status==4){
             return response()->json([
+                'message' => 'Cuenta principal bloqueada',
                 'account' => $account,
-                'workpoints' => AccountResource::collection($res)
-            ]);
-        }else{
-            return response()->json([
-                'message' => 'No tiene acceso a esta tienda',
-                'token' => $token,
-                'workpoints' => $res
+                'workpoints' => AccountResource::collection($workpoints)
             ]);
         }
+        return response()->json([
+            'account' => $account,
+            'workpoints' => AccountResource::collection($workpoints)
+        ]);
     }
     /**
      * Join user to workpoint
