@@ -111,7 +111,8 @@ class LocationController extends Controller{
      * Get cellers in workpoint
      */
     public function getCellers(){
-        $workpoint = env('ID_ENV');
+        $payload = Auth::payload();
+        $workpoint = $payload['workpoiny']->_workpoint;
         if($workpoint){
             $cellers = \App\Celler::where('_workpoint', $workpoint)->get();
             
@@ -127,7 +128,7 @@ class LocationController extends Controller{
             ]);
         }else{
             return response()->json([
-                'msg' => 'No ha indicado ningun punto de trabajo'
+                'msg' => 'Usuario no autenticado'
             ]);
         }
     }
