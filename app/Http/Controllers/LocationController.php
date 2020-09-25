@@ -113,7 +113,7 @@ class LocationController extends Controller{
      */
     public function getCellers(){
         $payload = Auth::payload();
-        $workpoint = $payload['workpoiny']->_workpoint;
+        $workpoint = $payload['workpoint']->_workpoint;
         if($workpoint){
             $cellers = \App\Celler::where('_workpoint', $workpoint)->get();
             
@@ -150,13 +150,15 @@ class LocationController extends Controller{
             $product->max = intval($access['MAXSTO']);
             return response()->json($product);
         }else{
-            $product = \App\ProductVariant::where('barcode', $code)->first()->product;
-            $product = $product->fresh('locations', 'category', 'status', 'units');
-            $access = AccessController::getMinMax($product->code);
-            $product->stock = intval($access['ACTSTO']);
-            $product->min = intval($access['MINSTO']);
-            $product->max = intval($access['MAXSTO']);
-            return response()->json($product);
+            $product = \App\ProductVariant::where('barcode', $code)->first();
+            if($product){
+                $product = $product->product->fresh('locations', 'category', 'status', 'units');
+                $access = AccessController::getMinMax($product->code);
+                $product->stock = intval($access['ACTSTO']);
+                $product->min = intval($access['MINSTO']);
+                $product->max = intval($access['MAXSTO']);
+                return response()->json($product);
+            }
         }
         return response()->json([
             "msg" => "Producto no encontrado"
