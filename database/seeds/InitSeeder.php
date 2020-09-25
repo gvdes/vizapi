@@ -135,6 +135,22 @@ class InitSeeder extends Seeder{
         $arr_to_insert =  $permissions->map(function( $permission){
             return ['_rol'=> 1, '_permission'=> $permission->id];
         })->toArray();
+        /* Permisos de root */
         DB::table('rol_permission_default')->insert($arr_to_insert);
+        DB::table('rol_permission_default')->insert([
+            /* Permisos de administrador de almacenes */
+            ['_rol'=> 6, '_permission'=> 21],
+            ['_rol'=> 6, '_permission'=> 22],
+            ['_rol'=> 6, '_permission'=> 23],
+            ['_rol'=> 6, '_permission'=> 24],
+            ['_rol'=> 6, '_permission'=> 25],
+            ['_rol'=> 6, '_permission'=> 26],
+            ['_rol'=> 7, '_permission'=> 21],
+            /* Permisos de bodeguero */
+            ['_rol'=> 6, '_permission'=> 22],
+            ['_rol'=> 6, '_permission'=> 23],
+            ['_rol'=> 6, '_permission'=> 24],
+            ['_rol'=> 6, '_permission'=> 25],
+        ]);
     }
 }
