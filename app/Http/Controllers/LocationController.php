@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +13,9 @@ class LocationController extends Controller{
      *
      * @return void
      */
+    public $account = null;
     public function __construct(){
-        //
+        $this->account = Auth::payload()['workpoint'];
     }
 
     /**
@@ -26,7 +28,7 @@ class LocationController extends Controller{
     public function createCeller(Request $request){
         $celler = \App\Celler::create([
             'name' => $request->name,
-            '_workpoint' => $request->_workpoint,
+            '_workpoint' => $this->account->_workpoint,
             '_type' => $request->_type
         ]);
         return response()->json([
@@ -112,8 +114,7 @@ class LocationController extends Controller{
      * Get cellers in workpoint
      */
     public function getCellers(){
-        $payload = Auth::payload();
-        $workpoint = $payload['workpoint']->_workpoint;
+        $workpoint = $this->account->_workpoint;
         if($workpoint){
             $cellers = \App\Celler::where('_workpoint', $workpoint)->get();
             
@@ -141,9 +142,12 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->code;
-        $product = \App\Product::with('locations', 'category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
+        $workpoint = $this->account->_workpoint;
+        $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
+        $product = \App\Product::with(['locations' => function($query)use($cellers){
+            $query->whereIn('_celler', $cellers);
+        }])->with('category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
         if($product){
-            //$product->stock = AccessController::getStock($product->code);
             $access = AccessController::getMinMax($product->code);
             $product->stock = intval($access['ACTSTO']);
             $product->min = intval($access['MINSTO']);
@@ -152,7 +156,9 @@ class LocationController extends Controller{
         }else{
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
-                $product = $product->product->fresh('locations', 'category', 'status', 'units');
+                $product = $product = \App\Product::with(['locations' => function($query)use($cellers){
+                    $query->whereIn('_celler', $cellers);
+                }])->with('category', 'status', 'units')->find($product->product->id);
                 $access = AccessController::getMinMax($product->code);
                 $product->stock = intval($access['ACTSTO']);
                 $product->min = intval($access['MINSTO']);
@@ -251,8 +257,15 @@ class LocationController extends Controller{
 
     public function index(){
         $counterProducts = \App\Product::count();
-        $productsWithoutLocation = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get();
-        $productsWithLocation = \App\Product::has('locations', '>', 0)->select('id','code', 'description')->get();
+        $workpoint = $this->account->_workpoint;
+        $sections = \App\Celler::select('id')->where('_workpoint', $workpoint)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
+        $productsWithoutLocation = \App\Product::with('locations')->whereHas('locations', function (Builder $query) use ($sections){
+            $query->whereIn('_celler', $sections);
+        }, '<', 1)->select('id','code', 'description')->get();
+        /* return response()->json($productsWithoutLocation); */
+        $productsWithLocation = \App\Product::whereHas('locations', function (Builder $query) use ($sections){
+            $query->whereIn('_celler', $sections);
+        }, '>', 0)->select('id','code', 'description')->get();
 
         $withStocks = AccessController::getProductWithStock();
         $withoutStocks = AccessController::getProductWithoutStock();
