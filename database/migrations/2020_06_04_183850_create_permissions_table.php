@@ -15,7 +15,7 @@ class CreatePermissionsTable extends Migration {
             $table->smallIncrements('id');
             $table->string('name', 70);
             $table->unsignedTinyInteger('_module');
-            $table->foreign('_module')->references('id')->on('modules_app')->onDelete('cascade');
+            $table->foreign('_module')->references('id')->on('modules_app');
         });
     }
 

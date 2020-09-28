@@ -18,8 +18,8 @@ class CreateAccountLogTable extends Migration {
             $table->json('details');
             $table->timestamps();
 
-            $table->foreign('_log_type')->references('id')->on('account_log_types')->onDelete('cascade');
-            $table->foreign('_accto')->references('id')->on('accounts')->onDelete('cascade');
+            $table->foreign('_log_type')->references('id')->on('account_log_types');
+            $table->foreign('_accto')->references('id')->on('accounts');
         });
     }
 

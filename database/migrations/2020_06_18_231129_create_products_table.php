@@ -16,7 +16,7 @@ class CreateProductsTable extends Migration{
             $table->string('code',25)->unique();
             $table->string('name', 50);
             $table->string('description', 200);
-            $table->float('stock', 8, 2)->nullable();
+            $table->float('stock', 8, 2)->default(0);
             $table->smallInteger('pieces');
             $table->json('dimensions')->nullable();
             $table->float('weight', 6, 2)->nullable();

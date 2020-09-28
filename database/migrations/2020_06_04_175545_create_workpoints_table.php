@@ -15,6 +15,7 @@ class CreateWorkpointsTable extends Migration {
             $table->smallIncrements('id');
             $table->string('name', 45)->unique();
             $table->string('alias', 10);
+            $table->string('dominio', 100);
             $table->unsignedTinyInteger('_type');
 
             $table->foreign('_type')->references('id')->on('workpoints_types')->onDelete('cascade');

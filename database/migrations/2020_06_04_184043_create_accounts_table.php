@@ -18,14 +18,14 @@ class CreateAccountsTable extends Migration {
             $table->string('picture', 50);
             $table->string('names', 45);
             $table->string('surname_pat', 45);
-            $table->string('surname_mat', 45);
+            $table->string('surname_mat', 45)->nullable();
             $table->boolean('change_password');
             $table->rememberToken();
             $table->unsignedSmallInteger('_wp_principal');
             $table->unsignedTinyInteger('_rol');
             $table->timestamps();
-            $table->foreign('_wp_principal')->references('id')->on('workpoints')->onDelete('cascade');
-            $table->foreign('_rol')->references('id')->on('roles')->onDelete('cascade');
+            $table->foreign('_wp_principal')->references('id')->on('workpoints');
+            $table->foreign('_rol')->references('id')->on('roles');
         });
     }
 

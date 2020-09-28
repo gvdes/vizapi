@@ -14,7 +14,7 @@ class CreateProductActionsTable extends Migration{
         Schema::create('product_actions', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->string('name', 45);
-            $table->string('description', 100);
+            $table->string('description', 100)->nullable();
         });
     }
 

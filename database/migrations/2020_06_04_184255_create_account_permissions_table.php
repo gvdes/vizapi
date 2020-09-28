@@ -15,8 +15,8 @@ class CreateAccountPermissionsTable extends Migration {
             $table->unsignedInteger('_account');
             $table->unsignedSmallInteger('_permission');
             
-            $table->foreign('_account')->references('id')->on('account_workpoints')->onDelete('cascade');
-            $table->foreign('_permission')->references('id')->on('permissions')->onDelete('cascade');
+            $table->foreign('_account')->references('id')->on('account_workpoints');
+            $table->foreign('_permission')->references('id')->on('permissions');
         });
     }
 

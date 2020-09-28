@@ -18,10 +18,10 @@ class CreateAccountWorkpointTable extends Migration{
             $table->unsignedTinyInteger('_status');
             $table->unsignedTinyInteger('_rol');
 
-            $table->foreign('_account')->references('id')->on('accounts')->onDelete('cascade');
-            $table->foreign('_workpoint')->references('id')->on('workpoints')->onDelete('cascade');
-            $table->foreign('_status')->references('id')->on('account_status')->onDelete('cascade');
-            $table->foreign('_rol')->references('id')->on('roles')->onDelete('cascade');
+            $table->foreign('_account')->references('id')->on('accounts');
+            $table->foreign('_workpoint')->references('id')->on('workpoints');
+            $table->foreign('_status')->references('id')->on('account_status');
+            $table->foreign('_rol')->references('id')->on('roles');
         });
     }
 

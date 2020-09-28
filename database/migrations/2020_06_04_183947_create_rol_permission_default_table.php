@@ -15,8 +15,8 @@ class CreateRolPermissionDefaultTable extends Migration {
             $table->unsignedTinyInteger('_rol');
             $table->unsignedSmallInteger('_permission');
 
-            $table->foreign('_rol')->references('id')->on('roles')->onDelete('cascade');
-            $table->foreign('_permission')->references('id')->on('permissions')->onDelete('cascade');
+            $table->foreign('_rol')->references('id')->on('roles');
+            $table->foreign('_permission')->references('id')->on('permissions');
         });
     }
 

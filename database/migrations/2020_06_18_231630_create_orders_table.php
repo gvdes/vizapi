@@ -15,7 +15,7 @@ class CreateOrdersTable extends Migration{
             $table->increments('id');
             $table->smallInteger('num_ticket');
             $table->string('name', 35);
-            $table->tinyInteger('printed');
+            $table->tinyInteger('printed')->default(false);
             $table->unsignedInteger('_created_by');
             $table->unsignedSmallInteger('_workpoint_from');
             $table->time('time_life');
