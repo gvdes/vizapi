@@ -49,15 +49,28 @@ class LocationController extends Controller{
      * @param int request[].celler
      */
     public function createSection(Request $request){
-        $section = \App\CellerSection::create([
-            'name' => $request->name,
-            'alias' => $request->alias,
-            'path' => $request->path,
-            'root' => $request->root,
-            'deep' => $request->deep,
-            'details' => $request->details,
-            '_celler' => $request->_celler
-        ]);
+        if($request->root>0){
+            $root = \App\CellerSection::find($request->root);
+            $section = \App\CellerSection::create([
+                'name' => $request->name,
+                'alias' => $request->alias,
+                'path' => $root->path.'-'.$request->alias,
+                'root' => $root->id,
+                'deep' => ($root->deep + 1),
+                'details' => $request->details,
+                '_celler' => $root->_celler
+            ]);
+        }else{
+            $section = \App\CellerSection::create([
+                'name' => $request->name,
+                'alias' => $request->alias,
+                'path' => $request->alias,
+                'root' => 0,
+                'deep' => 0,
+                'details' => $request->details,
+                '_celler' => $request->_celler
+            ]);
+        }
 
         return response()->json([
             'success' => true,
