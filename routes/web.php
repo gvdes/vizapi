@@ -52,6 +52,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/', 'LocationController@test');
         $router->get('/cellers', 'LocationController@getCellers');
         $router->get('/sections', 'LocationController@getSections');
+        $router->get('/allSections', 'LocationController@getAllSections');
         $router->get('/product', 'LocationController@getProduct');
         $router->get('/report', 'LocationController@getReport');
         $router->post('/toggle', 'LocationController@setLocation');

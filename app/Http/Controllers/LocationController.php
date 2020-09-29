@@ -326,4 +326,23 @@ class LocationController extends Controller{
         }
     }
 
+    public function getAllSections(Request $request){
+        $sections = \App\CellerSection::where('_celler', 1)->get();
+        $roots = $sections->filter(function($section){
+            return $section->root == 0;
+        })->map(function($section) use ($sections){
+            $section->children = $this->getChildren($sections, $section->id);
+            return $section;
+        });
+        return response()->json($roots);
+    }
+
+    public function getChildren($sections, $root){
+        return $sections->filter(function($section) use($root){
+            return $section->root == $root;
+        })->map(function($section) use ($sections){
+            $section->children = $this->getChildren($sections, $section->id);
+            return $section;
+        })->values()->all();
+    }
 }
