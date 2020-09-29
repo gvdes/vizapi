@@ -65,4 +65,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'mail'], function () use ($router){
         $router->get('/', 'MailController@welcome');
     });
+
+    $router->group(['prefix' => 'product'], function () use ($router){
+        $router->get('/seeder', 'ProductController@seeder');
+        $router->get('/updateTable', 'ProductController@updateTable');
+    });
 });
