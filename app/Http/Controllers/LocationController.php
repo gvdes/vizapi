@@ -170,12 +170,11 @@ class LocationController extends Controller{
         }
         if($product){
             $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, /* $workpoint->dominio */"192.168.1.25/access/public/product/max/".$product->code);
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max/".$product->code);
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($client,CURLOPT_TIMEOUT,8);
             $access = json_decode(curl_exec($client), true);
-            //$access = AccessController::getMinMax($product->code);
             if($access){
                 $product->stock = intval($access['ACTSTO']);
                 $product->min = intval($access['MINSTO']);
@@ -219,7 +218,13 @@ class LocationController extends Controller{
      * @param int request.max
      */
     public function setMax(Request $request){
-        $res = AccessController::setMinMax($request->code, $request->min, $request->max); 
+        $client = curl_init();
+        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,8);
+        $res = json_decode(curl_exec($client), true);
         return response()->json(["success" => $res]);
     }
     
