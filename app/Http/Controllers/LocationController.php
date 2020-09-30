@@ -155,8 +155,8 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->code;
-        $workpoint = $this->account->_workpoint;
-        $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
+        $workpoint = \App\Workpoint::find($this->account->_workpoint);
+        $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $product = \App\Product::with(['locations' => function($query)use($cellers){
             $query->whereIn('_celler', $cellers);
         }])->with('category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
@@ -169,15 +169,21 @@ class LocationController extends Controller{
             }
         }
         if($product){
-            $access = AccessController::getMinMax($product->code);
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, /* $workpoint->dominio */"192.168.1.25/access/public/product/max/".$product->code);
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,8);
+            $access = json_decode(curl_exec($client), true);
+            //$access = AccessController::getMinMax($product->code);
             if($access){
                 $product->stock = intval($access['ACTSTO']);
                 $product->min = intval($access['MINSTO']);
                 $product->max = intval($access['MAXSTO']);
             }else{
-                $product->stock = 0;
-                $product->min = 0;
-                $product->max = 0;
+                $product->stock = '--';
+                $product->min = '--';
+                $product->max = '--';
             }
             return response()->json($product);
             
@@ -321,13 +327,13 @@ class LocationController extends Controller{
         }
         return response()->json([
             "withStock" => [
-                "stock" => 'N/A',
-                "withLocation" => 'N/A',
-                "withoutLocation" => 'N/A'
+                "stock" => '--',
+                "withLocation" => '--',
+                "withoutLocation" => '--'
             ],
             "withoutStock" => [
-                "stock" => 'N/A',
-                "withLocation" => 'N/A'
+                "stock" => '--',
+                "withLocation" => '--'
             ],
             "products" => $counterProducts,
             "connection" => false
