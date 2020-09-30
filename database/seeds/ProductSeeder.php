@@ -178,7 +178,7 @@ class ProductSeeder extends Seeder{
         ]);
 
         DB::table('providers')->insert([
-            ['id' => '404', 'name' => 'Proveedor varios', 'alias' => 'Proveedor varios', 'adress' => null, 'description' => '', 'phone' => '', 'email'=> '']
+            ['id' => '404', 'name' => 'Proveedor varios', 'alias' => 'Proveedor varios', 'adress' => json_encode(["calle" => '', "municipio" => '']), 'description' => '', 'phone' => '', 'email'=> '']
         ]);
     }
 }

@@ -17,20 +17,20 @@ class InitSeeder extends Seeder{
         ]);
 
         DB::table('workpoints')->insert([
-            ['id' => 1, 'name' => 'CEDIS San Pablo', 'alias' => 'CEDISSAP', '_type' => 1],
-            ['id' => 2, 'name' => 'CEDIS Pantaco', 'alias' => 'CEDISPAN', '_type' => 1],
-            ['id' => 3, 'name' => 'San Pablo Uno', 'alias' => 'SP1', '_type' => 2],
-            ['id' => 4, 'name' => 'San Pablo Dos', 'alias' => 'SP2', '_type' => 2],
-            ['id' => 5, 'name' => 'Correo Uno', 'alias' => 'CO1', '_type' => 2],
-            ['id' => 6, 'name' => 'Correo Dos', 'alias' => 'CO2', '_type' => 2],
-            ['id' => 7, 'name' => 'Apartado Uno', 'alias' => 'AP1', '_type' => 2],
-            ['id' => 8, 'name' => 'Apartado Dos', 'alias' => 'AP2', '_type' => 2],
-            ['id' => 9, 'name' => 'Ramon Corona Uno', 'alias' => 'RC1', '_type' => 2],
-            ['id' => 10, 'name' => 'Ramon Corona Dos', 'alias' => 'RC2', '_type' => 2],
-            ['id' => 11, 'name' => 'Brasil Uno', 'alias' => 'BRA1', '_type' => 2],
-            ['id' => 12, 'name' => 'Brasil Dos', 'alias' => 'BRA2', '_type' => 2],
-            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2],
-            ['id' => 404, 'name' => 'Clouster', 'alias' => 'VIZ', '_type' => 3],
+            ['id' => 1, 'name' => 'CEDIS San Pablo', 'alias' => 'CEDISSAP', '_type' => 1, 'dominio' => '192.168.1.224:1618'],
+            ['id' => 2, 'name' => 'CEDIS Pantaco', 'alias' => 'CEDISPAN', '_type' => 1, 'dominio' => 'pantaco.grupovizcarra.net:1619'],
+            ['id' => 3, 'name' => 'San Pablo Uno', 'alias' => 'SP1', '_type' => 2, 'dominio' => '192.168.1.29:1619'],
+            ['id' => 4, 'name' => 'San Pablo Dos', 'alias' => 'SP2', '_type' => 2, 'dominio' => 'sanpablodos.grupovizcarra.net:1619'],
+            ['id' => 5, 'name' => 'Correo Uno', 'alias' => 'CO1', '_type' => 2, 'dominio' => 'correouno.grupovizcarra.net:1619'],
+            ['id' => 6, 'name' => 'Correo Dos', 'alias' => 'CO2', '_type' => 2, 'dominio' => 'correodos.grupovizcarra.net:1619'],
+            ['id' => 7, 'name' => 'Apartado Uno', 'alias' => 'AP1', '_type' => 2, 'dominio' => 'apartado.grupovizcarra.net:1619'],
+            ['id' => 8, 'name' => 'Apartado Dos', 'alias' => 'AP2', '_type' => 2, 'dominio' => 'apartadodos.grupovizcarra.net:1619'],
+            ['id' => 9, 'name' => 'Ramon Corona Uno', 'alias' => 'RC1', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1619'],
+            ['id' => 10, 'name' => 'Ramon Corona Dos', 'alias' => 'RC2', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1620'],
+            ['id' => 11, 'name' => 'Brasil Uno', 'alias' => 'BRA1', '_type' => 2, 'dominio' => 'brasil.grupovizcarra.net:1619'],
+            ['id' => 12, 'name' => 'Brasil Dos', 'alias' => 'BRA2', '_type' => 2, 'dominio' => 'brasildos.grupovizcarra.net:1619'],
+            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2, 'dominio' => 'bolivia.grupovizcarra.net:1619'],
+            ['id' => 404, 'name' => 'Clouster', 'alias' => 'VIZ', '_type' => 3, 'dominio' => 'tablero.grupovizcarra.net:1619']
         ]);
 
         DB::table('account_status')->insert([

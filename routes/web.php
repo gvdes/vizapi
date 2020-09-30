@@ -71,4 +71,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/seeder', 'ProductController@seeder');
         $router->get('/updateTable', 'ProductController@updateTable');
     });
+
+    $router->group(['prefix' => 'provider'], function () use ($router){
+        $router->get('/seeder', 'ProviderController@seeder');
+    });
 });
