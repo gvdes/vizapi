@@ -160,24 +160,27 @@ class LocationController extends Controller{
         $product = \App\Product::with(['locations' => function($query)use($cellers){
             $query->whereIn('_celler', $cellers);
         }])->with('category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
-        if($product){
-            $access = AccessController::getMinMax($product->code);
-            $product->stock = intval($access['ACTSTO']);
-            $product->min = intval($access['MINSTO']);
-            $product->max = intval($access['MAXSTO']);
-            return response()->json($product);
-        }else{
+        if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
                 $product = $product = \App\Product::with(['locations' => function($query)use($cellers){
                     $query->whereIn('_celler', $cellers);
                 }])->with('category', 'status', 'units')->find($product->product->id);
-                $access = AccessController::getMinMax($product->code);
+            }
+        }
+        if($product){
+            $access = AccessController::getMinMax($product->code);
+            if($access){
                 $product->stock = intval($access['ACTSTO']);
                 $product->min = intval($access['MINSTO']);
                 $product->max = intval($access['MAXSTO']);
-                return response()->json($product);
+            }else{
+                $product->stock = 0;
+                $product->min = 0;
+                $product->max = 0;
             }
+            return response()->json($product);
+            
         }
         return response()->json([
             "msg" => "Producto no encontrado"
@@ -270,43 +273,64 @@ class LocationController extends Controller{
 
     public function index(){
         $counterProducts = \App\Product::count();
-        $workpoint = $this->account->_workpoint;
-        $sections = \App\Celler::select('id')->where('_workpoint', $workpoint)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
+        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
+        $sections = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $productsWithoutLocation = \App\Product::with('locations')->whereHas('locations', function (Builder $query) use ($sections){
             $query->whereIn('_celler', $sections);
         }, '<', 1)->select('id','code', 'description')->get();
-        /* return response()->json($productsWithoutLocation); */
         $productsWithLocation = \App\Product::whereHas('locations', function (Builder $query) use ($sections){
             $query->whereIn('_celler', $sections);
         }, '>', 0)->select('id','code', 'description')->get();
 
-        $withStocks = AccessController::getProductWithStock();
-        $withoutStocks = AccessController::getProductWithoutStock();
-
-        $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($withStocks){
-            return array_search($product['code'], array_column($withStocks, 'code'));
-        })->count();
+        $start = microtime(true);
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/withStock");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        $withStocks = json_decode(curl_exec($client), true);
+        if($withStocks){
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/withoutStock");
+            $withoutStocks = json_decode(curl_exec($client), true);
+            curl_close($client);
+            if($withoutStocks){
+                $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($withStocks){
+                    return array_search($product['code'], array_column($withStocks, 'code'));
+                })->count();
+                
+                $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($withStocks){
+                    return array_search($product['code'], array_column($withStocks, 'code'));
+                })->count();
         
-        $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($withStocks){
-            return array_search($product['code'], array_column($withStocks, 'code'));
-        })->count();
-
-        $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($withoutStocks){
-            return array_search($product['code'], array_column($withoutStocks, 'code'));
-        })->count();
-
-
+                $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($withoutStocks){
+                    return array_search($product['code'], array_column($withoutStocks, 'code'));
+                })->count();
+                return response()->json([
+                    "withStock" => [
+                        "stock" => count($withStocks),
+                        "withLocation" => $withLocationWithStockCounter,
+                        "withoutLocation" => $withoutLocationWithStockCounter
+                    ],
+                    "withoutStock" => [
+                        "stock" => count($withoutStocks),
+                        "withLocation" => $withLocationWithoutStockCounter
+                    ],
+                    "products" => $counterProducts,
+                    "connection" => true
+                ]);
+            }
+        }
         return response()->json([
             "withStock" => [
-                "stock" => count($withStocks),
-                "withLocation" => $withLocationWithStockCounter,
-                "withoutLocation" => $withoutLocationWithStockCounter
+                "stock" => 'N/A',
+                "withLocation" => 'N/A',
+                "withoutLocation" => 'N/A'
             ],
             "withoutStock" => [
-                "stock" => count($withoutStocks),
-                "withLocation" => $withLocationWithoutStockCounter
+                "stock" => 'N/A',
+                "withLocation" => 'N/A'
             ],
-            "products" => $counterProducts
+            "products" => $counterProducts,
+            "connection" => false
         ]);
     }
 
