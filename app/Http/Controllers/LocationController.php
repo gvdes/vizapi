@@ -49,32 +49,48 @@ class LocationController extends Controller{
      * @param int request[].celler
      */
     public function createSection(Request $request){
+        $sections = [];
         if($request->root>0){
+            $siblings = \App\CellerSection::where('root', $request->root)->count();
             $root = \App\CellerSection::find($request->root);
-            $section = \App\CellerSection::create([
-                'name' => $request->name,
-                'alias' => $request->alias,
-                'path' => $root->path.'-'.$request->alias,
-                'root' => $root->id,
-                'deep' => ($root->deep + 1),
-                'details' => $request->details,
-                '_celler' => $root->_celler
-            ]);
+            $items = isset($request->items) ? $request->items : 1;
+            for($i = 0; $i<$items; $i++){
+                $index = $siblings+$i+1;
+                $section = \App\CellerSection::create([
+                    'name' => $request->name.''.$index,
+                    'alias' => $request->alias.' '.$index,
+                    'path' => $root->path.'-'.$request->alias.''.$index,
+                    'root' => $root->id,
+                    'deep' => ($root->deep + 1),
+                    'details' => json_encode($request->details),
+                    '_celler' => $root->_celler
+                ]);
+                array_push($sections, $section);
+            }
         }else{
-            $section = \App\CellerSection::create([
-                'name' => $request->name,
-                'alias' => $request->alias,
-                'path' => $request->alias,
-                'root' => 0,
-                'deep' => 0,
-                'details' => $request->details,
-                '_celler' => $request->_celler
-            ]);
+            $siblings = \App\CellerSection::where([
+                ['root', 0],
+                ['_celler', $request->_celler]
+            ])->count();
+            $items = isset($request->items) ? $request->items : 1;
+            for($i = 0; $i<$items; $i++){
+                $index = $siblings+$i+1;
+                $section = \App\CellerSection::create([
+                    'name' => $request->name.' '.$index,
+                    'alias' => $request->alias.''.$index,
+                    'path' => $request->alias.''.$index,
+                    'root' => 0,
+                    'deep' => 0,
+                    'details' => json_encode($request->details),
+                    '_celler' => $request->_celler
+                ]);
+                array_push($sections, $section);
+            }
         }
 
         return response()->json([
             'success' => true,
-            'celler' => $section
+            'celler' => $sections
         ]);
     }
 
@@ -362,13 +378,13 @@ class LocationController extends Controller{
     }
 
     public function getAllSections(Request $request){
-        $sections = \App\CellerSection::where('_celler', 1)->get();
+        $sections = \App\CellerSection::where('_celler', $request->_celler)->get();
         $roots = $sections->filter(function($section){
             return $section->root == 0;
         })->map(function($section) use ($sections){
             $section->children = $this->getChildren($sections, $section->id);
             return $section;
-        });
+        })->values()->all();
         return response()->json($roots);
     }
 

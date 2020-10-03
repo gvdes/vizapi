@@ -16,7 +16,7 @@ class CreateCellerSectionTable extends Migration{
             $table->string('name', 25);
             $table->string('alias', 20);
             $table->string('path', 40);
-            $table->tinyInteger('root');
+            $table->mediumInteger('root');
             $table->tinyInteger('deep');
             $table->json('details');
             $table->unsignedMediumInteger('_celler');

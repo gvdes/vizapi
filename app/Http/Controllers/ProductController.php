@@ -65,18 +65,13 @@ class ProductController extends Controller{
     }
 
     public function updateTable(Request $request){
+        $start = microtime(true);
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/product/updates");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        $products = json_decode(curl_exec($client), true);
         try{
-            $start = microtime(true);
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/product/updates");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            $products = json_decode(curl_exec($client), true);
-            return response()->json([
-                "success" => true,
-                "products" => count($products),
-                "time" => microtime(true) - $start
-            ]);
             DB::transaction(function() use ($products){
                 foreach($products as $product){
                     $instance = Product::updateOrCreate([
@@ -86,20 +81,22 @@ class ProductController extends Controller{
                         'description' => $product['description'],
                         'pieces' => $product['pieces'],
                         '_category' => $product['_category'],
-                        '_status' => $product['_status'],
+                        '_status' => 1,
                         '_provider' => $product['_provider'],
                         '_unit' => $product['_unit']
                     ]);
+                    $prices = [];
                     foreach($product['prices'] as $price){
-                        $instance->prices()->updateOrCreate(['_type' => $price['_type'], 'price' => $price['price']]);
+                        $prices[$price['_type']] = ['price' => $price['price']];
                     }
+                    $instance->prices()->sync($prices);
                 }
-                return response()->json([
-                    "success" => true,
-                    "products" => count($products),
-                    "time" => microtime(true) - $start
-                ]);
             });
+            return response()->json([
+                "success" => true,
+                "products" => count($products),
+                "time" => microtime(true) - $start
+            ]);
         }catch(\Exception $e){
             return response()->json(["message" => "No se ha podido actualizar la tabla de productos"]);
         }
