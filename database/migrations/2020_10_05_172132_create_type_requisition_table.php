@@ -13,8 +13,8 @@ class CreateTypeRequisitionTable extends Migration{
     public function up(){
         Schema::create('type_requisition', function (Blueprint $table) {
             $table->smallIncrements('id');
-            $table->string('name'. '25');
-            $table->string('shortname', '5');
+            $table->string('name', 25);
+            $table->string('shortname', 5);
         });
     }
 

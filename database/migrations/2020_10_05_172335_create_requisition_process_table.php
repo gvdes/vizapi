@@ -13,7 +13,7 @@ class CreateRequisitionProcessTable extends Migration{
     public function up(){
         Schema::create('requisition_process', function (Blueprint $table) {
             $table->smallIncrements('id');
-            $table->string('name', '20');
+            $table->string('name', 50);
         });
     }
 
