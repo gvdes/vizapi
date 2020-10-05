@@ -56,4 +56,12 @@ class Product extends Model{
         return $this->belongsToMany('App\CycleCount', 'cyclecount_body', '_product', '_cycle_count')
                     ->withPivot(['stock', 'stock_acc', 'details']);
     }
+
+    /**
+     * RELATIONSHIPS WITH REQUISITION'S MODELS
+     */
+    public function requisitions(){
+        return $this->belongsToMany('App\Models\Requisition\Requisition', 'product_required', '_product', '_requisition')
+                    ->with('units', 'comments');
+    }
 }

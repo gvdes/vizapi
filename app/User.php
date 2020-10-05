@@ -84,6 +84,13 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return $this->hasMany('App\CycleCount', '_created_by', 'id');
     }
 
+    /**
+     * RELATIONSHIPS WITH REQUISITION'S MODELS
+     */
+    public function requisitions(){
+        return $this->hasMany('App\Models\Requisition\Requisition', '_created_by', 'id');
+    }
+
     /** Mutators */
     public function setNamesAttribute($value){
         $this->attributes['names'] = ucfirst($value);

@@ -30,6 +30,17 @@ class WorkPoint extends Model{
     }
 
     public function cyclecounts(){
-        return $this->hasMany('App\CycleCount', '_workpount', 'id');
+        return $this->hasMany('App\CycleCount', '_workpoint', 'id');
+    }
+    
+    /**
+     * RELATIONSHIPS WITH REQUISITION'S MODELS
+     */
+    public function supplied(){
+        return $this->hasManY('App\Models\Requisition\Requisition','_workpoint_to', 'id');
+    }
+    
+    public function to_supply(){
+        return $this->hasManY('App\Models\Requisition\Requisition','_workpoint_from', 'id');
     }
 }
