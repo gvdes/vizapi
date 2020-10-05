@@ -294,12 +294,12 @@ class AccountController extends Controller{
             $save = $account->save();
             /**LOG 2 = ACTUALIZACIÓN DE DATOS */
             $payload = Auth::payload();
-            $user->log()->attach(2,[
+            /* $user->log()->attach(2,[
                 'details' => json_encode([
                     '_accfrom' => $payload['workpoint']->_account,
                     'data' => $request
                 ])
-            ]);
+            ]); */
             return response()->json(['sucess' => $save]);
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);

@@ -30,6 +30,7 @@ $router->group(['prefix' => 'account'], function () use ($router){
         $router->put('/password', 'AccountController@updatePassword');
         $router->put('/profile/{id}', 'AccountController@updateProfile');
         $router->put('/profile', 'AccountController@updateInfo');
+        $router->put('/{id}', 'AccountController@updateAccount');
     });
 });
 
