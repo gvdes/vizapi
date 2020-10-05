@@ -80,10 +80,12 @@ class InitSeeder extends Seeder{
             ['id'=> 14, 'name'=> 'Contador', 'deep'=> 1, 'root'=> 13, 'path'=> 'contador'],
             ['id'=> 15, 'name'=> 'Ubicador', 'deep'=> 1, 'root'=> 13, 'path'=> 'ubicador'],
             ['id'=> 16, 'name'=> 'Mínimos y máximos', 'deep'=> 1, 'root'=> 13, 'path'=> 'minymax'],
-            /* ['id'=> 4, 'name'=> 'Pedidos CEDIS', 'deep'=> 0 , 'root'=> 0],
-            ['id'=> 5, 'name'=> 'Generación pedidos CEDIS', 'deep'=> 1 , 'root'=> 4],
-            ['id'=> 6, 'name'=> 'Dashboard pedidos CEDIS', 'deep'=> 1 , 'root'=> 4],
-            ['id'=> 7, 'name'=> 'Etiquetas', 'deep'=> 0, 'root'=> 0] */
+            ['id'=> 17, 'name'=> 'admin', 'deep'=> 1, 'root'=> 13, 'path'=> 'admin'],
+            ['id'=> 18, 'name'=> 'Resurtido', 'deep'=> 0 , 'root'=> 0, 'path'=> 'pedidos'],
+            ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 17, 'path'=> 'dashboard'],
+            ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 17, 'path'=> 'solicitud'],
+            ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 17, 'path'=> ''],
+            ['id'=> 22, 'name'=> 'Etiquetas', 'deep'=> 0 , 'root'=> 0, 'path'=> 'etiquetas']
         ]);
 
         DB::table('permissions')->insert([
@@ -112,6 +114,13 @@ class InitSeeder extends Seeder{
             ['id'=> 24, '_module'=> 15, 'name'=> 'Iniciar conteo'],
             ['id'=> 25, '_module'=> 15, 'name'=> 'Finalizar conteo'],
             ['id'=> 26, '_module'=> 16, 'name'=> 'Acceso'],
+            ['id'=> 27, '_module'=> 17, 'name'=> 'Acceso'],
+            ['id'=> 28, '_module'=> 18, 'name'=> 'Acceso'],
+            ['id'=> 29, '_module'=> 19, 'name'=> 'Resurtido manual'],
+            ['id'=> 30, '_module'=> 19, 'name'=> 'Resurtido automatico'],
+            ['id'=> 31, '_module'=> 20, 'name'=> 'Acceso'],
+            ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'],
+            ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
             ['id'=> 12, '_module'=> 4, 'name'=> 'Creación de pedido autostock'],
             ['id'=> 13, '_module'=> 4, 'name'=> 'Visualización genérica de pedidos'],
@@ -139,18 +148,64 @@ class InitSeeder extends Seeder{
         DB::table('rol_permission_default')->insert($arr_to_insert);
         DB::table('rol_permission_default')->insert([
             /* Permisos de administrador de almacenes */
+                /* Modulo de almacenes */
             ['_rol'=> 6, '_permission'=> 21],
             ['_rol'=> 6, '_permission'=> 22],
             ['_rol'=> 6, '_permission'=> 23],
             ['_rol'=> 6, '_permission'=> 24],
             ['_rol'=> 6, '_permission'=> 25],
             ['_rol'=> 6, '_permission'=> 26],
-            ['_rol'=> 7, '_permission'=> 21],
+            ['_rol'=> 6, '_permission'=> 27],
+                /* Modulo de resurtido */
+            ['_rol'=> 6, '_permission'=> 28],
+            ['_rol'=> 6, '_permission'=> 29],
+            ['_rol'=> 6, '_permission'=> 30],
+            ['_rol'=> 6, '_permission'=> 31],
+            ['_rol'=> 6, '_permission'=> 32],
+            ['_rol'=> 6, '_permission'=> 33],
             /* Permisos de bodeguero */
-            ['_rol'=> 6, '_permission'=> 22],
-            ['_rol'=> 6, '_permission'=> 23],
-            ['_rol'=> 6, '_permission'=> 24],
-            ['_rol'=> 6, '_permission'=> 25],
+                /* Modulo de almacenes */
+            ['_rol'=> 7, '_permission'=> 21],
+            ['_rol'=> 7, '_permission'=> 22],
+            ['_rol'=> 7, '_permission'=> 23],
+            ['_rol'=> 7, '_permission'=> 24],
+            ['_rol'=> 7, '_permission'=> 25],
+            /* Modulo de administrador de sucursal */
+                /* Modulo de usuarios */
+            ['_rol'=> 3, '_permission'=> 1],
+            ['_rol'=> 3, '_permission'=> 2],
+            ['_rol'=> 3, '_permission'=> 3],
+            ['_rol'=> 3, '_permission'=> 4],
+            ['_rol'=> 3, '_permission'=> 5],
+            ['_rol'=> 3, '_permission'=> 6],
+            ['_rol'=> 3, '_permission'=> 7],
+            ['_rol'=> 3, '_permission'=> 8],
+            ['_rol'=> 3, '_permission'=> 9],
+            ['_rol'=> 3, '_permission'=> 10],
+            ['_rol'=> 3, '_permission'=> 11],
+                /* Modulo de preventa */
+            ['_rol'=> 3, '_permission'=> 12],
+            ['_rol'=> 3, '_permission'=> 13],
+            ['_rol'=> 3, '_permission'=> 14],
+            ['_rol'=> 3, '_permission'=> 15],
+            ['_rol'=> 3, '_permission'=> 16],
+            ['_rol'=> 3, '_permission'=> 17],
+            ['_rol'=> 3, '_permission'=> 18],
+            ['_rol'=> 3, '_permission'=> 19],
+            ['_rol'=> 3, '_permission'=> 21],
+            ['_rol'=> 3, '_permission'=> 22],
+            ['_rol'=> 3, '_permission'=> 23],
+            ['_rol'=> 3, '_permission'=> 24],
+            ['_rol'=> 3, '_permission'=> 25],
+            ['_rol'=> 3, '_permission'=> 26],
+            ['_rol'=> 3, '_permission'=> 27],
+                /* Modulo de resurtido */
+            ['_rol'=> 3, '_permission'=> 28],
+            ['_rol'=> 3, '_permission'=> 29],
+            ['_rol'=> 3, '_permission'=> 30],
+            ['_rol'=> 3, '_permission'=> 31],
+            ['_rol'=> 3, '_permission'=> 32],
+            ['_rol'=> 3, '_permission'=> 33],
         ]);
     }
 }
