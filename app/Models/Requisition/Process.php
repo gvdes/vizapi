@@ -13,6 +13,12 @@ class Process extends Model{
      * Relationships *
      *****************/
     public function requisitions(){
-        return $this->hasMany('App\Models\Requisitions\Requisition', '_status', 'id');
+        return $this->hasMany('App\Models\Requisition\Requisition', '_status', 'id');
+    }
+
+    public function historic(){
+        return $this->belongsToMany('App\Models\Requisition\Requisition', 'requisition_log', '_status', '_order')
+                    ->withPivot('id', 'details')
+                    ->withTimestamps();
     }
 }

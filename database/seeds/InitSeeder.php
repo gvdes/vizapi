@@ -82,9 +82,9 @@ class InitSeeder extends Seeder{
             ['id'=> 16, 'name'=> 'Mínimos y máximos', 'deep'=> 1, 'root'=> 13, 'path'=> 'minymax'],
             ['id'=> 17, 'name'=> 'admin', 'deep'=> 1, 'root'=> 13, 'path'=> 'admin'],
             ['id'=> 18, 'name'=> 'Resurtido', 'deep'=> 0 , 'root'=> 0, 'path'=> 'pedidos'],
-            ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 17, 'path'=> 'dashboard'],
-            ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 17, 'path'=> 'solicitud'],
-            ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 17, 'path'=> ''],
+            ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 18, 'path'=> 'dashboard'],
+            ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'],
+            ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 18, 'path'=> ''],
             ['id'=> 22, 'name'=> 'Etiquetas', 'deep'=> 0 , 'root'=> 0, 'path'=> 'etiquetas']
         ]);
 

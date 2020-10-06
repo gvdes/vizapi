@@ -21,7 +21,7 @@ class Requisition extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'product_required', '_requisition', '_product')
-                    ->with('units', 'comments');
+                    ->withPivot('units', 'comments');
     }
 
     public function to(){
@@ -34,5 +34,11 @@ class Requisition extends Model{
 
     public function created_by(){
         return $this->belongsTo('App\User', '_created_by');
+    }
+
+    public function log(){
+        return $this->belongsToMany('App\Models\Requisition\Process', 'requisition_log', '_order', '_status')
+                    ->withPivot('id', 'details')
+                    ->withTimestamps();
     }
 }
