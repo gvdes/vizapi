@@ -179,7 +179,7 @@ class LocationController extends Controller{
         if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
-                $product = $product = \App\Product::with(['locations' => function($query)use($cellers){
+                $product = \App\Product::with(['locations' => function($query)use($cellers){
                     $query->whereIn('_celler', $cellers);
                 }])->with('category', 'status', 'units')->find($product->product->id);
             }

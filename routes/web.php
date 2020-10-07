@@ -71,6 +71,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'product'], function () use ($router){
         $router->get('/seeder', 'ProductController@seeder');
         $router->get('/updateTable', 'ProductController@updateTable');
+        $router->get('/autocomplete', 'ProductController@autocomplete');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){

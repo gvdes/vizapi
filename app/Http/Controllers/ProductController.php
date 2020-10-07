@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Product;
+use App\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -100,6 +101,22 @@ class ProductController extends Controller{
         }catch(\Exception $e){
             return response()->json(["message" => "No se ha podido actualizar la tabla de productos"]);
         }
+    }
+
+    public function autocomplete(Request $request){
+        $code = $request->code;
+        $products = Product::with(['prices' => function($query){
+                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                        }])
+                        ->whereHas('variants', function(Builder $query) use ($code){
+                            $query->where('barcode', 'like', '%'.$code.'%');
+                        })
+                        ->orWhere([
+                            ['name', 'like','%'.$code.'%'],
+                            ['code', 'like','%'.$code.'%']
+                        ])
+                        ->limit('20')->get();
+        return response()->json($products);
     }
 
 }
