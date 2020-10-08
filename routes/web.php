@@ -81,4 +81,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'provider'], function () use ($router){
         $router->get('/seeder', 'ProviderController@seeder');
     });
+    
+    $router->group(['prefix' => 'requisition'], function () use ($router){
+        $router->get('/', 'RequisitionController@index');
+    });
 });

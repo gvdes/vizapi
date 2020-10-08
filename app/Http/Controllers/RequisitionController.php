@@ -6,9 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Requisition\Requisition;
+use App\Models\Requisition\Type;
 use App\Product;
+use App\WorkPoint;
+use App\Account;
 
-class ExampleController extends Controller{
+class RequisitionController extends Controller{
     /**
      * Create a new controller instance.
      *
@@ -132,6 +135,10 @@ class ExampleController extends Controller{
         $requisitions = Requisition::where(['created_by', $this->account->_account])
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8])
                                     ->get();
-        return response()->json();
+        return response()->json([
+            "workpoints" => $workpoints,
+            "types" => $types,
+            "requisitions" => $requisitions
+        ]);
     }
 }
