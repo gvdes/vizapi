@@ -107,14 +107,12 @@ class ProductController extends Controller{
         $code = $request->code;
         $products = Product::with(['prices' => function($query){
                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                        }])
+                        }, 'units', 'variants'])
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
                         })
-                        ->orWhere([
-                            ['name', 'like','%'.$code.'%'],
-                            ['code', 'like','%'.$code.'%']
-                        ])
+                        ->orWhere('name', 'like','%'.$code.'%')
+                        ->orWhere('code', 'like','%'.$code.'%')
                         ->limit('20')->get();
         return response()->json($products);
     }

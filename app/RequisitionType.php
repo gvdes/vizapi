@@ -3,7 +3,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Type extends Model{
+class RequisitionType extends Model{
     
     protected $table = 'type_requisition';
     protected $fillable = ['name', 'shortname'];
@@ -13,6 +13,6 @@ class Type extends Model{
      * Relationships *
      *****************/
     public function requisitions(){
-        return $this->hasMany('App\Models\Requisition\Requisition', '_type', 'id');
+        return $this->hasMany('App\Requisition', '_type', 'id');
     }
 }

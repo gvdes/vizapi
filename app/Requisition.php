@@ -12,11 +12,11 @@ class Requisition extends Model{
      * Relationships *
      *****************/
     public function type(){
-        return $this->belongsTo('App\Models\Requisition\Type', '_type');
+        return $this->belongsTo('App\RequisitionType', '_type');
     }
 
     public function status(){
-        return $this->belongsTo('App\Models\Requisition\Process', '_status');
+        return $this->belongsTo('App\RequisitionProcess', '_status');
     }
 
     public function products(){
@@ -37,7 +37,7 @@ class Requisition extends Model{
     }
 
     public function log(){
-        return $this->belongsToMany('App\Models\Requisition\Process', 'requisition_log', '_order', '_status')
+        return $this->belongsToMany('App\RequisitionProcess', 'requisition_log', '_order', '_status')
                     ->withPivot('id', 'details')
                     ->withTimestamps();
     }

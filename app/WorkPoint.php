@@ -37,10 +37,10 @@ class WorkPoint extends Model{
      * RELATIONSHIPS WITH REQUISITION'S MODELS
      */
     public function supplied(){
-        return $this->hasManY('App\Models\Requisition\Requisition','_workpoint_to', 'id');
+        return $this->hasManY('App\Requisition','_workpoint_to', 'id');
     }
     
     public function to_supply(){
-        return $this->hasManY('App\Models\Requisition\Requisition','_workpoint_from', 'id');
+        return $this->hasManY('App\Requisition','_workpoint_from', 'id');
     }
 }
