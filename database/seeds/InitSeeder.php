@@ -81,6 +81,7 @@ class InitSeeder extends Seeder{
             ['id'=> 15, 'name'=> 'Ubicador', 'deep'=> 1, 'root'=> 13, 'path'=> 'ubicador'],
             ['id'=> 16, 'name'=> 'Mínimos y máximos', 'deep'=> 1, 'root'=> 13, 'path'=> 'minymax'],
             ['id'=> 17, 'name'=> 'admin', 'deep'=> 1, 'root'=> 13, 'path'=> 'admin'],
+            ['id'=> 23, 'name'=> 'existencias', 'deep'=> 1, 'root'=> 13, 'path'=> 'existencias'], //existencias
             ['id'=> 18, 'name'=> 'Resurtido', 'deep'=> 0 , 'root'=> 0, 'path'=> 'pedidos'],
             ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 18, 'path'=> 'dashboard'],
             ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'],
@@ -111,6 +112,7 @@ class InitSeeder extends Seeder{
             ['id'=> 21, '_module'=> 13, 'name'=> 'Acceso'],
             ['id'=> 22, '_module'=> 14, 'name'=> 'Acceso'],
             ['id'=> 23, '_module'=> 15, 'name'=> 'Acceso'],
+            ['id'=> 34, '_module'=> 23, 'name'=> 'Acceso'],
             ['id'=> 24, '_module'=> 15, 'name'=> 'Iniciar conteo'],
             ['id'=> 25, '_module'=> 15, 'name'=> 'Finalizar conteo'],
             ['id'=> 26, '_module'=> 16, 'name'=> 'Acceso'],
@@ -156,6 +158,7 @@ class InitSeeder extends Seeder{
             ['_rol'=> 6, '_permission'=> 25],
             ['_rol'=> 6, '_permission'=> 26],
             ['_rol'=> 6, '_permission'=> 27],
+            ['_rol'=> 6, '_permission'=> 34],
                 /* Modulo de resurtido */
             ['_rol'=> 6, '_permission'=> 28],
             ['_rol'=> 6, '_permission'=> 29],
@@ -170,6 +173,7 @@ class InitSeeder extends Seeder{
             ['_rol'=> 7, '_permission'=> 23],
             ['_rol'=> 7, '_permission'=> 24],
             ['_rol'=> 7, '_permission'=> 25],
+            ['_rol'=> 7, '_permission'=> 34],
             /* Modulo de administrador de sucursal */
                 /* Modulo de usuarios */
             ['_rol'=> 3, '_permission'=> 1],
