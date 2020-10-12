@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\Requisition\Requisition;
-use App\Models\Requisition\Type;
+use App\Requisition;
+use App\RequisitionType as Type;
+use App\RequisitionProcess as Process;
 use App\Product;
 use App\WorkPoint;
 use App\Account;
+use App\Http\Resources\Requisition as RequisitionResource;
 
 class RequisitionController extends Controller{
     /**
@@ -26,10 +28,10 @@ class RequisitionController extends Controller{
         try{
             $requisition = DB::transaction(function() use ($request){
                 $now = new \DateTime();
-                $num_ticket = Requisitation::where('_workpoint_to', $request->_workpoint_to)
+                $num_ticket = Requisition::where('_workpoint_to', $request->_workpoint_to)
                                             ->whereDate('created_at', $now)
                                             ->count()+1;
-                $num_ticket_store = Requisitation::where('_workpoint_from', $this->account->_workpoint)
+                $num_ticket_store = Requisition::where('_workpoint_from', $this->account->_workpoint)
                                                 ->whereDate('created_at', $now)
                                                 ->count()+1;
                 $requisition =  Requisition::create([
@@ -42,8 +44,10 @@ class RequisitionController extends Controller{
                     "_type" => $request->_type,
                     "printed" => 0,
                     "time_life" => "00:15:00",
+                    "_status" => 1
                 ]);
-                return $requisition;
+                $this->log(1, $requisition);
+                return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
             return response()->json([
                 "success" => true,
@@ -56,17 +60,9 @@ class RequisitionController extends Controller{
 
     public function addProduct(Request $request){
         try{
-            $requisition = Requisition::with('workpoint_to')->find($request->id);
-            $amount = $request->amount;
+            $requisition = Requisition::find($request->_requisition);
             $product = Product::find($request->_product);
-            /**CONSULTA DE STOCK EN ACCESS */
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, $requisition->to->dominio."/access/public/product/max/".$product->code);
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,8);
-            $available = json_decode(curl_exec($client), true);
-            $product->stock = $available ? $available['ACTSTO'] : '--';
+            $requisition->products()->syncWithoutDetaching($request->_product, ['units' => $request->amount, 'comments' => $request->comments]);
             return response()->json($product);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido agregar el producto"]);
@@ -130,15 +126,34 @@ class RequisitionController extends Controller{
 
     public function index(){
         $workpoints = WorkPoint::where('_type', 1)->get();
-        $account = Account::with('permissions')->find($this->account->id);
-        $types = Type::all();
-        $requisitions = Requisition::where(['created_by', $this->account->_account])
-                                    ->whereIn('_status', [1,2,3,4,5,6,7,8])
+        $account = Account::with(['permissions'=> function($query){
+            $query->whereIn('id', [29,30])->get();
+        }])->find($this->account->id);
+        $permissions = $account->permissions->map(function($permission){
+            $id = $permission->id - 28;
+            return [$id];
+        });
+        $types = Type::whereIn('id', $permissions)->get();
+        $status = Process::all();
+        $now = new \DateTime();
+        $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
+                                        $query->with('prices', 'units', 'variants');
+                                    }, 'to', 'from', 'created_by', 'log'])->where('_created_by', $this->account->_account)
+                                    /* ->whereIn('_status', [1,2,3,4,5,6,7,8]) */
+                                    /* ->whereDate('created_at', $now) */
                                     ->get();
         return response()->json([
             "workpoints" => $workpoints,
             "types" => $types,
+            "status" => $status,
             "requisitions" => $requisitions
         ]);
+    }
+
+    public function find($id){
+        $requisition = Requisition::with(['type', 'status', 'products' => function($query){
+            $query->with('prices', 'units', 'variants');
+        }, 'to', 'from', 'created_by', 'log'])->find($id);
+        return response()->json(new RequisitionResource($requisition));
     }
 }

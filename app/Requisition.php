@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class Requisition extends Model{
     
     protected $table = 'requisition';
-    protected $fillable = ['name', 'notes', '_created_by', '_workpoint_from', '_workpoint_to', '_type', '_status', 'printed', 'time_life'];
+    protected $fillable = ['name', 'num_ticket', 'num_ticket_store', 'notes', '_created_by', '_workpoint_from', '_workpoint_to', '_type', '_status', 'printed', 'time_life'];
     
     /*****************
      * Relationships *
