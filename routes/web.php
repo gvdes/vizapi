@@ -60,6 +60,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
+        $router->get('/existencias', 'LocationController@existencias');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
     });

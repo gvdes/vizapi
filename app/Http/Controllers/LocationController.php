@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\WorkPoint;
+use App\Product;
 
 class LocationController extends Controller{
     /**
@@ -395,5 +397,101 @@ class LocationController extends Controller{
             $section->children = $this->getChildren($sections, $section->id);
             return $section;
         })->values()->all();
+    }
+
+    public function existencias(Request $request){
+        $category = \App\ProductCategory::where('root', 0)->get();
+        $products = [];
+        if(isset($request->_category)){
+            $category = \App\ProductCategory::find($request->_category);
+            $category->children = \App\ProductCategory::where('root', $request->_category)->get();
+        }
+        $stocks = [];
+        if(isset($request->stock)){
+            if(isset($request->_category)){
+                $ids = [$category->id];
+                $ids = $category->children->reduce(function($res, $category){
+                    array_push($res, $category->id);
+                    return $res;
+                }, $ids);
+                $products = Product::whereIn('_category', $ids)->get();
+                $stocks = $this->getStocks($products);
+            }else{
+                $stocks = $this->getStocks();
+            }
+        }
+        return response()->json([
+            "categories" => $category,
+            "filter" => [
+                ["name" => "Luces", "details" => ["type" => "select", "options" => [100,200,300,500,100]]],
+                ["name" => "Metros", "details" => ["type" => "select", "options" => [2,3,5,7,10,12,15]]],
+                ["name" => "Color", "details" => ["type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]]]
+            ],
+            "products" => $stocks,
+        ]);
+    }
+
+    public function getStocks($products = []){
+        $ids_workpoints = [1, 2, $this->account->_workpoint];
+        $workpoints = WorkPoint::whereIn('id', $ids_workpoints)->get()->sortBy('id');
+        $stocks = $workpoints->reduce(function($products, $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,100);
+            if(count($products) == 0){
+                $stocks = json_decode(curl_exec($client), true);
+                if($stocks){
+                    $stocks = collect($stocks);
+                    return $stocks->map(function($product) use($workpoint){
+                        $product_search = Product::where('code', $product['code'])->first();
+                        if($product_search){
+                            if($this->account->_workpoint == $workpoint->id){
+                                $product_search->stock = $product['stock'];
+                            }else{
+                                $product_search->stocks = [["workpoint" => $workpoint->alias, "stock" => $product['stock']]];
+                            }
+                            return $product_search;
+                        }
+                        return null;
+                    })->filter(function($product){
+                        return !is_null($product);
+                    });
+                }
+                return [];
+            }else{
+                $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
+                curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+                $stocks = json_decode(curl_exec($client), true);
+                if($stocks){
+                    $codes_array = array_column($stocks, 'code');
+                    return $products->map(function($product) use($codes_array, $stocks, $workpoint){
+                        $id = array_search($product->code, $codes_array);
+                        if(!is_bool($id)){
+                            if($this->account->_workpoint == $workpoint->id){
+                                $product->stock = $stocks[$id]['stock'];
+                            }else{
+                                $stock = isset($product->stocks) ? $product->stocks : [];
+                                array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
+                                $product->stocks = $stock;
+                            }
+                        }else{
+                            if($this->account->_workpoint == $workpoint->id){
+                                $product->stock = "--";
+                            }else{
+                                $stock = isset($product->stocks) ? $product->stocks : [];
+                                array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
+                                $product->stocks = $stock;
+                            }
+                        }
+                        return $product;
+                    });
+                }
+                return $products;
+            }
+        }, $products)->sortByDesc('stock')->values()->all();
+        return $stocks;
     }
 }
