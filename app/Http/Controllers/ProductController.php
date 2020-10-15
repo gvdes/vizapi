@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\ProductCategory;
 
 class ProductController extends Controller{
     /**
@@ -117,4 +118,33 @@ class ProductController extends Controller{
         return response()->json($products);
     }
 
+    public function getProductByCategory(Request $request){
+        $products = [];
+        $filter = null;
+        if(!isset($request->_category)){
+            $category = ProductCategory::where('root', 0)->get();
+        }else{
+            $category = ProductCategory::find($request->_category);
+            $category->children = ProductCategory::where('root', $request->_category)->get();
+            $filter = $category->attributes;
+        }
+        if(isset($request->products)){
+            if(isset($request->_category)){
+                $ids = [$category->id];
+                /* array_push($ids, array_column($category->children->toArray(), 'id')); */
+                $ids = $category->children->reduce(function($res, $category){
+                    array_push($res, $category->id);
+                    return $res;
+                }, $ids);
+                $products = Product::whereIn('_category', $ids)->get();
+            }else{
+                $products = Product::limit(100)->get();
+            }
+        }
+        return response()->json([
+            "categories" => $category,
+            "filter" => $filter,
+            "products" => $products,
+        ]);
+    }
 }

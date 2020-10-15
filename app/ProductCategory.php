@@ -7,6 +7,7 @@ class ProductCategory extends Model{
     
     protected $table = 'product_categories';
     protected $fillable = ['name', 'code', 'deep', 'root'];
+    protected $hidden = ['attributes'];
     public $timestamps = false;
     
     /*****************

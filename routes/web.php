@@ -40,8 +40,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/join', 'AuthController@joinWorkpoint');
     });
     
-    $router->group(['prefix' => 'products'], function () use ($router){
-    });
     
     $router->group(['prefix' => 'access'], function () use ($router){
         $router->get('/products', 'AccessController@getProducts');
@@ -60,7 +58,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
-        $router->get('/existencias', 'LocationController@existencias');
+        $router->get('/stocks', 'LocationController@getStocks');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
     });
@@ -73,6 +71,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/seeder', 'ProductController@seeder');
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/autocomplete', 'ProductController@autocomplete');
+        $router->get('/catalog', 'ProductController@getProductByCategory');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
