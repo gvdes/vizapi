@@ -74,19 +74,21 @@ class AccountController extends Controller{
                 $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
             }
             foreach($workpoints as $workpoint){
-                $account = \App\Account::create([
-                    '_account' => $user->id,
-                    '_workpoint' => $workpoint['id'],
-                    '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
-                    '_status' => 1,
-                ]);
-                $permissions = isset($workpoint['permissions']) ? (object)$workpoint['permissions'] : \App\Roles::with('permissions_default')->find($account->_rol);
-                //Asociar permisos con cuentas
-                $permissions_default = collect($permissions->permissions_default);
-                $insert = $permissions_default->map(function($permission){
-                    return $permission->id;
-                })->toArray();
-                $account->permissions()->attach($insert);
+                if($workpoint['id']!=404){
+                    $account = \App\Account::create([
+                        '_account' => $user->id,
+                        '_workpoint' => $workpoint['id'],
+                        '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
+                        '_status' => 1,
+                    ]);
+                    $permissions = isset($workpoint['permissions']) ? (object)$workpoint['permissions'] : \App\Roles::with('permissions_default')->find($account->_rol);
+                    //Asociar permisos con cuentas
+                    $permissions_default = collect($permissions->permissions_default);
+                    $insert = $permissions_default->map(function($permission){
+                        return $permission->id;
+                    })->toArray();
+                    $account->permissions()->attach($insert);
+                }
             }
             /**LOG 1 = CREACIÓN DE CUENTA */
             /* $payload = Auth::payload();

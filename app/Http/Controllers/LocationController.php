@@ -447,27 +447,27 @@ class LocationController extends Controller{
                     return $products->map(function($product) use($codes_array, $stocks, $workpoint){
                         $id = array_search($product->code, $codes_array);
                         if(!is_bool($id)){
-                            if($this->account->_workpoint == $workpoint->id){
+                            /* if($this->account->_workpoint == $workpoint->id){
                                 $product->stock = $stocks[$id]['stock'];
                             }else{
-                                $stock = isset($product->stocks) ? $product->stocks : [];
-                                array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                                $product->stocks = $stock;
-                            }
+                            } */
+                            $stock = isset($product->stocks) ? $product->stocks : [];
+                            array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
+                            $product->stocks = $stock;
                         }else{
-                            if($this->account->_workpoint == $workpoint->id){
+                            /* if($this->account->_workpoint == $workpoint->id){
                                 $product->stock = "--";
                             }else{
-                                $stock = isset($product->stocks) ? $product->stocks : [];
-                                array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                                $product->stocks = $stock;
-                            }
+                            } */
+                            $stock = isset($product->stocks) ? $product->stocks : [];
+                            array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
+                            $product->stocks = $stock;
                         }
                         return $product;
                     });
                 }
                 return $products;
-            }, $products)->sortByDesc('stock')->values()->all();
+            }, $products)/* ->sortByDesc('stock')->values()->all() */;
             return $stocks;
         }
         return response()->json(["message" => "Debe mandar almenos un articulo"]);

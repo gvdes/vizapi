@@ -58,7 +58,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
-        $router->get('/stocks', 'LocationController@getStocks');
+        $router->post('/stocks', 'LocationController@getStocks');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
     });

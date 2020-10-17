@@ -43,4 +43,12 @@ class WorkPoint extends Model{
     public function to_supply(){
         return $this->hasManY('App\Requisition','_workpoint_from', 'id');
     }
+
+    /**
+     * RELATIONSHIPS WITH CELLER'S MODELS
+     */
+    public function products(){
+        return $this->belongsToMany('App\Product', 'product_stock', '_workpoint', '_product')
+                    ->withPivot('min', 'max', 'stock');
+    }
 }

@@ -57,11 +57,24 @@ class Product extends Model{
                     ->withPivot(['stock', 'stock_acc', 'details']);
     }
 
+    public function attributes(){
+        return $this->belongsToMany('App\CategoryAttribute', 'product_attributes', '_product', '_attribute')
+                    ->withPivot('value');
+    }
+
     /**
      * RELATIONSHIPS WITH REQUISITION'S MODELS
      */
     public function requisitions(){
         return $this->belongsToMany('App\Requisition', 'product_required', '_product', '_requisition')
                     ->withPivot('units', 'comments');
+    }
+
+    /**
+     * RELATIONSHIPS WITH WORKPOINT'S MODELS
+     */
+    public function stock(){
+        return $this->belongsToMany('App\WokrPoint', 'product_stock', '_product', '_workpoint')
+                    ->withPivot('min', 'max', 'stock');
     }
 }

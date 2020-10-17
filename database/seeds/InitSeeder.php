@@ -11,25 +11,25 @@ class InitSeeder extends Seeder{
      */
     public function run(){
         DB::table('workpoints_types')->insert([
-            ['id'=> 1, 'name'=> 'CEDIS'],
-            ['id'=> 2, 'name'=> 'Sucursal'],
-            ['id' =>3, 'name' => 'Cluster']
+            ['id' => 1, 'name' => 'CEDIS'],
+            ['id' => 2, 'name' => 'Sucursal'],
+            ['id' => 3, 'name' => 'Cluster']
         ]);
 
         DB::table('workpoints')->insert([
             ['id' => 1, 'name' => 'CEDIS San Pablo', 'alias' => 'CEDISSAP', '_type' => 1, 'dominio' => '192.168.1.224:1618'],
-            ['id' => 2, 'name' => 'CEDIS Pantaco', 'alias' => 'CEDISPAN', '_type' => 1, 'dominio' => 'pantaco.grupovizcarra.net:1619'],
+            ['id' => 2, 'name' => 'CEDIS Pantaco', 'alias' => 'CEDISPAN', '_type' => 1, 'dominio' => '192.168.1.55:1619'],
             ['id' => 3, 'name' => 'San Pablo Uno', 'alias' => 'SP1', '_type' => 2, 'dominio' => '192.168.1.29:1619'],
             ['id' => 4, 'name' => 'San Pablo Dos', 'alias' => 'SP2', '_type' => 2, 'dominio' => 'sanpablodos.grupovizcarra.net:1619'],
             ['id' => 5, 'name' => 'Correo Uno', 'alias' => 'CO1', '_type' => 2, 'dominio' => 'correouno.grupovizcarra.net:1619'],
             ['id' => 6, 'name' => 'Correo Dos', 'alias' => 'CO2', '_type' => 2, 'dominio' => 'correodos.grupovizcarra.net:1619'],
             ['id' => 7, 'name' => 'Apartado Uno', 'alias' => 'AP1', '_type' => 2, 'dominio' => 'apartado.grupovizcarra.net:1619'],
-            ['id' => 8, 'name' => 'Apartado Dos', 'alias' => 'AP2', '_type' => 2, 'dominio' => 'apartadodos.grupovizcarra.net:1619'],
-            ['id' => 9, 'name' => 'Ramon Corona Uno', 'alias' => 'RC1', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1619'],
-            ['id' => 10, 'name' => 'Ramon Corona Dos', 'alias' => 'RC2', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1620'],
+            ['id' => 8, 'name' => 'Apartado Dos', 'alias' => 'AP2', '_type' => 2, 'dominio' => 'apartadodos.grupovizcarra.net:1618'],
+            ['id' => 9, 'name' => 'Ramon Corona Uno', 'alias' => 'RC1', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1621'],
+            ['id' => 10, 'name' => 'Ramon Corona Dos', 'alias' => 'RC2', '_type' => 2, 'dominio' => 'rac.grupovizcarra.net:1618'],
             ['id' => 11, 'name' => 'Brasil Uno', 'alias' => 'BRA1', '_type' => 2, 'dominio' => 'brasil.grupovizcarra.net:1619'],
             ['id' => 12, 'name' => 'Brasil Dos', 'alias' => 'BRA2', '_type' => 2, 'dominio' => 'brasildos.grupovizcarra.net:1619'],
-            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2, 'dominio' => 'bolivia.grupovizcarra.net:1619'],
+            ['id' => 13, 'name' => 'Bolivia', 'alias' => 'BOL', '_type' => 2, 'dominio' => 'bolivia.grupovizcarra.net:1618'],
             ['id' => 404, 'name' => 'Clouster', 'alias' => 'VIZ', '_type' => 3, 'dominio' => 'tablero.grupovizcarra.net:1619']
         ]);
 
@@ -143,7 +143,7 @@ class InitSeeder extends Seeder{
             ['id'=> 28, '_module'=> 5, 'name'=> 'Cancelar pedido'] */
         ]);
         $permissions = DB::table('permissions')->get();
-        $arr_to_insert =  $permissions->map(function( $permission){
+        $arr_to_insert = $permissions->map(function( $permission){
             return ['_rol'=> 1, '_permission'=> $permission->id];
         })->toArray();
         /* Permisos de root */
@@ -211,5 +211,39 @@ class InitSeeder extends Seeder{
             ['_rol'=> 3, '_permission'=> 32],
             ['_rol'=> 3, '_permission'=> 33],
         ]);
+
+        /**CREAR ROOT */
+        $user_id = DB::table('accounts')->insertGetId([
+            'nick' => 'root',
+            'password' => app('hash')->make('root'),
+            'names' => 'Super',
+            'picture' => '',
+            'surname_pat' => 'Usuario',
+            'change_password' => true,
+            '_wp_principal' => 1,
+            '_rol' => 1,
+            'created_at' => new DateTime,
+            'updated_at' => new DateTime
+        ]);
+        $workpoints = DB::table('workpoints')->get();
+        $permissions = DB::table('permissions')->get();
+
+        foreach($workpoints as $workpoint){
+            if($workpoint->id!=404){
+                $account_id = DB::table('account_workpoints')->insertGetId([
+                    '_account' => $user_id,
+                    '_workpoint' => $workpoint->id,
+                    '_status' => 1,
+                    '_rol' => 1
+                ]);
+                $insert_permissions = $permissions->map(function($permission) use($account_id){
+                    return [
+                        '_account' => $account_id,
+                        '_permission' => $permission->id
+                    ];
+                })->toArray();
+                DB::table('account_permissions')->insert($insert_permissions);
+            }
+        }
     }
 }

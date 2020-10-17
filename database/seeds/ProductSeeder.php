@@ -10,7 +10,7 @@ class ProductSeeder extends Seeder{
      * @return void
      */
     public function run(){
-        DB::table('price_list')->insert([
+        /* DB::table('price_list')->insert([
             ['id' => 1, 'name' => 'Menudeo', 'alias' => 'MEN'],
             ['id' => 2, 'name' => 'Mayoreo', 'alias' => 'MAY'],
             ['id' => 3, 'name' => 'Docena', 'alias' => 'DOC'],
@@ -29,8 +29,8 @@ class ProductSeeder extends Seeder{
             ['id' => 5, 'name' => 'Agotado', 'description' => 'Sé cambiado el status del producto ha agotado'],
             ['id' => 6, 'name' => 'Reservado', 'description' => 'Todas las existencias de producto pertenecen a pedidos en este momento'],
             ['id' => 7, 'name' => 'Bloqueado', 'description' => 'Se ha bloqueado el producto en el sistema']
-            ]);
-            
+        ]);
+             */
         DB::table('product_categories')->insert([
             ['id' => 1, 'name' => 'Mochila', 'deep' => 0, 'root' => 0],
             ['id' => 2, 'name' => 'Primaria', 'deep' => 1, 'root' =>1],
@@ -48,7 +48,7 @@ class ProductSeeder extends Seeder{
             ['id' => 14, 'name' => 'Mini', 'deep' => 1, 'root' =>1],
             ['id' => 15, 'name' => 'Cartera y monedero', 'deep' => 1, 'root' =>1],
             ['id' => 16, 'name' => 'Cosmetiquera', 'deep' => 1, 'root' =>1],
-            ['id' => 17, 'name' => 'Series', 'deep' => 0, 'root' =>0],
+            /* ['id' => 17, 'name' => 'Series', 'deep' => 0, 'root' =>0],
             ['id' => 18, 'name' => 'Serie luz normal', 'deep' => 1, 'root' =>17],
             ['id' => 19, 'name' => 'Serie led', 'deep' => 1, 'root' =>17],
             ['id' => 20, 'name' => 'Cascada normal', 'deep' => 1, 'root' =>17],
@@ -67,7 +67,7 @@ class ProductSeeder extends Seeder{
             ['id' => 33, 'name' => 'Arbol fibra optica', 'deep' => 1, 'root' =>17],
             ['id' => 34, 'name' => 'Arbol navideño', 'deep' => 1, 'root' =>17],
             ['id' => 35, 'name' => 'Esferas', 'deep' => 1, 'root' =>17],
-            ['id' => 36, 'name' => 'Paquete de oferta', 'deep' => 1, 'root' =>17],
+            ['id' => 36, 'name' => 'Paquete de oferta', 'deep' => 1, 'root' =>17], */
             ['id' => 37, 'name' => 'Juguete', 'deep' => 0, 'root' =>0],
             ['id' => 38, 'name' => 'Montable', 'deep' => 1, 'root' =>37],
             ['id' => 39, 'name' => 'Radio control', 'deep' => 1, 'root' =>37],
@@ -161,6 +161,47 @@ class ProductSeeder extends Seeder{
             ['id' => 127, 'name' => 'Varios', 'deep' => 1, 'root' =>119],
             ['id' => 128, 'name' => 'Fig ECO', 'deep' => 1, 'root' =>119],
             ['id' => 129, 'name' => 'Bolsa ecologica', 'deep' => 1, 'root' =>94],
+            ['id' => 130, 'name' => 'Navidad', 'deep' => 0, 'root' =>0],
+            ['id' => 131, 'name' => 'Serie', 'deep' => 1, 'root' =>130],
+            ['id' => 132, 'name' => 'Cascada', 'deep' => 2, 'root' =>131],
+            ['id' => 133, 'name' => 'Lineal', 'deep' => 2, 'root' =>131],
+            ['id' => 134, 'name' => 'Manguera', 'deep' => 2, 'root' =>131],
+            ['id' => 135, 'name' => 'Maya', 'deep' => 2, 'root' =>131],
+            ['id' => 136, 'name' => 'Red', 'deep' => 2, 'root' =>131],
+            ['id' => 137, 'name' => 'Cortina', 'deep' => 2, 'root' =>131],
+            ['id' => 138, 'name' => 'Arbol', 'deep' => 1, 'root' =>130],
+            ['id' => 139, 'name' => 'Pie de arbol', 'deep' => 2, 'root' =>138],
+            ['id' => 140, 'name' => 'Punta de arbol', 'deep' => 2, 'root' =>138],
+            ['id' => 141, 'name' => 'Esfera', 'deep' => 2, 'root' =>138],
+            ['id' => 142, 'name' => 'Adorno', 'deep' => 1, 'root' =>130],
+            ['id' => 143, 'name' => 'Bolsa', 'deep' => 1, 'root' =>130],
+            ['id' => 144, 'name' => 'Calendario', 'deep' => 1, 'root' =>130],
+            ['id' => 145, 'name' => 'Camino', 'deep' => 1, 'root' =>130],
+            ['id' => 146, 'name' => 'Canasta', 'deep' => 1, 'root' =>130],
+            ['id' => 147, 'name' => 'Cojin', 'deep' => 1, 'root' =>130],
+            ['id' => 148, 'name' => 'Colgante', 'deep' => 1, 'root' =>130],
+            ['id' => 149, 'name' => 'Corbata', 'deep' => 1, 'root' =>130],
+            ['id' => 150, 'name' => 'Diadema', 'deep' => 1, 'root' =>130],
+            ['id' => 151, 'name' => 'Diamantina', 'deep' => 1, 'root' =>130],
+            ['id' => 152, 'name' => 'Dulcero', 'deep' => 1, 'root' =>130],
+            ['id' => 153, 'name' => 'Escarcha', 'deep' => 1, 'root' =>130],
+            ['id' => 154, 'name' => 'Farol', 'deep' => 1, 'root' =>130],
+            ['id' => 155, 'name' => 'Figura', 'deep' => 1, 'root' =>130],
+            ['id' => 156, 'name' => 'Florero', 'deep' => 1, 'root' =>130],
+            ['id' => 157, 'name' => 'Flores', 'deep' => 1, 'root' =>130],
+            ['id' => 158, 'name' => 'Funda', 'deep' => 1, 'root' =>130],
+            ['id' => 159, 'name' => 'Gorro', 'deep' => 1, 'root' =>130],
+            ['id' => 160, 'name' => 'Inflable', 'deep' => 1, 'root' =>130],
+            ['id' => 161, 'name' => 'Juego de baño', 'deep' => 1, 'root' =>130],
+            ['id' => 162, 'name' => 'Letrero', 'deep' => 1, 'root' =>130],
+            ['id' => 163, 'name' => 'Miniatura', 'deep' => 1, 'root' =>130],
+            ['id' => 164, 'name' => 'Muñeco', 'deep' => 1, 'root' =>130],
+            ['id' => 165, 'name' => 'Proyector', 'deep' => 1, 'root' =>130],
+            ['id' => 166, 'name' => 'Reloj', 'deep' =>1, 'root' =>130],
+            ['id' => 167, 'name' => 'Stickers', 'deep' => 1, 'root' =>130],
+            ['id' => 168, 'name' => 'Tapete', 'deep' => 1, 'root' =>130],
+            ['id' => 169, 'name' => 'Corona', 'deep' => 1, 'root' =>130],
+            ['id' => 170, 'name' => 'Bota', 'deep' => 1, 'root' =>130],
             ['id' => 404, 'name' => 'Sin categoría', 'deep' => 0, 'root' =>0],
         ]);
                 
@@ -181,18 +222,22 @@ class ProductSeeder extends Seeder{
             ['id' => '404', 'name' => 'Proveedor varios', 'alias' => 'Proveedor varios', 'adress' => json_encode(["calle" => '', "municipio" => '']), 'description' => '', 'phone' => '', 'email'=> '']
         ]);
 
-        for($x=17; $x<37; $x++){
+        for($x=131; $x<139; $x++){
             DB::table('category_attributes')->insert([
-                ['name' => 'Luces', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => [100,200,300,500,1000]])],
+                ['name' => 'Luces', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => [6,8,9,10,12,16,18,20,22,24,25,28,30,31,32,36,40,48,50,54,56,60,64,66,72,74,80,88,100,108,120,128,138,140,150,160,200,240,264,276,300,320,348,400,480,500,600,700,800,900,1000, 'N/A']])],
                 ['name' => 'Metros', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => [2,3,5,7,10,12,15]])],
-                ['name' => 'Color', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])],
-                ['name' => 'Musical', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
                 ['name' => 'Mágica', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
                 ['name' => 'Tipo de foco', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Normal", "V8", "V9"]])],
-                ['name' => 'Presentación', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Unicel", "Caja", "Individual", "Docena"]])],
                 ['name' => 'Color del cable', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])]
             ]);
         }
-
+            
+        for($x=130; $x<170; $x++){
+            DB::table('category_attributes')->insert([
+                ['name' => 'Color', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])],
+                ['name' => 'Musical', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
+                ['name' => 'Presentación', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Unicel", "Caja", "Individual", "Docena"]])],
+            ]);
+        }
     }
 }

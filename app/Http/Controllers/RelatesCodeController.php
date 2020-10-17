@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Product;
 use App\ProductVariant;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RelatesCodeController extends Controller{
     /**
@@ -26,7 +28,7 @@ class RelatesCodeController extends Controller{
             curl_close($client);
             if($codes){
                 DB::transaction(function() use($codes){
-                    foreach($code as $code){
+                    foreach($codes as $code){
                         $product = Product::where('code', $code['ARTEAN'])->first();
                         if($product){
                             $variant = new ProductVariant();

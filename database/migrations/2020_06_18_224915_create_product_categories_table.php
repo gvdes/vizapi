@@ -15,7 +15,7 @@ class CreateProductCategoriesTable extends Migration{
             $table->smallIncrements('id');
             $table->string('name', 50);
             $table->tinyInteger('deep');
-            $table->tinyInteger('root');
+            $table->smallInteger('root');
         });
     }
 

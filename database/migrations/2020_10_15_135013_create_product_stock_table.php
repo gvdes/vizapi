@@ -12,12 +12,12 @@ class CreateProductStockTable extends Migration{
      */
     public function up(){
         Schema::create('Product_Stock', function (Blueprint $table) {
-            $table->unsignedMediumInteger('_celler');
+            $table->unsignedSmallInteger('_workpoint');
             $table->unsignedInteger('_product');
             $table->float('min', 8,2);
             $table->float('max', 8,2);
             $table->float('stock', 8,2);
-            $table->foreign('_celler')->references('id')->on('celler'); 
+            $table->foreign('_workpoint')->references('id')->on('workpoints'); 
             $table->foreign('_product')->references('id')->on('products'); 
         });
     }
