@@ -124,9 +124,14 @@ class ProductController extends Controller{
         if(!isset($request->_category)){
             $category = ProductCategory::where('root', 0)->orderBy('name')->get();
         }else{
-            $category = ProductCategory::find($request->_category);
+            /* $category = ProductCategory::find($request->_category);
             $category->children = ProductCategory::where('root', $request->_category)->orderBy('name')->get();
-            $filter = $category->attributes;
+            $filter = $category->attributes; */
+            $_category = $request->_category;
+            $category = ProductCategory::with('attributes')->find($_category);
+            $category->children = $this->getDescendentsCategory($category->id);
+            $ascendents = $this->getAscendentsCategory($category);
+            $filter = $this->getFilter($ascendents);
         }
         if(isset($request->products)){
             if(isset($request->_category)){
@@ -135,6 +140,11 @@ class ProductController extends Controller{
                     array_push($res, $category->id);
                     return $res;
                 }, $ids);
+                /* if(isset($request->attributes)){
+                    $products = Product::with('attributes')->whereHas('attributes', function(Builder $query){
+                        $query->where('id', '')->orWhere()->orWhere();
+                    })->whereIn('_category', $ids)->get();
+                } */
                 $products = Product::with('attributes')->whereIn('_category', $ids)->get();
             }else{
                 $products = Product::limit(100)->get();
@@ -145,5 +155,48 @@ class ProductController extends Controller{
             "filter" => $filter,
             "products" => $products,
         ]);
+    }
+
+    public function categoryTree(Request $request/* $_category */){
+        $_category = $request->_category;
+        $category = ProductCategory::with('attributes')->find($_category);
+        $category->children = $this->getDescendentsCategory($category->id);
+        $ascendents = $this->getAscendentsCategory($category);
+        $filter = $this->getFilter($ascendents);
+        return response()->json([
+            "filter" => $filter,
+            "category" => $ascendents
+        ]);
+    }
+
+    public function getDescendentsCategory($_category){
+        $children = ProductCategory::with('attributes')->where('root', $_category)->orderBy('name')->get();
+        if(count($children)>0){
+            return $children->map(function($category){
+                $category->children = $this->getDescendentsCategory($category->id);
+                return $category;
+            });
+        }
+        return $children;
+    }
+
+    public function getAscendentsCategory($category){
+        if($category->root==0){
+            return $category;
+        }
+        $asc = ProductCategory::with('attributes')->find($category->root);
+        $asc->children = $category;
+        return $this->getAscendentsCategory($asc);
+    }
+
+    public function getFilter($category){
+        $filter = $category->attributes->toArray();
+        if(count($category->children)>0){
+            return $category->children->reduce(function($filter, $category){
+                $filters_children = $this->getFilter($category);
+                return array_merge($filter, $filters_children);
+            }, []);
+        }
+        return $filter;
     }
 }
