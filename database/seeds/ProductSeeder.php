@@ -222,22 +222,18 @@ class ProductSeeder extends Seeder{
             ['id' => '404', 'name' => 'Proveedor varios', 'alias' => 'Proveedor varios', 'adress' => json_encode(["calle" => '', "municipio" => '']), 'description' => '', 'phone' => '', 'email'=> '']
         ]);
 
-        for($x=131; $x<139; $x++){
-            DB::table('category_attributes')->insert([
-                ['name' => 'Luces', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => [6,8,9,10,12,16,18,20,22,24,25,28,30,31,32,36,40,48,50,54,56,60,64,66,72,74,80,88,100,108,120,128,138,140,150,160,200,240,264,276,300,320,348,400,480,500,600,700,800,900,1000, 'N/A']])],
-                ['name' => 'Metros', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => [2,3,5,7,10,12,15]])],
-                ['name' => 'Mágica', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
-                ['name' => 'Tipo de foco', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Normal", "V8", "V9"]])],
-                ['name' => 'Color del cable', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])]
-            ]);
-        }
+        DB::table('category_attributes')->insert([
+            ['name' => 'Luces', '_category' => 131, "details" => json_encode([ "type" => "select", "options" => [6,8,9,10,12,16,18,20,22,24,25,28,30,31,32,36,40,48,50,54,56,60,64,66,72,74,80,88,100,108,120,128,138,140,150,160,200,240,264,276,300,320,348,400,480,500,600,700,800,900,1000, 'N/A']])],
+            ['name' => 'Metros', '_category' => 131, "details" => json_encode([ "type" => "select", "options" => [2,3,5,7,10,12,15]])],
+            ['name' => 'Mágica', '_category' => 131, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
+            ['name' => 'Tipo de foco', '_category' => 131, "details" => json_encode([ "type" => "select", "options" => ["Normal", "V8", "V9"]])],
+            ['name' => 'Color del cable', '_category' => 131, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])]
+        ]);
             
-        for($x=130; $x<170; $x++){
-            DB::table('category_attributes')->insert([
-                ['name' => 'Color', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])],
-                ['name' => 'Musical', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
-                ['name' => 'Presentación', '_category' => $x, "details" => json_encode([ "type" => "select", "options" => ["Unicel", "Caja", "Individual", "Docena"]])],
-            ]);
-        }
+        DB::table('category_attributes')->insert([
+            ['name' => 'Color', '_category' => 130, "details" => json_encode([ "type" => "select", "options" => ["Azul", "Blanca", "Rojo", "Verde"]])],
+            ['name' => 'Musical', '_category' => 130, "details" => json_encode([ "type" => "select", "options" => ["Si", "No"]])],
+            ['name' => 'Presentación', '_category' => 130, "details" => json_encode([ "type" => "select", "options" => ["Unicel", "Caja", "Individual", "Docena"]])],
+        ]);
     }
 }
