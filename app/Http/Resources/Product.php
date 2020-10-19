@@ -14,19 +14,22 @@ class Product extends JsonResource{
     public function toArray($request){
         return [
             'id' => $this->id,
-            'nick' => $this->nick,
-            'pictures' => $this->pictures,
-            'names' => $this->names,
-            'surname_pat' => $this->surname_pat,
-            'surname_mat' => $this->surname_mat,
-            'change_password' => $this->change_password,
-            'rol' => $this->whenLoaded('rol'),
-            'token' => $this->when($this->token, function(){
-                return $this->token;
-            }),
-            'wp_principal' => $this->whenLoaded('wp_principal'),
-            'workpoints' => Account::collection($this->whenLoaded('workpoints')),
-            'log' => Log::collection($this->whenLoaded('log'))
+            'code' => $this->code,
+            'name' => $this->name,
+            'description' => $this->description,
+            'stock' => $this->stock,
+            'pieces' => $this->pieces,
+            'dimensions' => $this->dimensions,
+            'weight' => $this->weight,
+            'attributes' => $this->whenLoaded('attributes', function(){
+                return $this->attributes->map(function($attribute){
+                    return [
+                        "id" => $attribute->id,
+                        "name" => $attribute->name,
+                        "value" => $attribute->pivot->value
+                    ];
+                });
+            })
         ];
     }
 }

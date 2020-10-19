@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\ProductCategory;
+use App\Http\Resources\Product as ProductResource;
 
 class ProductController extends Controller{
     /**
@@ -155,7 +156,7 @@ class ProductController extends Controller{
         return response()->json([
             "categories" => $category,
             "filter" => $filter,
-            "products" => $products,
+            "products" => ProductResource::collection($products)
         ]);
     }
 
@@ -178,7 +179,6 @@ class ProductController extends Controller{
                 }
             })->whereIn('_category', $ids)->get();
         }
-        
     }
 
     public function getDescendentsCategory($category){
