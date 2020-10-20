@@ -105,6 +105,35 @@ class ProductController extends Controller{
         }
     }
 
+    public function addAtributes(Request $request){
+        /* $products = array_slice($request->products, 1700); */
+        $products = $request->products;
+        $total = 0;
+        foreach($products as $row){
+            $product = Product::where('code', $row['codigo'])->first();
+            if($product){
+                $description = mb_convert_encoding($row['descripcion'], "UTF-8");
+                $product->description = ucfirst(mb_strtolower($description));
+                $product->_category = $row['categoria'];
+                $product->save();
+                $remove = ['categoria', 'descripcion', 'codigo'];
+                $arr = collect(array_diff_key($row, array_flip($remove)));
+                $attributes = $arr->filter(function($el){
+                    return $el !='N-A';
+                })->map(function($el, $key){
+                    if($el=='OK'){
+                        return ['value'=> "Si"];    
+                    }
+                    $value = mb_convert_encoding($el, "UTF-8");
+                    return ['value'=> ucfirst(mb_strtolower($value))];
+                })->toArray();
+                $product->attributes()->attach($attributes);
+                $total++;
+            }
+        }
+        return response()->json($total);
+    }
+
     public function autocomplete(Request $request){
         $code = $request->code;
         $products = Product::with(['prices' => function($query){

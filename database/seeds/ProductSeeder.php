@@ -202,6 +202,8 @@ class ProductSeeder extends Seeder{
             ['id' => 168, 'name' => 'Tapete', 'deep' => 1, 'root' =>130],
             ['id' => 169, 'name' => 'Corona', 'deep' => 1, 'root' =>130],
             ['id' => 170, 'name' => 'Bota', 'deep' => 1, 'root' =>130],
+            ['id' => 171, 'name' => 'Feston', 'deep' => 1, 'root' =>130],
+            ['id' => 172, 'name' => 'Mantel', 'deep' => 1, 'root' =>130],
             ['id' => 404, 'name' => 'Sin categoría', 'deep' => 0, 'root' =>0],
         ]);
                 

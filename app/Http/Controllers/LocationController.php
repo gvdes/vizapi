@@ -467,8 +467,14 @@ class LocationController extends Controller{
                     });
                 }
                 return $products;
-            }, $products)/* ->sortByDesc('stock')->values()->all() */;
-            return $stocks;
+            }, $products);
+            $sorted = $stocks->sortByDesc(function($product){
+                return array_reduce($product->stocks,function($total, $store){
+                    return $total + $store['stock'];
+                },0);
+            })->values()->all();
+            /* return $stocks; */
+            return $sorted;
         }
         return response()->json(["message" => "Debe mandar almenos un articulo"]);
     }

@@ -73,6 +73,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/autocomplete', 'ProductController@autocomplete');
         $router->get('/catalog', 'ProductController@getProductByCategory');
         $router->get('/tree', 'ProductController@categoryTree');
+        $router->post('/updateDesc', 'ProductController@addAtributes');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
