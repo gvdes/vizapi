@@ -187,8 +187,7 @@ class ProductController extends Controller{
         return response()->json([
             "categories" => $category,
             "filter" => $filter,
-            "products" => ProductResource::collection($products),
-            "request" => $request->filter
+            "products" => ProductResource::collection($products)
         ]);
     }
 
