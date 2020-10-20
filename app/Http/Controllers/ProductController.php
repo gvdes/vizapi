@@ -149,6 +149,7 @@ class ProductController extends Controller{
     }
 
     public function getProductByCategory(Request $request){
+        /* return response()->json($request); */
         $products = [];
         $filter = null;
         if(!isset($request->_category)){
@@ -163,11 +164,12 @@ class ProductController extends Controller{
         }
         if(isset($request->products)){
             if(isset($request->_category)){
-                $ids = [$category->id];
+                /* $ids = [$category->id];
                 $ids = $category->children->reduce(function($res, $category){
                     array_push($res, $category->id);
                     return $res;
-                }, $ids);
+                }, $ids); */
+                $ids = $this->getIdsTree($category2);
                 if(isset($request->filter)){
                     $attributes = $request->filter;
                     $products = Product::with('attributes')->whereHas('attributes', function(Builder $query) use($attributes){
@@ -185,7 +187,8 @@ class ProductController extends Controller{
         return response()->json([
             "categories" => $category,
             "filter" => $filter,
-            "products" => ProductResource::collection($products)
+            "products" => ProductResource::collection($products),
+            "request" => $request->filter
         ]);
     }
 
@@ -238,5 +241,14 @@ class ProductController extends Controller{
         }, []);
         $filter = $category->attributes->toArray();
         return array_merge($children_attributes, $filter);
+    }
+    public function getIdsTree($category){
+        $children = collect($category->children);
+        $children_ids = $children->reduce(function($ids, $category){
+            $ids_children = $this->getIdsTree($category);
+            return array_merge($ids, $ids_children);
+        }, []);
+        $id = [$category->id];
+        return array_merge($children_ids, $id);
     }
 }
