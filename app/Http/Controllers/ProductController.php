@@ -164,17 +164,14 @@ class ProductController extends Controller{
         }
         if(isset($request->products)){
             if(isset($request->_category)){
-                /* $ids = [$category->id];
-                $ids = $category->children->reduce(function($res, $category){
-                    array_push($res, $category->id);
-                    return $res;
-                }, $ids); */
                 $ids = $this->getIdsTree($category2);
                 if(isset($request->filter)){
                     $attributes = $request->filter;
-                    $products = Product::with('attributes')->whereHas('attributes', function(Builder $query) use($attributes){
+                    $products = Product::with('attributes')->where(function($query) use($attributes){
                         foreach($attributes as $attribute){
-                            $query->where('_attribute', $attribute['_attribute'])->whereIn('value', $attribute['values']);
+                            $query->whereHas('attributes',function(Builder $query) use($attribute){
+                                $query->where('_attribute', $attribute['_attribute'])->whereIn('value', $attribute['values']);
+                            });
                         }
                     })->whereIn('_category', $ids)->get();
                 }else{
