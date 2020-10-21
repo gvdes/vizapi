@@ -173,7 +173,7 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->code;
-        $workpoint = \App\Workpoint::find($this->account->_workpoint);
+        $workpoint = WorkPoint::find($this->account->_workpoint);
         $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $product = \App\Product::with(['locations' => function($query)use($cellers){
             $query->whereIn('_celler', $cellers);
