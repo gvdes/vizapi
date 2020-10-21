@@ -160,6 +160,16 @@ class RequisitionController extends Controller{
         ]);
     }
 
+    public function dashboard(){
+        $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
+                                        $query->with('prices', 'units', 'variants');
+                                    }, 'to', 'from', 'created_by', 'log'])
+                                    ->where('_workpoint_to', $this->account->_workpoint)
+                                    ->whereIn('_status', [1,2,3,4,5,6,7,8])
+                                    ->get();
+        return response()->json(RequisitionResource::collection($requisitions));
+    }
+
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query->with('prices', 'units', 'variants');
