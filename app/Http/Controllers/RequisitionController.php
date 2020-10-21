@@ -61,16 +61,22 @@ class RequisitionController extends Controller{
     public function addProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            $product = Product::find($request->_product);
-            $amount = isset($request->amount) ? $request->amount : 1;
-            $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
-            return response()->json($product);
+            if($this->account->_account == $requisition->_created_by){
+                $product = Product::find($request->_product);
+                $amount = isset($request->amount) ? $request->amount : 1;
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
+                return response()->json($product);
+            }else{
+                return response()->json(["msg" => "No puedes agregar productos"]);
+            }
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido agregar el producto"]);
         }
     }
 
     public function log($case, Requisition $requisition){
+        $account = Account::with('user')->find($this->account->_account);
+        $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
         switch($case){
             case 1:
                 $requisition->log()->attach(1, [ 'details' => json_encode([])]);
@@ -80,43 +86,42 @@ class RequisitionController extends Controller{
             break;
             case 3:
                 $requisition->log()->attach(3, [ 'details' => json_encode([
-                    "started_by" => "",
-                    "responsables" => []
+                    "responsable" => $responsable
                 ])]);
             break;
             case 4:
                 $requisition->log()->attach(4, [ 'details' => json_encode([
-                    "finished_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 5:
                 $requisition->log()->attach(5, [ 'details' => json_encode([
-                    "picked_out_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 6:
                 $requisition->log()->attach(6, [ 'details' => json_encode([
-                    "received_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 7:
                 $requisition->log()->attach(7, [ 'details' => json_encode([
-                    "started_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 8:
                 $requisition->log()->attach(8, [ 'details' => json_encode([
-                    "finished_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 9:
                 $requisition->log()->attach(9, [ 'details' => json_encode([
-                    "finished_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 10:
                 $requisition->log()->attach(10, [ 'details' => json_encode([
-                    "cancelled_by" => ""
+                    "responsable" => $responsable
                 ])]);
             break;
             case 11:
@@ -175,5 +180,17 @@ class RequisitionController extends Controller{
             $query->with('prices', 'units', 'variants');
         }, 'to', 'from', 'created_by', 'log'])->find($id);
         return response()->json(new RequisitionResource($requisition));
+    }
+
+    public function nextStep(Request $request){
+        $requisition = Requisition::find($request->id);
+        $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
+        if($status>0 && $status<12){
+            $this->log($status, $requisition);
+            $requisition->_status = $status;
+            $requisition->save();
+            return response()->json(["success" => true]);
+        }
+        return response()->json(["success" => false, "message" => "Status no válido"]);
     }
 }

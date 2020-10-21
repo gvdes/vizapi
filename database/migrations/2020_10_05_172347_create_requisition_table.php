@@ -15,7 +15,7 @@ class CreateRequisitionTable extends Migration{
             $table->increments('id');
             $table->mediumInteger('num_ticket');
             $table->mediumInteger('num_ticket_Store');
-            $table->string('notes', 100);
+            $table->string('notes', 100)->nullable();
             $table->unsignedInteger('_created_by');
             $table->unsignedSmallInteger('_workpoint_from');
             $table->unsignedSmallInteger('_workpoint_to');

@@ -86,9 +86,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
     
     $router->group(['prefix' => 'requisition'], function () use ($router){
         $router->get('/', 'RequisitionController@index');
-        $router->get('/{id}', 'RequisitionController@find');
         $router->get('/dashboard', 'RequisitionController@dashboard');
+        $router->get('/{id}', 'RequisitionController@find');
         $router->post('/', 'RequisitionController@create');
         $router->post('/add', 'RequisitionController@addProduct');
+        $router->post('/next', 'RequisitionController@nextStep');
     });
 });
