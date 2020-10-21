@@ -136,18 +136,26 @@ class RequisitionController extends Controller{
         });
         $types = Type::whereIn('id', $permissions)->get();
         $status = Process::all();
-        $now = new \DateTime();
+        $clause = [
+            ['_workpoint_from', $this->account->_workpoint]
+        ];
+        if($this->account->_rol == 4 ||  $this->account->_rol == 5 || $this->account->_rol == 7){
+            array_push($clause, ['_created_by', $this->account->_account]);
+        }
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
                                         $query->with('prices', 'units', 'variants');
-                                    }, 'to', 'from', 'created_by', 'log'])->where('_created_by', $this->account->_account)
-                                    /* ->whereIn('_status', [1,2,3,4,5,6,7,8]) */
-                                    /* ->whereDate('created_at', $now) */
+                                    }, 'to', 'from', 'created_by', 'log'])
+                                    ->where($clause)
+                                    ->whereIn('_status', [1,2,3,4,5,6,7,8])
+                                    /* ->orWhere(function($query){
+                                        $now = new \DateTime();
+                                        $query->whereDate('created_at', $now);
+                                    }) */
                                     ->get();
         return response()->json([
             "workpoints" => $workpoints,
             "types" => $types,
             "status" => $status,
-            /* "requisitions" => $requisitions */
             "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
