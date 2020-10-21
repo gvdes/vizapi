@@ -85,7 +85,7 @@ class InitSeeder extends Seeder{
             ['id'=> 18, 'name'=> 'Resurtido', 'deep'=> 0 , 'root'=> 0, 'path'=> 'pedidos'],
             ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 18, 'path'=> 'dashboard'],
             ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'],
-            ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 18, 'path'=> ''],
+            /* ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 18, 'path'=> ''], */
             ['id'=> 22, 'name'=> 'Etiquetas', 'deep'=> 0 , 'root'=> 0, 'path'=> 'etiquetas']
         ]);
 
@@ -121,7 +121,7 @@ class InitSeeder extends Seeder{
             ['id'=> 29, '_module'=> 19, 'name'=> 'Resurtido manual'],
             ['id'=> 30, '_module'=> 19, 'name'=> 'Resurtido automatico'],
             ['id'=> 31, '_module'=> 20, 'name'=> 'Acceso'],
-            ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'],
+            /* ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'], */
             ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
             ['id'=> 12, '_module'=> 4, 'name'=> 'Creación de pedido autostock'],

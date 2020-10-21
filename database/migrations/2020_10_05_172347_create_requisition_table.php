@@ -13,7 +13,8 @@ class CreateRequisitionTable extends Migration{
     public function up(){
         Schema::create('requisition', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name', 25);
+            $table->mediumInteger('num_ticket');
+            $table->mediumInteger('num_ticket_Store');
             $table->string('notes', 100);
             $table->unsignedInteger('_created_by');
             $table->unsignedSmallInteger('_workpoint_from');

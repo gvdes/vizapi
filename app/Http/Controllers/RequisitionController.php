@@ -51,7 +51,7 @@ class RequisitionController extends Controller{
             });
             return response()->json([
                 "success" => true,
-                "order" => $requisition
+                "order" => new RequisitionResource($requisition)
             ]);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido crear el pedido"]);
@@ -62,7 +62,8 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             $product = Product::find($request->_product);
-            $requisition->products()->syncWithoutDetaching($request->_product, ['units' => $request->amount, 'comments' => $request->comments]);
+            $amount = isset($request->amount) ? $request->amount : 1;
+            $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
             return response()->json($product);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido agregar el producto"]);
@@ -146,7 +147,8 @@ class RequisitionController extends Controller{
             "workpoints" => $workpoints,
             "types" => $types,
             "status" => $status,
-            "requisitions" => $requisitions
+            /* "requisitions" => $requisitions */
+            "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
 

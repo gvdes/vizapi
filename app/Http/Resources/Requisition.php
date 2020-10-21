@@ -54,7 +54,27 @@ class Requisition extends JsonResource{
                 });
             }),
             'products' => $this->whenLoaded('products', function(){
-                return $this->products;
+                return $this->products->map(function($product){
+                    return [
+                        "id" => $product->id,
+                        "code" => $product->code,
+                        "name" => $product->name,
+                        "description" => $product->description,
+                        "dimensions" => $product->dimensions,
+                        "prices" => $product->prices->map(function($price){
+                            return [
+                                "id" => $price->id,
+                                "name" => $price->name,
+                                "price" => $price->pivot->price,
+                            ];
+                        }),
+                        "pieces" => $product->pieces.' '.$product->units->alias,
+                        "ordered" => [
+                            "amount" => $product->pivot->units,
+                            "comments" => $product->pivot->comments
+                        ]
+                    ];
+                });
             })
         ];
     }
