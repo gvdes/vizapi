@@ -10,7 +10,7 @@ class ProductSeeder extends Seeder{
      * @return void
      */
     public function run(){
-        /* DB::table('price_list')->insert([
+        DB::table('price_list')->insert([
             ['id' => 1, 'name' => 'Menudeo', 'alias' => 'MEN'],
             ['id' => 2, 'name' => 'Mayoreo', 'alias' => 'MAY'],
             ['id' => 3, 'name' => 'Docena', 'alias' => 'DOC'],
@@ -30,7 +30,7 @@ class ProductSeeder extends Seeder{
             ['id' => 6, 'name' => 'Reservado', 'description' => 'Todas las existencias de producto pertenecen a pedidos en este momento'],
             ['id' => 7, 'name' => 'Bloqueado', 'description' => 'Se ha bloqueado el producto en el sistema']
         ]);
-             */
+            
         DB::table('product_categories')->insert([
             ['id' => 1, 'name' => 'Mochila', 'deep' => 0, 'root' => 0],
             ['id' => 2, 'name' => 'Primaria', 'deep' => 1, 'root' =>1],
