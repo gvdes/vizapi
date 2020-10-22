@@ -92,4 +92,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/add', 'RequisitionController@addProduct');
         $router->post('/next', 'RequisitionController@nextStep');
     });
+
+    $router->group(['prefix' => 'test'], function () use ($router){
+        $router->get('/', 'MiniPrinterController@requisitionReceipt');
+    });
 });

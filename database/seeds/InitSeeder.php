@@ -164,7 +164,6 @@ class InitSeeder extends Seeder{
             ['_rol'=> 6, '_permission'=> 29],
             ['_rol'=> 6, '_permission'=> 30],
             ['_rol'=> 6, '_permission'=> 31],
-            ['_rol'=> 6, '_permission'=> 32],
             ['_rol'=> 6, '_permission'=> 33],
             /* Permisos de bodeguero */
                 /* Modulo de almacenes */
@@ -208,7 +207,6 @@ class InitSeeder extends Seeder{
             ['_rol'=> 3, '_permission'=> 29],
             ['_rol'=> 3, '_permission'=> 30],
             ['_rol'=> 3, '_permission'=> 31],
-            ['_rol'=> 3, '_permission'=> 32],
             ['_rol'=> 3, '_permission'=> 33],
         ]);
 
