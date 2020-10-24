@@ -165,6 +165,8 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(2,1);
         $printer->text("10\n");
         $printer->setTextSize(1,1);
+        $printer->text("Volumen 10 m^3\n");
+        $printer->text("5 cajas sin contabilizar\n");
         $printer->text("--------------------------------------------\n");
         $printer->setBarcodeHeight(80);
         $printer->setBarcodeWidth(4);
@@ -173,7 +175,7 @@ class MiniPrinterController extends Controller{
         $printer->text("GRUPO VIZCARRA\n");
         $printer->feed(1);
         $printer->cut();
-        $printer->close();
+        /* $printer->close(); */
         return response()->json(['result'=> 'ticket impreso']);
     }
 }

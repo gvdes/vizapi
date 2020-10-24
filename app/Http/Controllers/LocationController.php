@@ -430,7 +430,7 @@ class LocationController extends Controller{
     public function getStocks(Request $request){
         if(count($request->products)>0){
             $products = Product::whereIn('id', $request->products)->get();
-            $ids_workpoints = [1, 2, $this->account->_workpoint];
+            $ids_workpoints = [1, $this->account->_workpoint];
             $workpoints = WorkPoint::whereIn('id', $ids_workpoints)->get()->sortBy('id');
             $stocks = $workpoints->reduce(function($products, $workpoint){
                 $client = curl_init();
