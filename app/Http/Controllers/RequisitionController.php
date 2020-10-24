@@ -62,10 +62,28 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by){
-                $product = Product::find($request->_product);
+                $product = Product::with('prices', 'units')->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
-                return response()->json($product);
+                return response()->json([
+                    "id" => $product->id,
+                    "code" => $product->code,
+                    "name" => $product->name,
+                    "description" => $product->description,
+                    "dimensions" => $product->dimensions,
+                    "prices" => $product->prices->map(function($price){
+                        return [
+                            "id" => $price->id,
+                            "name" => $price->name,
+                            "price" => $price->pivot->price,
+                        ];
+                    }),
+                    "pieces" => $product->pieces.' '.$product->units->alias,
+                    "ordered" => [
+                        "amount" => $amount,
+                        "comments" => $request->comments
+                    ]
+                ]);
             }else{
                 return response()->json(["msg" => "No puedes agregar productos"]);
             }
