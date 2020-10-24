@@ -84,7 +84,7 @@ class InitSeeder extends Seeder{
             ['id'=> 23, 'name'=> 'existencias', 'deep'=> 1, 'root'=> 13, 'path'=> 'existencias'], //existencias
             ['id'=> 18, 'name'=> 'Resurtido', 'deep'=> 0 , 'root'=> 0, 'path'=> 'pedidos'],
             ['id'=> 19, 'name'=> 'Dashboard', 'deep'=> 1 , 'root'=> 18, 'path'=> 'dashboard'],
-            ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'],
+            /* ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'], */
             /* ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 18, 'path'=> ''], */
             ['id'=> 22, 'name'=> 'Etiquetas', 'deep'=> 0 , 'root'=> 0, 'path'=> 'etiquetas']
         ]);
@@ -117,10 +117,9 @@ class InitSeeder extends Seeder{
             ['id'=> 25, '_module'=> 15, 'name'=> 'Finalizar conteo'],
             ['id'=> 26, '_module'=> 16, 'name'=> 'Acceso'],
             ['id'=> 27, '_module'=> 17, 'name'=> 'Acceso'],
-            ['id'=> 28, '_module'=> 18, 'name'=> 'Acceso'],
-            ['id'=> 29, '_module'=> 19, 'name'=> 'Resurtido manual'],
-            ['id'=> 30, '_module'=> 19, 'name'=> 'Resurtido automatico'],
-            ['id'=> 31, '_module'=> 20, 'name'=> 'Acceso'],
+            ['id'=> 29, '_module'=> 18, 'name'=> 'Resurtido manual'],
+            ['id'=> 30, '_module'=> 18, 'name'=> 'Resurtido automatico'],
+            ['id'=> 31, '_module'=> 19, 'name'=> 'Acceso'],
             /* ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'], */
             ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
@@ -160,7 +159,6 @@ class InitSeeder extends Seeder{
             ['_rol'=> 6, '_permission'=> 27],
             ['_rol'=> 6, '_permission'=> 34],
                 /* Modulo de resurtido */
-            ['_rol'=> 6, '_permission'=> 28],
             ['_rol'=> 6, '_permission'=> 29],
             ['_rol'=> 6, '_permission'=> 30],
             ['_rol'=> 6, '_permission'=> 31],
@@ -203,11 +201,21 @@ class InitSeeder extends Seeder{
             ['_rol'=> 3, '_permission'=> 26],
             ['_rol'=> 3, '_permission'=> 27],
                 /* Modulo de resurtido */
-            ['_rol'=> 3, '_permission'=> 28],
             ['_rol'=> 3, '_permission'=> 29],
             ['_rol'=> 3, '_permission'=> 30],
             ['_rol'=> 3, '_permission'=> 31],
             ['_rol'=> 3, '_permission'=> 33],
+            
+            /* Permisos de vendedor */
+                    /* Modulo de preventa */
+                ['_rol'=> 4, '_permission'=> 12],
+                    /* Modulo de resurtido */
+                ['_rol'=> 4, '_permission'=> 29],
+                    /* Modulo de etiquetas */
+                ['_rol'=> 4, '_permission'=> 33],
+                    /* Modulo de almacenes */
+                ['_rol'=> 4, '_permission'=> 21],
+                ['_rol'=> 7, '_permission'=> 34],
         ]);
 
         /**CREAR ROOT */

@@ -94,6 +94,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'test'], function () use ($router){
-        $router->get('/', 'MiniPrinterController@requisitionReceipt');
+        $router->get('/', 'MiniPrinterController@requisitionTicket');
     });
 });

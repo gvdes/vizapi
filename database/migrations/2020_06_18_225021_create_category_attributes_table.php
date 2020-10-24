@@ -15,7 +15,7 @@ class CreateCategoryAttributesTable extends Migration{
             $table->increments('id');
             $table->string('name', 60);
             $table->unsignedSmallInteger('_category');
-            $table->boolean('required');
+            $table->json('details');
             $table->foreign('_category')->references('id')->on('product_categories');
         });
     }
