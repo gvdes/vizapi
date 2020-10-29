@@ -254,7 +254,7 @@ class RequisitionController extends Controller{
         return response()->json($requisition); */
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
-            return response()->json($this->log($status, $requisition));
+            $this->log($status, $requisition);
             $requisition->_status = $status;
             $requisition->save();
             return response()->json(["success" => true]);
