@@ -84,6 +84,13 @@ class MiniPrinterController extends Controller{
         });
         $finished_at = $finished_at[sizeof($finished_at) - 1];
         $printer->setJustification(Printer::JUSTIFY_CENTER);
+        if($requisition->printed>0){
+            $printer->setTextSize(2,2);
+            $printer->setReverseColors(true);
+            $printer->text(" REIMPRESION \n");
+            $printer->feed(1);
+            $printer->setReverseColors(false);
+        }
         $printer->setTextSize(1,2);
         $printer->setEmphasis(true);
         $printer->setReverseColors(true);

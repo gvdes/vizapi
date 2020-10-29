@@ -130,6 +130,8 @@ class RequisitionController extends Controller{
                 $storePrinter->requisitionReceipt($requisition);
                 $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
                 $cellerPrinter->requisitionTicket($requisition);
+                $requisition->printed = $requisition->printed +1;
+                $requisition->save();
                 /* try {
                     $printer = Printer::where('_workpoint', $requisition->workpoint_to)
                     ->where(function($query) use($requisition){
@@ -260,5 +262,23 @@ class RequisitionController extends Controller{
             return response()->json(["success" => true]);
         }
         return response()->json(["success" => false, "message" => "Status no válido"]);
+    }
+
+    public function reimpresion(Request $request){
+        $requisition = Requisition::find($request->_requisition);
+        $_workpoint_from = $requisition->_workpoint_from;
+        $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
+            $query->with(['locations' => function($query)  use ($_workpoint_from){
+                $query->whereHas('celler', function($query) use ($_workpoint_from){
+                    $query->where('_workpoint', $_workpoint_from);
+                });
+
+            }]);
+
+        }]);
+        $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+        $cellerPrinter->requisitionTicket($requisition);
+        $requisition->printed = $requisition->printed +1;
+        return response()->json(["success" => $requisition->save()]);
     }
 }

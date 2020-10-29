@@ -92,6 +92,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/add', 'RequisitionController@addProduct');
         $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
+        $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
     $router->group(['prefix' => 'test'], function () use ($router){
