@@ -88,7 +88,23 @@ class RequisitionController extends Controller{
                 return response()->json(["msg" => "No puedes agregar productos"]);
             }
         }catch(Exception $e){
-            return response()->json(["message" => "No se ha podido agregar el producto"]);
+            return response()->json(["msg" => "No se ha podido agregar el producto"]);
+        }
+    }
+
+    public function removeProduct(Request $request){
+        try{
+            $requisition = Requisition::find($request->_requisition);
+            if($this->account->_account == $requisition->_created_by){
+                $product = Product::with('prices', 'units')->find($request->_product);
+                $amount = isset($request->amount) ? $request->amount : 1;
+                $requisition->products()->detach([$request->_product]);
+                return response()->json(["success" => true]);
+            }else{
+                return response()->json(["msg" => "No puedes agregar productos"]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto"]);
         }
     }
 
@@ -101,6 +117,29 @@ class RequisitionController extends Controller{
             break;
             case 2:
                 $requisition->log()->attach(2, [ 'details' => json_encode([])]);
+                $_workpoint_from = $requisition->_workpoint_from;
+                $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
+                    $query->with(['locations' => function($query)  use ($_workpoint_from){
+                        $query->whereHas('celler', function($query) use ($_workpoint_from){
+                            $query->where('_workpoint', $_workpoint_from);
+                        });
+
+                    }]);
+                }]);
+                $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                $storePrinter->requisitionReceipt($requisition);
+                $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                $cellerPrinter->requisitionTicket($requisition);
+                /* try {
+                    $printer = Printer::where('_workpoint', $requisition->workpoint_to)
+                    ->where(function($query) use($requisition){
+                        $query->where('preferences->workpoints', 'all')->orWhereJsonContains('preferences->workpoints', $requisition->workpoint_from);
+                    })->first();
+                    if($printer){
+                    }
+                } catch (\Throwable $th) {
+                    //throw $th;
+                } */
             break;
             case 3:
                 $requisition->log()->attach(3, [ 'details' => json_encode([
@@ -201,10 +240,21 @@ class RequisitionController extends Controller{
     }
 
     public function nextStep(Request $request){
+
         $requisition = Requisition::find($request->id);
+        $_workpoint_from = $requisition->_workpoint_from;
+        /* $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
+            $query->with(['locations' => function($query)  use ($_workpoint_from){
+                $query->whereHas('celler', function($query) use ($_workpoint_from){
+                    $query->where('_workpoint', $_workpoint_from);
+                });
+
+            }]);
+        }]);
+        return response()->json($requisition); */
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
-            $this->log($status, $requisition);
+            /* return response()->json($this->log($status, $requisition)); */
             $requisition->_status = $status;
             $requisition->save();
             return response()->json(["success" => true]);

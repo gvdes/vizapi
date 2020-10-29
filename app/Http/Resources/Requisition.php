@@ -22,26 +22,26 @@ class Requisition extends JsonResource{
             'time_life' => $this->time_life,
             'created_at' => $this->created_at->format('Y-m-d H:00'),
             'updated_at' => $this->updated_at->format('Y-m-d H:00'),
-            '_type' => $this->when(!$this->type, function(){
+            'type' => $this->whenLoaded('type'),
+            '_type' => $this->when($this->type, function(){
                 return $this->_type;
             }),
-            'type' => $this->whenLoaded('type'),
-            '_status' => $this->when(!$this->status, function(){
+            'status' => $this->whenLoaded('status'),
+            '_status' => $this->when($this->status, function(){
                 return $this->_status;
             }),
-            'status' => $this->whenLoaded('status'),
-            '_created_by' => $this->when(!$this->created_by, function(){
+            'created_by' => $this->whenLoaded('created_by'),
+            '_created_by' => $this->when($this->created_by, function(){
                 return $this->_created_by;
             }),
-            'created_by' => $this->whenLoaded('created_by'),
-            '_workpoint_from' => $this->when(!$this->from, function(){
-                return $this->_workpoint_from;
-            }),
             'from' => $this->whenLoaded('from'),
-            '_workpoint_to' => $this->when(!$this->to, function(){
+            '_workpoint_from' => $this->when($this->from, function(){
                 return $this->_workpoint_from;
             }),
             'to' => $this->whenLoaded('to'),
+            '_workpoint_to' => $this->when($this->to, function(){
+                return $this->_workpoint_from;
+            }),
             'log' => $this->whenLoaded('log', function(){
                 return $this->log->map(function($event){
                     return [

@@ -90,6 +90,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/{id}', 'RequisitionController@find');
         $router->post('/', 'RequisitionController@create');
         $router->post('/add', 'RequisitionController@addProduct');
+        $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
     });
 

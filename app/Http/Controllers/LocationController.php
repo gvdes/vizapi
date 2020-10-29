@@ -59,8 +59,8 @@ class LocationController extends Controller{
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
                 $section = \App\CellerSection::create([
-                    'name' => $request->name.''.$index,
-                    'alias' => $request->alias.' '.$index,
+                    'name' => $request->name.' '.$index,
+                    'alias' => $request->alias.''.$index,
                     'path' => $root->path.'-'.$request->alias.''.$index,
                     'root' => $root->id,
                     'deep' => ($root->deep + 1),
