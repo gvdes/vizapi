@@ -67,7 +67,7 @@ class Product extends Model{
      */
     public function requisitions(){
         return $this->belongsToMany('App\Requisition', 'product_required', '_product', '_requisition')
-                    ->withPivot('units', 'comments');
+                    ->withPivot('units', 'comments', 'stock');
     }
 
     /**

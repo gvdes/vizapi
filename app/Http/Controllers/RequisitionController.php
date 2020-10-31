@@ -47,6 +47,30 @@ class RequisitionController extends Controller{
                     "_status" => 1
                 ]);
                 $this->log(1, $requisition);
+                /* if($requisition->_status == 2){
+                    $products = Product::whereHas('stock', function(Builder $query){
+                        $categories = array_merge(range(37,57), range(130,184));
+                        $query->where([
+                            ['_workpoint', $this->_workpoint],
+                            ['min', '>', 0],
+                            ['max', '>', 0]
+                        ]);
+                    }, '>', 0)->whereIn('_category', $categories)->get();
+                    $client = curl_init();
+                    curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+                    curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+                    curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+                    curl_setopt($client, CURLOPT_POST, 1);
+                    curl_setopt($client,CURLOPT_TIMEOUT,100);
+                    $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
+                    curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+                    $stocks = json_decode(curl_exec($client), true);
+                    if($stocks){
+                        foreach($products as $product){       
+                            $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $amount, 'comments' => '']]);
+                        }
+                    }
+                } */
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
             return response()->json([
@@ -64,6 +88,9 @@ class RequisitionController extends Controller{
             if($this->account->_account == $requisition->_created_by){
                 $product = Product::with('prices', 'units')->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
+                if($product->units->id == 3){
+                    $amount = $amount * $product->pieces;
+                }
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
                 return response()->json([
                     "id" => $product->id,
@@ -113,25 +140,55 @@ class RequisitionController extends Controller{
         $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
         switch($case){
             case 1:
-                $requisition->log()->attach(1, [ 'details' => json_encode([])]);
+                $requisition->log()->attach(1, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                ])]);
             break;
             case 2:
-                $requisition->log()->attach(2, [ 'details' => json_encode([])]);
-                $_workpoint_from = $requisition->_workpoint_from;
-                $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
-                    $query->with(['locations' => function($query)  use ($_workpoint_from){
-                        $query->whereHas('celler', function($query) use ($_workpoint_from){
-                            $query->where('_workpoint', $_workpoint_from);
-                        });
+                $client = curl_init();
+                curl_setopt($client, CURLOPT_URL, $requisition->to->dominio."/access/public/product/stocks");
+                curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+                curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($client, CURLOPT_POST, 1);
+                curl_setopt($client,CURLOPT_TIMEOUT,90);
+                $data = http_build_query(["products" => array_column($requisition->products->toArray(), 'code')]);
+                curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+                $stocks = json_decode(curl_exec($client), true);
+                if($stocks){
+                    foreach($requisition->products as $key => $product){
+                        $requisition->products()->syncWithoutDetaching([
+                            $product->id => [
+                                'units' => $product->pivot->units,
+                                'comments' => $product->pivot->comments,
+                                'stock' => $stocks[$key]['stock']
+                            ]
+                        ]);
+                    }
+                    $_workpoint_from = $requisition->_workpoint_from;
+                    $ordered = $requisition->products;
+                    $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
+                        $query->with(['locations' => function($query)  use ($_workpoint_from){
+                            $query->whereHas('celler', function($query) use ($_workpoint_from){
+                                $query->where('_workpoint', $_workpoint_from);
+                            });
 
+                        }]);
                     }]);
-                }]);
-                $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
-                $storePrinter->requisitionReceipt($requisition);
-                $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
-                $cellerPrinter->requisitionTicket($requisition);
-                $requisition->printed = $requisition->printed +1;
-                $requisition->save();
+                    $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                    if($cellerPrinter->requisitionTicket($requisition)){
+                        $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                        $storePrinter->requisitionReceipt($requisition);
+                        $requisition->printed = $requisition->printed +1;
+                        $requisition->save();
+                        $requisition->log()->attach(2, [ 'details' => json_encode([
+                            "responsable" => $responsable
+                        ])]);
+                    }else{
+                        return false;
+                    }
+                    return true;
+                }
+                return false;
                 /* try {
                     $printer = Printer::where('_workpoint', $requisition->workpoint_to)
                     ->where(function($query) use($requisition){
@@ -147,41 +204,49 @@ class RequisitionController extends Controller{
                 $requisition->log()->attach(3, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 4:
                 $requisition->log()->attach(4, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 5:
                 $requisition->log()->attach(5, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 6:
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 7:
                 $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 8:
                 $requisition->log()->attach(8, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 9:
                 $requisition->log()->attach(9, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 10:
                 $requisition->log()->attach(10, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
             case 11:
                 $requisition->log()->attach(11, [ 'details' => json_encode([])]);
@@ -256,12 +321,14 @@ class RequisitionController extends Controller{
         return response()->json($requisition); */
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
-            $this->log($status, $requisition);
-            $requisition->_status = $status;
-            $requisition->save();
-            return response()->json(["success" => true]);
+            $result = $this->log($status, $requisition);
+            if($result){
+                $requisition->_status= $status;
+                $requisition->save();
+            }
+            return response()->json(["success" => $result]);
         }
-        return response()->json(["success" => false, "message" => "Status no válido"]);
+        return response()->json(["success" => false, "msg" => "Status no válido"]);
     }
 
     public function reimpresion(Request $request){

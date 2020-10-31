@@ -20,8 +20,8 @@ class Requisition extends JsonResource{
             'notes' => $this->notes,
             'printed' => $this->printed,
             'time_life' => $this->time_life,
-            'created_at' => $this->created_at->format('Y-m-d H:00'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:00'),
+            'created_at' => $this->created_at->format('Y-m-d H:i'),
+            'updated_at' => $this->updated_at->format('Y-m-d H:i'),
             'type' => $this->whenLoaded('type'),
             '_type' => $this->when($this->type, function(){
                 return $this->_type;
@@ -48,8 +48,8 @@ class Requisition extends JsonResource{
                         "id" => $event->id,
                         "name" => $event->name,
                         "details" => json_decode($event->pivot->details),
-                        "created_at" => $event->pivot->created_at->format('Y-m-d H:00'),
-                        "updated_at" => $event->pivot->updated_at->format('Y-m-d H:00')
+                        "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
+                        "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
                     ];
                 });
             }),

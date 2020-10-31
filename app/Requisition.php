@@ -21,7 +21,7 @@ class Requisition extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'product_required', '_requisition', '_product')
-                    ->withPivot('units', 'comments');
+                    ->withPivot('units', 'comments', 'stock');
     }
 
     public function to(){
