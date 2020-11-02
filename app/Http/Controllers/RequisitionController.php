@@ -86,7 +86,9 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by){
-                $product = Product::with('prices', 'units')->find($request->_product);
+                $product = Product::with(['prices' => function($query){
+                    $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
                 if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
@@ -154,6 +156,7 @@ class RequisitionController extends Controller{
                 $data = http_build_query(["products" => array_column($requisition->products->toArray(), 'code')]);
                 curl_setopt($client, CURLOPT_POSTFIELDS, $data);
                 $stocks = json_decode(curl_exec($client), true);
+                return $stocks;
                 if($stocks){
                     foreach($requisition->products as $key => $product){
                         $requisition->products()->syncWithoutDetaching([
@@ -166,7 +169,7 @@ class RequisitionController extends Controller{
                     }
                     $_workpoint_from = $requisition->_workpoint_from;
                     $ordered = $requisition->products;
-                    $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
+                    $requisition->refresh(['log', 'products' => function($query) use ($_workpoint_from){
                         $query->with(['locations' => function($query)  use ($_workpoint_from){
                             $query->whereHas('celler', function($query) use ($_workpoint_from){
                                 $query->where('_workpoint', $_workpoint_from);
@@ -189,16 +192,6 @@ class RequisitionController extends Controller{
                     return true;
                 }
                 return false;
-                /* try {
-                    $printer = Printer::where('_workpoint', $requisition->workpoint_to)
-                    ->where(function($query) use($requisition){
-                        $query->where('preferences->workpoints', 'all')->orWhereJsonContains('preferences->workpoints', $requisition->workpoint_from);
-                    })->first();
-                    if($printer){
-                    }
-                } catch (\Throwable $th) {
-                    //throw $th;
-                } */
             break;
             case 3:
                 $requisition->log()->attach(3, [ 'details' => json_encode([
@@ -272,7 +265,9 @@ class RequisitionController extends Controller{
             array_push($clause, ['_created_by', $this->account->_account]);
         }
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
-                                        $query->with('prices', 'units', 'variants');
+                                        $query->with(['prices' => function($query){
+                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                                        }, 'units', 'variants']);
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8])
@@ -291,7 +286,9 @@ class RequisitionController extends Controller{
 
     public function dashboard(){
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
-                                        $query->with('prices', 'units', 'variants');
+                                        $query->with(['prices' => function($query){
+                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                                        }, 'units', 'variants']);
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where('_workpoint_to', $this->account->_workpoint)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8])
@@ -301,7 +298,9 @@ class RequisitionController extends Controller{
 
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
-            $query->with('prices', 'units', 'variants');
+            $query->with(['prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+            }, 'units', 'variants']);
         }, 'to', 'from', 'created_by', 'log'])->find($id);
         return response()->json(new RequisitionResource($requisition));
     }
