@@ -95,7 +95,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
-    $router->group(['prefix' => 'test'], function () use ($router){
-        $router->get('/', 'MiniPrinterController@requisitionTicket');
-    });
+});
+
+$router->group(['prefix' => 'test'], function () use ($router){
+    /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
+    $router->get('/', 'ReportsController@export');
 });
