@@ -110,7 +110,8 @@ class RequisitionController extends Controller{
                     "pieces" => $product->pieces.' '.$product->units->alias,
                     "ordered" => [
                         "amount" => $amount,
-                        "comments" => $request->comments
+                        "comments" => $request->comments,
+                        "stock" => 0
                     ]
                 ]);
             }else{
