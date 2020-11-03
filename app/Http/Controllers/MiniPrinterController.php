@@ -30,7 +30,8 @@ class MiniPrinterController extends Controller{
             $summary = $requisition->products->reduce(function($summary, $product){
                 if(intval($product->pivot->stock)>0){
                     $summary['models'] = $summary['models'] + 1;
-                    $summary['articles'] = $summary['articles'] + intval($product->pivot->units);
+                    $pieces = $product->_unit == 3 ? $product->pieces : 1;
+                    $summary['articles'] = $summary['articles'] + $product->pivot->units * $pieces;
                 }else{
                     $summary['soldOut'] = $summary['soldOut'] + 1;
                 }
@@ -88,9 +89,10 @@ class MiniPrinterController extends Controller{
                 return false;
             }
             $summary = $requisition->products->reduce(function($summary, $product){
+                $pieces = $product->_unit == 3 ? $product->pieces : 1;
                 if($product->pivot->stock>0){
                     $summary['models'] = $summary['models'] + 1;
-                    $summary['articles'] = $summary['articles'] + $product->pivot->units;
+                    $summary['articles'] = $summary['articles'] + $product->pivot->units * $pieces;
                     $volumen = ($product->dimensions->length * $product->dimensions->height * $product->dimensions->width) / 1000000;
                     if($volumen<=0){
                         $summary['sinVolumen'] = $summary['sinVolumen'] + $product->pivot->units;
@@ -98,7 +100,7 @@ class MiniPrinterController extends Controller{
                     $summary['volumen'] = $summary['volumen'] + $volumen;
                 }else{
                     $summary['modelsSouldOut'] = $summary['modelsSouldOut'] + 1;
-                    $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + $product->pivot->units;
+                    $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + $product->pivot->units * $pieces;
                 }
                 return $summary;
             }, ["models" => 0, "articles" => 0, "volumen" => 0, "sinVolumen" => 0, "modelsSouldOut" => 0, "articlesSouldOut" => 0]);
@@ -131,6 +133,7 @@ class MiniPrinterController extends Controller{
             $printer->text("----------------------------------------\n");
             $y = 1;
             foreach($requisition->products as $key => $product){
+                $pieces = 1;
                 if(intval($product->pivot->stock)>0){
                     $locations = $product->locations->reduce(function($res, $location){
                         return $res.$location->path."";
@@ -145,11 +148,12 @@ class MiniPrinterController extends Controller{
                         $printer->setTextSize(2,1);
                         $printer->text(($product->pivot->units / $product->pieces)."\r\n");
                         $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                        $pieces = $product->pieces;
                     }
                     $printer->setTextSize(1,1);
                     $printer->text("UF: ");
                     $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->units);
+                    $printer->text($product->pivot->units*$pieces);
                     $printer->setTextSize(1,1);
                     $printer->text(" - UD: ");
                     $printer->setTextSize(2,1);
