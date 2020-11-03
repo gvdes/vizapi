@@ -62,11 +62,13 @@ class MiniPrinterController extends Controller{
             $printer->text(" Piezas: ");
             $printer->setTextSize(2,1);
             $printer->text($summary['articles']."\n");
-            $printer->setTextSize(1,1);
-            $printer->text("Modelos agotados: ");
-            $printer->setTextSize(2,1);
-            $printer->text($summary['soldOut']."\n");
-            $printer->setTextSize(1,1);
+            if($summary['soldOut']>0){
+                $printer->setTextSize(1,1);
+                $printer->text("Modelos agotados: ");
+                $printer->setTextSize(2,1);
+                $printer->text($summary['soldOut']."\n");
+                $printer->setTextSize(1,1);
+            }
             $printer->text("--------------------------------------------\n");
             $printer->setBarcodeHeight(80);
             $printer->setBarcodeWidth(4);
@@ -166,50 +168,6 @@ class MiniPrinterController extends Controller{
                     $y=1;
                 }
             }
-            
-            /* $printer->setTextSize(1,1);
-            $printer->text("--------------------------------------------\n");
-            $printer->text("--------------------------------------------\n");
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text(" COMPLEMENTO █ 0002 █ 2/2");
-            $printer->setTextSize(2,1);
-            $printer->text(" SP2\n");
-            $printer->setTextSize(1,1);
-            $printer->text(" Generado: 21-10-2020 15:30 Hrs \n");
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->setTextSize(2,1);
-            $printer->text("1█ P1-P1-T2,T3 █ 5658 \n");
-            $printer->setTextSize(1,1);
-            $printer->text("Carreola de juguete doll \n");
-            $printer->text("   CAJAS SOLICITADAS: ");
-            $printer->setTextSize(2,1);
-            $printer->text("2\r\n");
-            $printer->setJustification(Printer::JUSTIFY_RIGHT);
-            $printer->setTextSize(1,1);
-            $printer->text("UF: ");
-            $printer->setTextSize(2,1);
-            $printer->text("16");
-            $printer->setTextSize(1,1);
-            $printer->text(" - UD: ");
-            $printer->setTextSize(2,1);
-            $printer->text(" 287\r\n");
-            $printer->feed(1);
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text("2█ P1-P1-T4,T5 █ JL7229 \n");
-            $printer->setTextSize(1,1);
-            $printer->text("Carreola de juguete doll \n");
-            $printer->text("   CAJAS SOLICITADAS: ");
-            $printer->setTextSize(2,1);
-            $printer->text("1\r\n");
-            $printer->setJustification(Printer::JUSTIFY_RIGHT);
-            $printer->setTextSize(1,1);
-            $printer->text("UF: ");
-            $printer->setTextSize(2,1);
-            $printer->text("24");
-            $printer->setTextSize(1,1);
-            $printer->text(" - UD: ");
-            $printer->setTextSize(2,1);
-            $printer->text(" 240\r\n"); */
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setTextSize(1,1);
             $printer->text("--------------------------------------------\n");
@@ -223,14 +181,16 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(1,1);
             $printer->text("Volumen ".$summary['volumen']." m^3\n");
             $printer->text($summary['sinVolumen']." cajas sin contabilizar\n");
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text("Modelos agotados: ");
-            $printer->setTextSize(2,1);
-            $printer->text($summary['modelsSouldOut']."\n");
-            $printer->setTextSize(1,1);
-            $printer->text("Piezas agotadas: ");
-            $printer->setTextSize(2,1);
-            $printer->text($summary['articlesSouldOut']."\n");
+            if($summary['articlesSouldOut']>0){
+                $printer->setJustification(Printer::JUSTIFY_LEFT);
+                $printer->text("Modelos agotados: ");
+                $printer->setTextSize(2,1);
+                $printer->text($summary['modelsSouldOut']."\n");
+                $printer->setTextSize(1,1);
+                $printer->text("Piezas agotadas: ");
+                $printer->setTextSize(2,1);
+                $printer->text($summary['articlesSouldOut']."\n");
+            }
             $printer->setTextSize(1,1);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->text("--------------------------------------------\n");
