@@ -156,7 +156,6 @@ class RequisitionController extends Controller{
                 $data = http_build_query(["products" => array_column($requisition->products->toArray(), 'code')]);
                 curl_setopt($client, CURLOPT_POSTFIELDS, $data);
                 $stocks = json_decode(curl_exec($client), true);
-                return $stocks;
                 if($stocks){
                     foreach($requisition->products as $key => $product){
                         $requisition->products()->syncWithoutDetaching([
