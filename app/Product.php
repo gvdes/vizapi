@@ -74,7 +74,7 @@ class Product extends Model{
      * RELATIONSHIPS WITH WORKPOINT'S MODELS
      */
     public function stock(){
-        return $this->belongsToMany('App\WokrPoint', 'product_stock', '_product', '_workpoint')
+        return $this->belongsToMany('App\WorkPoint', 'product_stock', '_product', '_workpoint')
                     ->withPivot('min', 'max', 'stock');
     }
 

@@ -47,7 +47,7 @@ class RequisitionController extends Controller{
                     "_status" => 1
                 ]);
                 $this->log(1, $requisition);
-                /* if($requisition->_status == 2){
+                if($requisition->_type == 2){
                     $products = Product::whereHas('stock', function(Builder $query){
                         $categories = array_merge(range(37,57), range(130,184));
                         $query->where([
@@ -70,7 +70,7 @@ class RequisitionController extends Controller{
                             $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $amount, 'comments' => '']]);
                         }
                     }
-                } */
+                }
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
             return response()->json([
@@ -90,9 +90,9 @@ class RequisitionController extends Controller{
                     $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
                 }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
-                if($product->units->id == 3){
+                /* if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
-                }
+                } */
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
                 return response()->json([
                     "id" => $product->id,
@@ -346,5 +346,39 @@ class RequisitionController extends Controller{
         $cellerPrinter->requisitionTicket($requisition);
         $requisition->printed = $requisition->printed +1;
         return response()->json(["success" => $requisition->save()]);
+    }
+
+    public function test(){
+        $categories = array_merge(range(37,57), range(130,184));
+        $products = Product::whereHas('stock', function($query){
+            $query->where([
+                ['_workpoint', $this->account->_workpoint],
+                ['min', '>', 0],
+                ['max', '>', 0]
+            ]);
+        }, '>', 0)->whereIn('_category', $categories)->get();
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,100);
+        $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        $stocks = json_decode(curl_exec($client), true);
+        if($stocks){
+            $toSupply = [];
+            foreach($products as $key => $product){
+                $required = $required->stock->max - $stocks[$key]['stock'];
+                if($product->_unit == 3){
+                    $required = floor($required/$product->pieces) * $product->pieces;
+                }
+
+                if($required > 0){
+                    array_push($toSupply, [$product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
+                }
+            }
+            $requisition->products()->syncWithoutDetaching($toSupply);
+        }
     }
 }
