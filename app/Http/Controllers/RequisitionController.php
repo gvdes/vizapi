@@ -78,6 +78,8 @@ class RequisitionController extends Controller{
                             }
                         }
                     }
+                    $requisition->_status = 2;
+                    $requisition->save();
                     $this->log(2, $requisition);
                 }
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
@@ -148,7 +150,7 @@ class RequisitionController extends Controller{
     }
 
     public function log($case, Requisition $requisition){
-        $account = Account::with('user')->find($this->account->_account);
+        $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
         switch($case){
             case 1:
