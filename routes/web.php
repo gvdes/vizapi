@@ -73,6 +73,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/autocomplete', 'ProductController@autocomplete');
         $router->post('/catalog', 'ProductController@getProductByCategory');
         $router->get('/tree', 'ProductController@categoryTree');
+        $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
     });
 

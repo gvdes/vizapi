@@ -308,16 +308,6 @@ class RequisitionController extends Controller{
     public function nextStep(Request $request){
 
         $requisition = Requisition::find($request->id);
-        /* $_workpoint_from = $requisition->_workpoint_from; */
-        /* $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
-            $query->with(['locations' => function($query)  use ($_workpoint_from){
-                $query->whereHas('celler', function($query) use ($_workpoint_from){
-                    $query->where('_workpoint', $_workpoint_from);
-                });
-
-            }]);
-        }]);
-        return response()->json($requisition); */
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
             $result = $this->log($status, $requisition);

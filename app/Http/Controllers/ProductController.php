@@ -67,6 +67,24 @@ class ProductController extends Controller{
         }
     }
 
+    public function getMaximum(){
+        $start = microtime(true);
+        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        $maximum = json_decode(curl_exec($client), true);
+        
+        foreach($maximum as $row){
+            $product = Product::where('code', $row['code'])->first();
+            if($product){
+                $product->stock()->attach($workpoint->id, ['min' => $row['min'], 'max' => $row['max'], 'stock' => $row['stock']]);
+            }
+        }
+        return response()->json(["success" => true, "time" => microtime(true) - $start]);
+    }
+
     public function updateTable(Request $request){
         $start = microtime(true);
         $client = curl_init();
