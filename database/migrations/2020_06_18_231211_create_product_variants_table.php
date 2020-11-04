@@ -13,7 +13,7 @@ class CreateProductVariantsTable extends Migration{
     public function up(){
         Schema::create('product_variants', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('barcode', 30)->unique();
+            $table->string('barcode', 30);
             $table->float('stock', 8, 2)->default(0);
             $table->unsignedInteger('_product');
             $table->foreign('_product')->references('id')->on('products');
