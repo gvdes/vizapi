@@ -79,7 +79,7 @@ class ProductController extends Controller{
         foreach($maximum as $row){
             $product = Product::where('code', $row['code'])->first();
             if($product){
-                $product->stock()->attach($workpoint->id, ['min' => $row['min'], 'max' => $row['max'], 'stock' => $row['stock']]);
+                $product->stocks()->attach($workpoint->id, ['min' => $row['min'], 'max' => $row['max'], 'stock' => $row['stock']]);
             }
         }
         return response()->json(["success" => true, "time" => microtime(true) - $start]);
