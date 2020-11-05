@@ -283,13 +283,15 @@ class RequisitionController extends Controller{
         if($this->account->_rol == 4 ||  $this->account->_rol == 5 || $this->account->_rol == 7){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
+        $now = new \DateTime();
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
                                         $query->with(['prices' => function($query){
                                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
                                         }, 'units', 'variants']);
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
-                                    ->whereIn('_status', [1,2,3,4,5,6,7,8])
+                                    ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
+                                    ->whereDate('created_at', $now)
                                     /* ->orWhere(function($query){
                                         $now = new \DateTime();
                                         $query->whereDate('created_at', $now);
@@ -304,13 +306,15 @@ class RequisitionController extends Controller{
     }
 
     public function dashboard(){
+        $today = new \DateTime();
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
                                         $query->with(['prices' => function($query){
                                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
                                         }, 'units', 'variants']);
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where('_workpoint_to', $this->account->_workpoint)
-                                    ->whereIn('_status', [1,2,3,4,5,6,7,8])
+                                    ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
+                                    ->whereDate('_created_at', $today)
                                     ->get();
         return response()->json(RequisitionResource::collection($requisitions));
     }
