@@ -314,7 +314,7 @@ class RequisitionController extends Controller{
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where('_workpoint_to', $this->account->_workpoint)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
-                                    ->whereDate('_created_at', $today)
+                                    ->whereDate('created_at', $today)
                                     ->get();
         return response()->json(RequisitionResource::collection($requisitions));
     }
