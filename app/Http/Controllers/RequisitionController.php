@@ -78,9 +78,9 @@ class RequisitionController extends Controller{
                             }
                         }
                     }
-                    $requisition->_status = 2;
+                    /* $requisition->_status = 2;
                     $requisition->save();
-                    $this->log(2, $requisition);
+                    $this->log(2, $requisition); */
                 }
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
@@ -142,10 +142,10 @@ class RequisitionController extends Controller{
                 $requisition->products()->detach([$request->_product]);
                 return response()->json(["success" => true]);
             }else{
-                return response()->json(["msg" => "No puedes agregar productos"]);
+                return response()->json(["msg" => "No puedes eliminar productos"]);
             }
         }catch(Exception $e){
-            return response()->json(["msg" => "No se ha podido agregar el producto"]);
+            return response()->json(["msg" => "No se ha podido eliminar el producto"]);
         }
     }
 
