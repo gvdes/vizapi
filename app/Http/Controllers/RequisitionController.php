@@ -152,6 +152,15 @@ class RequisitionController extends Controller{
     public function log($case, Requisition $requisition){
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+        $previous = null;
+        if($case != 1){
+            $logs = $requisition->log->toArray();
+            $end = end($logs);
+            $previous = $end['pivot']['_status'];
+        }
+        if($previous){
+            $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
+        }
         switch($case){
             case 1:
                 $requisition->log()->attach(1, [ 'details' => json_encode([
@@ -197,7 +206,6 @@ class RequisitionController extends Controller{
                         $requisition->log()->attach(2, [ 'details' => json_encode([
                             "responsable" => $responsable
                         ])]);
-                        $requisition->log()->syncWithoutDetaching([1 => [ 'updated_at' => new \DateTime()]]);
                     }else{
                         return false;
                     }
@@ -209,49 +217,42 @@ class RequisitionController extends Controller{
                 $requisition->log()->attach(3, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([2 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 4:
                 $requisition->log()->attach(4, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([3 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 5:
                 $requisition->log()->attach(5, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([4 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 6:
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([5 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 7:
                 $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([6 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 8:
                 $requisition->log()->attach(8, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([7 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 9:
                 $requisition->log()->attach(9, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                $requisition->log()->syncWithoutDetaching([8 => [ 'updated_at' => new \DateTime()]]);
                 return true;
             break;
             case 10:
