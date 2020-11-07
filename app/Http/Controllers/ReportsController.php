@@ -3,6 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Product;
+use App\WorkPoint;
+
+use App\Exports\ArrayExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportsController extends Controller{
     /**
@@ -13,6 +19,40 @@ class ReportsController extends Controller{
     public $account = null;
     public function __construct(){
         /* $this->account = Auth::payload()['workpoint']; */
+    }
+
+    public function getReports(Request $request){
+        switch($request->report){
+            case "sinMaximos":
+                $data = $this->sinMaximos();
+                $namefile = 'sinMáximos_';
+            break;
+            case "sinUbicaciones":
+                $data = $this->sinUbicaciones();
+                $namefile = 'sinUbicaciones_';
+            break;
+            case "comparativoGeneralExhibicion":
+                $data = $this->sinUbicaciones();
+                $namefile = 'comparativo';
+            break;
+            case "comparativoCedisGeneral":
+            break;
+            case "comprasVsVentaProveedor":
+            break;
+            case "inventarioCedisPantaco":
+            break;
+            case "checkStocks":
+                $data = $this->chechStocks($stores, $codes);
+                $namefile = 'stocks_';
+            break;
+        }
+        if($request->excel){
+            $export = new StocksExport($data);
+            $date = new \DateTime();
+            return Excel::download($export, $namefile.$date.'.xlsx');
+        }else{
+            return response()->json($data);
+        }
     }
 
     public function sinMaximos(Request $request){
@@ -123,5 +163,57 @@ class ReportsController extends Controller{
 
     public function inventarioCedisPantaco(){
 
+    }
+
+    public function chechStocks($stores, $codes){
+        switch($stores){
+            case "navidad": 
+                $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,7,9])->get();
+            break;
+            case "juguete": 
+                $workpoints = WorkPoint::whereIn('id', [1,2,6,8])->get();
+            break;
+            case "all":
+                $workpoints = WorkPoint::all();
+        }
+        $products = Product::whereIn('code', $codes)->get();
+        $codes = array_column($products->toArray(), 'code');
+        $stocks = [];
+        foreach($workpoints as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,90);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
+        }
+        $result = $products->map(function($product, $key) use($stocks, $workpoints){
+            $data = [
+                'code' => $product->code,
+                'scode' => $product->name,
+                'descripción' => $product->description
+            ];
+            foreach($workpoints as $workpoint){
+                if($stocks[$workpoint->alias]){
+                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
+                }else{
+                    $data[$workpoint->alias] = '--';
+                }
+            }
+            return $data;
+        })->toArray();
+
+        return $result;
+    }
+
+    public function test(){
+        $export = new StocksExport([
+            [1,2,3],
+            [4,5,6]
+        ]);
+        return Excel::download($export, 'invoices.xlsx');
     }
 }

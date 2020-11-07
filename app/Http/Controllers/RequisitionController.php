@@ -267,7 +267,7 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function index(){
+    public function index(Request $request){
         $workpoints = WorkPoint::where('_type', 1)->get();
         $account = Account::with(['permissions'=> function($query){
             $query->whereIn('id', [29,30])->get();
@@ -285,6 +285,9 @@ class RequisitionController extends Controller{
             array_push($clause, ['_created_by', $this->account->_account]);
         }
         $now = new \DateTime();
+        if(isset($request->date)){
+            $now = $request->date;
+        }
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
                                         $query->with(['prices' => function($query){
                                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
@@ -397,5 +400,20 @@ class RequisitionController extends Controller{
             }
             $requisition->products()->syncWithoutDetaching($toSupply);
         }
+    }
+
+    public function search(Request $request){
+        $where = [];
+        $note = '';
+        $created_by = '';
+        $created_at = '';
+        $from = '';
+        $to = '';
+        $status = '';
+        $between_created = '';
+
+        $requesitions = Requisition::where($where);
+
+        return response()->json();
     }
 }

@@ -96,8 +96,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
-    $router->group(['prefix' => 'test'], function () use ($router){
-        /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
-        $router->get('/', 'RequisitionController@test');
-    });
 });
+        $router->group(['prefix' => 'reports'], function () use ($router){
+            /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
+            $router->get('/stocks', 'ReportsController@chechStocks');
+            $router->get('/ventas', 'ReportsController@chechStocks');
+            $router->get('/test', 'ReportsController@test');
+        });
