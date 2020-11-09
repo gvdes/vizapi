@@ -16,7 +16,8 @@ class CreateOrderLogTable extends Migration{
             $table->unsignedInteger('_order');
             $table->unsignedSmallInteger('_status');
             $table->json('details');
-            $table->timestamps();
+            //$table->timestamps();
+            $table->dateTime('created_at');
             $table->foreign('_order')->references('id')->on('orders');
             $table->foreign('_status')->references('id')->on('order_process');
         });

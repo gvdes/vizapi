@@ -51,4 +51,8 @@ class WorkPoint extends Model{
         return $this->belongsToMany('App\Product', 'product_stock', '_workpoint', '_product')
                     ->withPivot('min', 'max', 'stock');
     }
+
+    public function printers(){
+        return $this->hasMany('App\Printer', '_workpoint');
+    }
 }

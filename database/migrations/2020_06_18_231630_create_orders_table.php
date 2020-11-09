@@ -18,10 +18,12 @@ class CreateOrdersTable extends Migration{
             $table->tinyInteger('printed')->default(false);
             $table->unsignedInteger('_created_by');
             $table->unsignedSmallInteger('_workpoint_from');
+            $table->unsignedSmallInteger('_status');
             $table->time('time_life');
             $table->timestamps();
             $table->foreign('_created_by')->references('_account')->on('account_workpoints');
             $table->foreign('_workpoint_from')->references('id')->on('workpoints');
+            $table->foreign('_status')->references('id')->on('order_process');
         });
     }
 
