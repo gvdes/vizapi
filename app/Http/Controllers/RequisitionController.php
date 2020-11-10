@@ -188,14 +188,17 @@ class RequisitionController extends Controller{
                         ]);
                     }
                     $_workpoint_from = $requisition->_workpoint_from;
-                    $ordered = $requisition->products;
                     $requisition->refresh(['log', 'products' => function($query) use ($_workpoint_from){
                         $query->with(['locations' => function($query)  use ($_workpoint_from){
                             $query->whereHas('celler', function($query) use ($_workpoint_from){
                                 $query->where('_workpoint', $_workpoint_from);
                             });
-
-                        }]);
+                        }])->groupBy(function($product, $key){
+                            if(count($product->location)>0){
+                                return explode($product->location[0]->path, '-')[0];
+                            }
+                            return '';
+                        });
                     }]);
                     $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
                     if($cellerPrinter->requisitionTicket($requisition)){
@@ -232,6 +235,16 @@ class RequisitionController extends Controller{
                 return true;
             break;
             case 6:
+                $_workpoint_to = $requisition->_workpoint_to;
+                $requisition->refresh(['log', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where('_workpoint', $_workpoint_to);
+                        });
+                    }]);
+                }]);
+                $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                $storePrinter->requisitionTicket($requisition);
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
@@ -356,9 +369,7 @@ class RequisitionController extends Controller{
                 $query->whereHas('celler', function($query) use ($_workpoint_from){
                     $query->where('_workpoint', $_workpoint_from);
                 });
-
             }]);
-
         }]);
         $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
         $cellerPrinter->requisitionTicket($requisition);
