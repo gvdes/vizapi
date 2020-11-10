@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\WorkPoint;
 use App\Product;
+use App\CellerSection;
 
 class LocationController extends Controller{
     /**
@@ -238,12 +239,17 @@ class LocationController extends Controller{
     public function setMax(Request $request){
         $client = curl_init();
         $workpoint = \App\WorkPoint::find($this->account->_workpoint);
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,8);
-        $res = json_decode(curl_exec($client), true);
-        return response()->json(["success" => $res]);
+        $product = Product::where('code', $request->code)->first();
+        if($product){
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
+            $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,8);
+            $res = json_decode(curl_exec($client), true);
+            return response()->json(["success" => $res]);
+        }
+        return response()->json(["success" => false]);
     }
     
     public function getReport(Request $request){
@@ -468,5 +474,31 @@ class LocationController extends Controller{
             return $sorted;
         }
         return response()->json(["message" => "Debe mandar almenos un articulo"]);
+    }
+
+    public function setMasiveLocation(Request $request){
+        $products = $request->products;
+        $added = 0;
+        $res = [];
+        $location = [];
+        foreach($products as $code){
+            $product = Product::where('code', $code['code'])->first();
+            
+            if($product){
+                $section = CellerSection::whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                })->where('path', $code['path'])->first();
+                if($section){
+                    $product->locations()->toggle($section->id);
+                    $added++;
+                }else{
+                    array_push($location, $code['code']);
+                }
+            }else{
+                array_push($res, $code['code']);
+                /* $product->locations()->toggle($request->_section) */
+            }
+        }
+        return response()->json(["success"=>$added, "notFound" => $res, "locationNotFound" => $location]);
     }
 }

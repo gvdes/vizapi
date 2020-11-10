@@ -57,6 +57,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/toggle', 'LocationController@setLocation');
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
+        $router->post('/setMassive', 'LocationController@setMasiveLocation');
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
         $router->post('/stocks', 'LocationController@getStocks');
         $router->post('/celler', 'LocationController@createCeller');
