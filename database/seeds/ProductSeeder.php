@@ -204,6 +204,18 @@ class ProductSeeder extends Seeder{
             ['id' => 170, 'name' => 'Bota', 'deep' => 1, 'root' =>130],
             ['id' => 171, 'name' => 'Feston', 'deep' => 1, 'root' =>130],
             ['id' => 172, 'name' => 'Mantel', 'deep' => 1, 'root' =>130],
+            ['id' => 173, 'name' => 'Arcos', 'deep' => 1, 'root' =>37],
+            ['id' => 174, 'name' => 'Balas', 'deep' => 1, 'root' =>37],
+            ['id' => 175, 'name' => 'Bebe', 'deep' => 1, 'root' =>37],
+            ['id' => 176, 'name' => 'Caballete', 'deep' => 1, 'root' =>37],
+            ['id' => 177, 'name' => 'Caballo', 'deep' => 1, 'root' =>37],
+            ['id' => 178, 'name' => 'Doctor', 'deep' => 1, 'root' =>37],
+            ['id' => 179, 'name' => 'Herramientas', 'deep' => 1, 'root' =>37],
+            ['id' => 180, 'name' => 'Mesa', 'deep' => 1, 'root' =>37],
+            ['id' => 181, 'name' => 'Muñecos', 'deep' => 1, 'root' =>37],
+            ['id' => 182, 'name' => 'Peluche', 'deep' => 1, 'root' =>37],
+            ['id' => 183, 'name' => 'Princesas', 'deep' => 1, 'root' =>37],
+            ['id' => 184, 'name' => 'Super mercado', 'deep' => 1, 'root' =>37],
             ['id' => 404, 'name' => 'Sin categoría', 'deep' => 0, 'root' =>0],
         ]);
                 

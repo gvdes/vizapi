@@ -59,8 +59,8 @@ class LocationController extends Controller{
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
                 $section = \App\CellerSection::create([
-                    'name' => $request->name.''.$index,
-                    'alias' => $request->alias.' '.$index,
+                    'name' => $request->name.' '.$index,
+                    'alias' => $request->alias.''.$index,
                     'path' => $root->path.'-'.$request->alias.''.$index,
                     'root' => $root->id,
                     'deep' => ($root->deep + 1),
@@ -447,21 +447,13 @@ class LocationController extends Controller{
                     return $products->map(function($product) use($codes_array, $stocks, $workpoint){
                         $id = array_search($product->code, $codes_array);
                         if(!is_bool($id)){
-                            /* if($this->account->_workpoint == $workpoint->id){
-                                $product->stock = $stocks[$id]['stock'];
-                            }else{
-                            } */
-                            $stock = isset($product->stocks) ? $product->stocks : [];
+                            $stock = isset($product->stockStores) ? $product->stockStores : [];
                             array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                            $product->stocks = $stock;
+                            $product->stockStores = $stock;
                         }else{
-                            /* if($this->account->_workpoint == $workpoint->id){
-                                $product->stock = "--";
-                            }else{
-                            } */
-                            $stock = isset($product->stocks) ? $product->stocks : [];
+                            $stock = isset($product->stockStores) ? $product->stockStores : [];
                             array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                            $product->stocks = $stock;
+                            $product->stockStores = $stock;
                         }
                         return $product;
                     });
@@ -469,11 +461,10 @@ class LocationController extends Controller{
                 return $products;
             }, $products);
             $sorted = $stocks->sortByDesc(function($product){
-                return array_reduce($product->stocks,function($total, $store){
+                return array_reduce($product->stockStores,function($total, $store){
                     return $total + $store['stock'];
                 },0);
             })->values()->all();
-            /* return $stocks; */
             return $sorted;
         }
         return response()->json(["message" => "Debe mandar almenos un articulo"]);

@@ -67,14 +67,26 @@ class Product extends Model{
      */
     public function requisitions(){
         return $this->belongsToMany('App\Requisition', 'product_required', '_product', '_requisition')
-                    ->withPivot('units', 'comments');
+                    ->withPivot('units', 'comments', 'stock');
     }
 
     /**
      * RELATIONSHIPS WITH WORKPOINT'S MODELS
      */
-    public function stock(){
-        return $this->belongsToMany('App\WokrPoint', 'product_stock', '_product', '_workpoint')
+    public function stocks(){
+        return $this->belongsToMany('App\WorkPoint', 'product_stock', '_product', '_workpoint')
                     ->withPivot('min', 'max', 'stock');
+    }
+
+    /**
+     * MUTATORS
+     */
+
+    public function getDimensionsAttribute($value){
+        $values = json_decode($value);
+        $values->length = floatval($values->length) ?  floatval($values->length) : floatval(0);
+        $values->height = floatval($values->height) ?  floatval($values->height) : floatval(0);
+        $values->width = floatval($values->width) ?  floatval($values->width) : floatval(0);
+        return $values;
     }
 }

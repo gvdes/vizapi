@@ -16,6 +16,7 @@ class CreateProductRequiredTable extends Migration{
             $table->unsignedInteger('_requisition');
             $table->float('units', 8, 2);
             $table->string('comments', 100);
+            $table->float('stock', 8, 2);
 
             $table->foreign('_product')->references('id')->on('products');
             $table->foreign('_requisition')->references('id')->on('requisition');

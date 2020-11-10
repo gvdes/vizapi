@@ -73,6 +73,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/autocomplete', 'ProductController@autocomplete');
         $router->post('/catalog', 'ProductController@getProductByCategory');
         $router->get('/tree', 'ProductController@categoryTree');
+        $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
     });
 
@@ -90,10 +91,15 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/{id}', 'RequisitionController@find');
         $router->post('/', 'RequisitionController@create');
         $router->post('/add', 'RequisitionController@addProduct');
+        $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
+        $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
-    $router->group(['prefix' => 'test'], function () use ($router){
-        $router->get('/', 'MiniPrinterController@requisitionTicket');
-    });
 });
+        $router->group(['prefix' => 'reports'], function () use ($router){
+            /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
+            $router->get('/stocks', 'ReportsController@chechStocks');
+            $router->get('/ventas', 'ReportsController@chechStocks');
+            $router->get('/test', 'ReportsController@test');
+        });
