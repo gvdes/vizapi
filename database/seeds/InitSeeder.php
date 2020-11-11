@@ -120,9 +120,9 @@ class InitSeeder extends Seeder{
             ['id'=> 29, '_module'=> 18, 'name'=> 'Resurtido manual'],
             ['id'=> 30, '_module'=> 18, 'name'=> 'Resurtido automatico'],
             ['id'=> 31, '_module'=> 19, 'name'=> 'Acceso'],
-            ['id'=> 34, '_module'=> 19, 'name'=> 'Iniciar surtido'],
-            ['id'=> 35, '_module'=> 19, 'name'=> 'Iniciar envio'],
-            ['id'=> 36, '_module'=> 18, 'name'=> 'Comfirmar pedido'],
+            ['id'=> 35, '_module'=> 19, 'name'=> 'Iniciar surtido'],
+            ['id'=> 36, '_module'=> 19, 'name'=> 'Iniciar envio'],
+            ['id'=> 37, '_module'=> 18, 'name'=> 'Comfirmar pedido'],
             /* ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'], */
             ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
@@ -166,8 +166,8 @@ class InitSeeder extends Seeder{
             ['_rol'=> 6, '_permission'=> 30],
             ['_rol'=> 6, '_permission'=> 31],
             ['_rol'=> 6, '_permission'=> 33],
-            ['_rol'=> 6, '_permission'=> 34],
             ['_rol'=> 6, '_permission'=> 35],
+            ['_rol'=> 6, '_permission'=> 36],
             /* Permisos de bodeguero */
                 /* Modulo de almacenes */
             ['_rol'=> 7, '_permission'=> 21],
@@ -210,7 +210,7 @@ class InitSeeder extends Seeder{
             ['_rol'=> 3, '_permission'=> 30],
             ['_rol'=> 3, '_permission'=> 31],
             ['_rol'=> 3, '_permission'=> 33],
-            ['_rol'=> 3, '_permission'=> 36],
+            ['_rol'=> 3, '_permission'=> 37],
             /* Permisos de vendedor */
                     /* Modulo de preventa */
                 ['_rol'=> 4, '_permission'=> 12],
