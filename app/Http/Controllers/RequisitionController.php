@@ -342,7 +342,6 @@ class RequisitionController extends Controller{
 
     public function nextStep(Request $request){
         $requisition = Requisition::find($request->id);
-        return response()->json($a);
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
             $result = $this->log($status, $requisition);

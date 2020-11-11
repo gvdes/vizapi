@@ -483,19 +483,21 @@ class LocationController extends Controller{
         $location = [];
         foreach($products as $code){
             $product = Product::where('code', $code['code'])->first();
-            
+            $path = $code['path'];
+            /* $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
+            $path = $path[0].'-P'.substr($path,1,strlen($path)); */
             if($product){
                 $section = CellerSection::whereHas('celler', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
-                })->where('path', $code['path'])->first();
+                })->where('path', $path)->first();
                 if($section){
                     $product->locations()->toggle($section->id);
                     $added++;
                 }else{
-                    array_push($location, ["code" => $code['code'], "location" => $code['path']]);
+                    array_push($location, ["code" => $code['code'], "location" => $path]);
                 }
             }else{
-                array_push($res, ["code" => $code['code'], "location" => $code['path']]);
+                array_push($res, ["code" => $code['code'], "location" => $path]);
             }
         }
         return response()->json(["success"=>$added, "notFound" => $res, "locationNotFound" => $location]);
