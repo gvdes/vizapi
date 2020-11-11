@@ -492,11 +492,10 @@ class LocationController extends Controller{
                     $product->locations()->toggle($section->id);
                     $added++;
                 }else{
-                    array_push($location, $code['code']);
+                    array_push($location, ["code" => $code['code'], "location" => $code['path']]);
                 }
             }else{
-                array_push($res, $code['code']);
-                /* $product->locations()->toggle($request->_section) */
+                array_push($res, ["code" => $code['code'], "location" => $code['path']]);
             }
         }
         return response()->json(["success"=>$added, "notFound" => $res, "locationNotFound" => $location]);

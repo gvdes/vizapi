@@ -207,4 +207,18 @@ class MiniPrinterController extends Controller{
             return false;
         }
     }
+
+    public function test(Requisition $requisition){
+        $product = collect($requisition->products);
+        $groupBy = $product/* ->map(function($product){
+            $product->locations->sortBy('id');
+        }) *//* ->groupBy(function($product){
+            if(count($product->locations)>0){
+                return explode('-',$product->locations[0]->path)[0];
+            }else{
+                return '';
+            }
+        }) */;
+        return $groupBy;
+    }
 }

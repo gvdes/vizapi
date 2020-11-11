@@ -16,7 +16,7 @@ class CreateProductStockTable extends Migration{
             $table->unsignedInteger('_product');
             $table->float('min', 8,2);
             $table->float('max', 8,2);
-            $table->float('stock', 8,2);
+            $table->float('stock', 8,2)->default(0);
             $table->foreign('_workpoint')->references('id')->on('workpoints'); 
             $table->foreign('_product')->references('id')->on('products'); 
         });

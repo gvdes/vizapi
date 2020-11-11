@@ -193,12 +193,7 @@ class RequisitionController extends Controller{
                             $query->whereHas('celler', function($query) use ($_workpoint_from){
                                 $query->where('_workpoint', $_workpoint_from);
                             });
-                        }])->groupBy(function($product, $key){
-                            if(count($product->location)>0){
-                                return explode($product->location[0]->path, '-')[0];
-                            }
-                            return '';
-                        });
+                        }]);
                     }]);
                     $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
                     if($cellerPrinter->requisitionTicket($requisition)){
@@ -346,8 +341,8 @@ class RequisitionController extends Controller{
     }
 
     public function nextStep(Request $request){
-
         $requisition = Requisition::find($request->id);
+        return response()->json($a);
         $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
         if($status>0 && $status<12){
             $result = $this->log($status, $requisition);
