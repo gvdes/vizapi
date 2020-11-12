@@ -156,7 +156,7 @@ class MiniPrinterController extends Controller{
                     $printer->text("----------------------------------------------\n");
                     $printer->text("----------------------------------------------\n");
                     $printer->setTextSize(2,1);
-                    $printer->text("█ ".$requisition->to->alias."  >>>  ".$requisition->from->alias." █\n");
+                    $printer->text("█ ".$requisition->to->alias." >>> ".$requisition->from->alias." █\n");
                     $printer->setTextSize(1,1);
                     $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
                     $printer->feed(1);

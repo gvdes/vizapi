@@ -123,9 +123,9 @@ class RequisitionController extends Controller{
                     $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
                 }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
-                if($product->units->id == 3){
+                /* if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
-                }
+                } */
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
                 return response()->json([
                     "id" => $product->id,
