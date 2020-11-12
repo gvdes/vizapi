@@ -73,7 +73,8 @@ class Requisition extends JsonResource{
                             "amount" => $product->pivot->units,
                             "comments" => $product->pivot->comments,
                             "stock" => $product->pivot->stock
-                        ]
+                        ],
+                        "units" => $product->units
                     ];
                 });
             })
