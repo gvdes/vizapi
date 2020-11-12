@@ -482,7 +482,11 @@ class LocationController extends Controller{
         $res = [];
         $location = [];
         foreach($products as $code){
-            $product = Product::where('code', $code['code'])->first();
+            $product = Product::whereHas('variants', function(Builder $query) use ($code){
+                $query->where('barcode', 'like', '%'.$code['code'].'%');
+            })
+            ->orWhere('name', 'like','%'.$code['code'].'%')
+            ->orWhere('code', 'like','%'.$code['code'].'%')->first();
             $path = $code['path'];
             /* $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
             $path = $path[0].'-P'.substr($path,1,strlen($path)); */

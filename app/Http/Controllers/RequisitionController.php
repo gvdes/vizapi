@@ -50,15 +50,22 @@ class RequisitionController extends Controller{
                 if($requisition->_type == 2){
                     $workpoint = WorkPoint::find($requisition->_workpoint_from);
                     $categories = array_merge(range(37,57), range(130,184));
-                    $products = Product::whereHas('stocks', function($query){
+                    $products = Product::with(['stocks' => function($query){
                         $query->where([
                             ['_workpoint', $this->account->_workpoint],
                             ['min', '>', 0],
                             ['max', '>', 0]
                         ]);
-                    }, '>', 0)->whereIn('_category', $categories)->get();
+                    }])->whereHas('stocks', function($query){
+                        $query->where([
+                            ['_workpoint', $this->account->_workpoint],
+                            ['min', '>', 0],
+                            ['max', '>', 0]
+                        ]);
+                    }, '>', 0)/* ->whereIn('_category', $categories) */->get();
                     $client = curl_init();
-                    curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+                    $workpoint_to = WorkPoint::find($requisition->_workpoint_to);
+                    curl_setopt($client, CURLOPT_URL, $workpoint_to->dominio."/access/public/product/stocks");
                     curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
                     curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
                     curl_setopt($client, CURLOPT_POST, 1);
@@ -69,13 +76,28 @@ class RequisitionController extends Controller{
                     if($stocks){
                         $toSupply = [];
                         foreach($products as $key => $product){
-                            $required = intval($product->stocks[0]->max) - intval($stocks[$key]['stock']);
+                            $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
+                            $max = intval($product->stocks[0]->pivot->max);
+                            if($max>$stock){
+                                $required = $max - $stock;
+                            }else{
+                                $required = 0;
+                            }
+
                             if($product->_unit == 3){
                                 $required = floor($required/$product->pieces);
                             }
                             if($required > 0){
                                 $requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
                             }
+                            /* $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
+                            $required = intval($product->stocks[0]->max) - intval($stocks[$key]['stock']);
+                            if($product->_unit == 3){
+                                $required = floor($required/$product->pieces);
+                            }
+                            if($required > 0){
+                                $requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
+                            } */
                         }
                     }
                     /* $requisition->_status = 2;
@@ -101,9 +123,9 @@ class RequisitionController extends Controller{
                     $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
                 }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
-                /* if($product->units->id == 3){
+                if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
-                } */
+                }
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
                 return response()->json([
                     "id" => $product->id,
@@ -187,11 +209,11 @@ class RequisitionController extends Controller{
                             ]
                         ]);
                     }
-                    $_workpoint_from = $requisition->_workpoint_from;
-                    $requisition->refresh(['log', 'products' => function($query) use ($_workpoint_from){
-                        $query->with(['locations' => function($query)  use ($_workpoint_from){
-                            $query->whereHas('celler', function($query) use ($_workpoint_from){
-                                $query->where('_workpoint', $_workpoint_from);
+                    $_workpoint_to = $requisition->_workpoint_to;
+                    $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                        $query->with(['locations' => function($query)  use ($_workpoint_to){
+                            $query->whereHas('celler', function($query) use ($_workpoint_to){
+                                $query->where('_workpoint', $_workpoint_to);
                             });
                         }]);
                     }]);
@@ -230,11 +252,11 @@ class RequisitionController extends Controller{
                 return true;
             break;
             case 6:
-                $_workpoint_to = $requisition->_workpoint_to;
-                $requisition->refresh(['log', 'products' => function($query) use ($_workpoint_to){
-                    $query->with(['locations' => function($query)  use ($_workpoint_to){
-                        $query->whereHas('celler', function($query) use ($_workpoint_to){
-                            $query->where('_workpoint', $_workpoint_to);
+                $_workpoint_from = $requisition->_workpoint_from;
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
+                    $query->with(['locations' => function($query)  use ($_workpoint_from){
+                        $query->whereHas('celler', function($query) use ($_workpoint_from){
+                            $query->where('_workpoint', $_workpoint_from);
                         });
                     }]);
                 }]);
@@ -357,30 +379,37 @@ class RequisitionController extends Controller{
 
     public function reimpresion(Request $request){
         $requisition = Requisition::find($request->_requisition);
-        $_workpoint_from = $requisition->_workpoint_from;
-        $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_from){
-            $query->with(['locations' => function($query)  use ($_workpoint_from){
-                $query->whereHas('celler', function($query) use ($_workpoint_from){
-                    $query->where('_workpoint', $_workpoint_from);
+        $_workpoint_to = $requisition->_workpoint_to;
+        $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where('_workpoint', $_workpoint_to);
                 });
             }]);
         }]);
         $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
-        $cellerPrinter->requisitionTicket($requisition);
+        $res = $cellerPrinter->requisitionTicket($requisition);
+        return response()->json(["success" => $res]);
         $requisition->printed = $requisition->printed +1;
         return response()->json(["success" => $requisition->save()]);
     }
 
     public function test(){
         $categories = array_merge(range(37,57), range(130,184));
-        $products = Product::whereHas('stock', function($query){
+        $products = Product::with(['stocks' => function($query){
+            $query->where([
+                ['_workpoint', $this->account->_workpoint],
+                ['min', '>', 0],
+                ['max', '>', 0]
+            ]);
+        }])->whereHas('stocks', function($query){
             $query->where([
                 ['_workpoint', $this->account->_workpoint],
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
         }, '>', 0)->whereIn('_category', $categories)->get();
-        $workpoint = WorkPoint::find(2);
+        $workpoint = WorkPoint::find($this->account->_workpoint);
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -390,20 +419,30 @@ class RequisitionController extends Controller{
         $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         $stocks = json_decode(curl_exec($client), true);
-        return response()->json($stocks);
+        /* return response()->json($stocks); */
         if($stocks){
             $toSupply = [];
+            $notSupply = [];
             foreach($products as $key => $product){
-                $required = $required->stock->max - $stocks[$key]['stock'];
-                if($product->_unit == 3){
-                    $required = floor($required/$product->pieces) * $product->pieces;
+                $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
+                $max = intval($product->stocks[0]->pivot->max);
+                if($max>$stock){
+                    $required = $max - $stock;
+                }else{
+                    $required = 0;
                 }
 
+                if($product->_unit == 3){
+                    $required = floor($required/$product->pieces);
+                }
                 if($required > 0){
-                    array_push($toSupply, [$product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
+                    array_push($toSupply, [$product->code => ['units' => $required, 'comments' => '', 'stock' => 0]]);
+                    //$requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
+                }else{
+                    array_push($notSupply, [$product->code => ['units' => $required, 'comments' => '', 'stock' => 0]]);
                 }
             }
-            $requisition->products()->syncWithoutDetaching($toSupply);
+            return response()->json(["supply"=> $toSupply, "notSupply"=> $notSupply]);
         }
     }
 

@@ -123,7 +123,9 @@ class MiniPrinterController extends Controller{
             $printer->setReverseColors(true);
             $printer->text(" Pedido para ".$requisition->from->alias." \n");
             $printer->setReverseColors(false);
-            $printer->text(" $requisition->notes \n");
+            if($requisition->notes){
+                $printer->text(" $requisition->notes \n");
+            }
             $printer->setTextSize(1,2);
             $printer->text("----------------------------------------\n");
             $printer->text(" Generado: ".$finished_at->pivot->created_at." Hrs ");
@@ -134,40 +136,69 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(1,2);
             $printer->text("----------------------------------------\n");
             $y = 1;
-            foreach($requisition->products as $key => $product){
-                $pieces = 1;
-                if(intval($product->pivot->stock)>0){
-                    $locations = $product->locations->reduce(function($res, $location){
-                        return $res.$location->path."";
-                    }, '');
-                    $printer->setJustification(Printer::JUSTIFY_LEFT);
-                    $printer->setTextSize(2,1);
-                    $printer->text($y."█ ".trim($locations)." █".$product->code." \n");
-                    $printer->setTextSize(1,1);
-                    $printer->text($product->description." \n");
-                    if($product->units->id == 3){
-                        $printer->text(" CAJAS SOLICITADAS: ");
-                        $printer->setTextSize(2,1);
-                        $printer->text($product->pivot->units."\r\n");
-                        $printer->setJustification(Printer::JUSTIFY_RIGHT);
-                        $pieces = $product->pieces;
-                    }
-                    $printer->setTextSize(1,1);
-                    $printer->text("UF: ");
-                    $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->units*$pieces);
-                    $printer->setTextSize(1,1);
-                    $printer->text(" - UD: ");
-                    $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->stock."\n");
-                    if($product->pivot->notes){
-                        $printer->setTextSize(1,1);
-                        $printer->text($product->pivot->notes."\n");
-                    }
-                    $printer->feed(1);
-                    $y=1;
+            $product = collect($requisition->products);
+            $groupBy = $product->map(function($product){
+                $product->locations->sortBy('id');
+                return $product;
+            })->groupBy(function($product){
+                if(count($product->locations)>0){
+                    return explode('-',$product->locations[0]->path)[0];
+                }else{
+                    return '';
                 }
+            })->sortKeys();
+            /* return $groupBy; */
+            $piso_num = 1;
+            foreach($groupBy as $piso){
+                if($piso_num>1){
+                    $printer->setJustification(Printer::JUSTIFY_LEFT);
+                    $printer->setTextSize(1,1);
+                    $printer->text("----------------------------------------------\n");
+                    $printer->text("----------------------------------------------\n");
+                    $printer->setTextSize(2,1);
+                    $printer->text("█ ".$requisition->to->alias."  >>>  ".$requisition->from->alias." █\n");
+                    $printer->setTextSize(1,1);
+                    $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
+                    $printer->feed(1);
+                }
+                foreach($piso as $product){
+                    $pieces = 1;
+                    if(intval($product->pivot->stock)>0){
+                        $locations = $product->locations->reduce(function($res, $location){
+                            return $res.$location->path.",";
+                        }, '');
+                        $printer->setJustification(Printer::JUSTIFY_LEFT);
+                        $printer->setTextSize(2,1);
+                        $printer->text($y."█ ".trim($locations)."█".$product->code." \n");
+                        $printer->setTextSize(1,1);
+                        $printer->text($product->description." \n");
+                        if($product->units->id == 3){
+                            $printer->text(" CAJAS SOLICITADAS: ");
+                            $printer->setTextSize(2,1);
+                            $printer->text($product->pivot->units."\r\n");
+                            $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                            $pieces = $product->pieces;
+                        }
+                        $printer->setTextSize(1,1);
+                        $printer->text("UF: ");
+                        $printer->setTextSize(2,1);
+                        $printer->text($product->pivot->units*$pieces);
+                        $printer->setTextSize(1,1);
+                        $printer->text(" - UD: ");
+                        $printer->setTextSize(2,1);
+                        $printer->text($product->pivot->stock."\n");
+                        if($product->pivot->notes){
+                            $printer->setTextSize(1,1);
+                            $printer->text($product->pivot->notes."\n");
+                        }
+                        $printer->feed(1);
+                        $y++;
+                    }
+                }
+                $piso_num++;
             }
+            /* foreach($requisition->products as $key => $product){
+            } */
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setTextSize(1,1);
             $printer->text("--------------------------------------------\n");
@@ -210,15 +241,16 @@ class MiniPrinterController extends Controller{
 
     public function test(Requisition $requisition){
         $product = collect($requisition->products);
-        $groupBy = $product/* ->map(function($product){
+        $groupBy = $product->map(function($product){
             $product->locations->sortBy('id');
-        }) *//* ->groupBy(function($product){
+            return $product;
+        })->groupBy(function($product){
             if(count($product->locations)>0){
                 return explode('-',$product->locations[0]->path)[0];
             }else{
                 return '';
             }
-        }) */;
+        })->sortKeys();
         return $groupBy;
     }
 }
