@@ -137,7 +137,8 @@ class RequisitionController extends Controller{
                         "amount" => $amount,
                         "comments" => $request->comments,
                         "stock" => 0
-                    ]
+                    ],
+                    "units" => $product->units
                 ]);
             }else{
                 return response()->json(["msg" => "No puedes agregar productos"]);
@@ -387,7 +388,8 @@ class RequisitionController extends Controller{
     }
 
     public function test(){
-        $categories = array_merge(range(37,57), range(130,184));
+        //$categories = array_merge(range(37,57), range(130,184));
+        $categories = range(37,57);
         $products = Product::with(['stocks' => function($query){
             $query->where([
                 ['_workpoint', $this->account->_workpoint],
@@ -400,7 +402,7 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)/* ->whereIn('_category', $categories) */->get();
+        }, '>', 0)->whereIn('_category', $categories)->get();
         $workpoint = WorkPoint::find($this->account->_workpoint);
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
@@ -418,9 +420,11 @@ class RequisitionController extends Controller{
             foreach($products as $key => $product){
                 $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
                 $max = intval($product->stocks[0]->pivot->max);
+                $min = intval($product->stocks[0]->pivot->min);
                 if($max>$stock){
                     $required = $max - $stock;
-                }else{
+                    array_push($toSupply, ['code' => $product->code, "scode" => $product->name, "description" => $product->description, "ipack" => $product->pieces, "stock" => $stock, "min" =>$min, "max" => $max]);
+                }/* else{
                     $required = 0;
                 }
 
@@ -432,7 +436,7 @@ class RequisitionController extends Controller{
                     //$requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
                 }else{
                     array_push($notSupply, [$product->code => ['units' => $required, 'comments' => '', 'stock' => 0]]);
-                }
+                } */
             }
             return response()->json(["supply"=> $toSupply/* , "notSupply"=> $notSupply */]);
         }
