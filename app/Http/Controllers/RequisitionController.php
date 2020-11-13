@@ -481,10 +481,10 @@ class RequisitionController extends Controller{
     public function getPrinter($who, $for){
         switch($who->id){
             case 1:
-                return ["domain" => "192.168.1.36", "port" => 9100];
+                return ["domain" => "192.168.1.115", "port" => 9100];
                 break;
             case 2:
-                return ["domain" => "192.168.1.36", "port" => 9100];
+                return ["domain" => "192.168.1.115", "port" => 9100];
                 break;
             case 3:
                 return ["domain" => $who->dominio, "port" => 3752];
