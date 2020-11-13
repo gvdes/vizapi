@@ -12,9 +12,9 @@ class MiniPrinterController extends Controller{
      * @return void
      */
     public $printer = null;
-    public function __construct($ip_printer){
+    public function __construct($ip_printer, $port){
         try{
-            $connector = new NetworkPrintConnector($ip_printer, 9100);
+            $connector = new NetworkPrintConnector($ip_printer, $port);
             $this->printer = new Printer($connector);
         }catch(\Exception $e){
             return $e;

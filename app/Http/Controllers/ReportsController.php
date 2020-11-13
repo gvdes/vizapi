@@ -169,11 +169,11 @@ class ReportsController extends Controller{
     public function chechStocks(Request $request){
         $stores = $request->stores; 
         $codes = $request->codes;
-        $codes = array_column($codes, 'code');
+        /* $codes = array_column($codes, 'code'); */
         switch($stores){
             case "navidad": 
-                /* $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,7,9])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [2])->get();
+                $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,7,9])->get();
+                /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
             case "juguete": 
                 $workpoints = WorkPoint::whereIn('id', [1,2,6,8])->get();

@@ -210,9 +210,15 @@ class RequisitionController extends Controller{
                             });
                         }]);
                     }]);
-                    $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                    $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
+                    $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                    $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                    /* $cellerPrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
                     if($cellerPrinter->requisitionTicket($requisition)){
-                        $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+                        $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
+                        $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                        $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                        /* $storePrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
                         $storePrinter->requisitionReceipt($requisition);
                         $requisition->printed = $requisition->printed +1;
                         $requisition->save();
@@ -281,7 +287,10 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $storePrinter = new MiniPrinterController('192.168.1.36');
+                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
+                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                /* $storePrinter = new MiniPrinterController('192.168.1.36'); */
                 $storePrinter->requisitionTicket($requisition);
                 $requisition->log()->attach(9, [ 'details' => json_encode([
                     "responsable" => $responsable
@@ -383,14 +392,16 @@ class RequisitionController extends Controller{
     public function reimpresion(Request $request){
         $requisition = Requisition::find($request->_requisition);
         $_workpoint_to = $requisition->_workpoint_to;
-        $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_to){
+        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
                     $query->where('_workpoint', $_workpoint_to);
                 });
             }]);
         }]);
-        $cellerPrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
+        $workpoint_to_print = Workpoint::find($this->account->_workpoint);
+        $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+        $cellerPrinter = new MiniPrinterController(/* '192.168.1.36' */$printer['domain'], $printer['port']);
         $res = $cellerPrinter->requisitionTicket($requisition);
         return response()->json(["success" => $res]);
         $requisition->printed = $requisition->printed +1;
@@ -465,5 +476,49 @@ class RequisitionController extends Controller{
         $requesitions = Requisition::where($where);
 
         return response()->json();
+    }
+
+    public function getPrinter($who, $for){
+        switch($who->id){
+            case 1:
+                return ["domain" => "192.168.1.36", "port" => 9100];
+                break;
+            case 2:
+                return ["domain" => "192.168.1.36", "port" => 9100];
+                break;
+            case 3:
+                return ["domain" => "192.168.1.79", "port" => 3752];
+                break;
+            case 4:
+                return ["domain" => $who->dominio, "port" => 6789];
+                break;
+            case 5:
+                return ["domain" => $who->dominio, "port" => 9376];
+                break;
+            case 6:
+                return ["domain" => $who->dominio, "port" => 9309];
+                break;
+            case 7:
+                return ["domain" => $who->dominio, "port" => 9301];
+                break;
+            case 8:
+                return ["domain" => $who->dominio, "port" => 9302];
+                break;
+            case 9:
+                return ["domain" => $who->dominio, "port" => 9304];
+                break;
+            case 10:
+                return ["domain" => $who->dominio, "port" => 9334];
+                break;
+            case 11:
+                return ["domain" => $who->dominio, "port" => 9300];
+                break;
+            case 12:
+                return ["domain" => $who->dominio, "port" => 9100];
+                break;
+            case 13:
+                return ["domain" => $who->dominio, "port" => 9601];
+                break;
+        }
     }
 }
