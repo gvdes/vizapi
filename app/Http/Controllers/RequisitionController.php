@@ -500,10 +500,10 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 9309];
                 break;
             case 7:
-                return ["domain" => $dominio, "port" => 9301];
+                return ["domain" => $dominio, "port" => 9302];
                 break;
             case 8:
-                return ["domain" => $dominio, "port" => 9302];
+                return ["domain" => $dominio, "port" => 9301];
                 break;
             case 9:
                 return ["domain" => $dominio, "port" => 9304];
