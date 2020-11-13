@@ -487,7 +487,7 @@ class RequisitionController extends Controller{
                 return ["domain" => "192.168.1.115", "port" => 9100];
                 break;
             case 3:
-                return ["domain" => $who->dominio, "port" => 3752];
+                return ["domain" => "192.168.1.79", "port" => 9100];
                 break;
             case 4:
                 return ["domain" => $who->dominio, "port" => 6789];
