@@ -479,6 +479,7 @@ class RequisitionController extends Controller{
     }
 
     public function getPrinter($who, $for){
+        $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
                 return ["domain" => "192.168.1.115", "port" => 9100];
@@ -490,34 +491,34 @@ class RequisitionController extends Controller{
                 return ["domain" => "192.168.1.79", "port" => 9100];
                 break;
             case 4:
-                return ["domain" => $who->dominio, "port" => 6789];
+                return ["domain" => $dominio, "port" => 6789];
                 break;
             case 5:
-                return ["domain" => $who->dominio, "port" => 9376];
+                return ["domain" => $dominio, "port" => 9376];
                 break;
             case 6:
-                return ["domain" => $who->dominio, "port" => 9309];
+                return ["domain" => $dominio, "port" => 9309];
                 break;
             case 7:
-                return ["domain" => $who->dominio, "port" => 9301];
+                return ["domain" => $dominio, "port" => 9301];
                 break;
             case 8:
-                return ["domain" => $who->dominio, "port" => 9302];
+                return ["domain" => $dominio, "port" => 9302];
                 break;
             case 9:
-                return ["domain" => $who->dominio, "port" => 9304];
+                return ["domain" => $dominio, "port" => 9304];
                 break;
             case 10:
-                return ["domain" => $who->dominio, "port" => 9334];
+                return ["domain" => $dominio, "port" => 9334];
                 break;
             case 11:
-                return ["domain" => $who->dominio, "port" => 9300];
+                return ["domain" => $dominio, "port" => 9300];
                 break;
             case 12:
-                return ["domain" => $who->dominio, "port" => 9100];
+                return ["domain" => $dominio, "port" => 9100];
                 break;
             case 13:
-                return ["domain" => $who->dominio, "port" => 9601];
+                return ["domain" => $dominio, "port" => 9601];
                 break;
         }
     }
