@@ -245,7 +245,7 @@ class RequisitionController extends Controller{
                 return true;
             break;
             case 6:
-                $_workpoint_from = $requisition->_workpoint_from;
+                /* $_workpoint_from = $requisition->_workpoint_from;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
                     $query->with(['locations' => function($query)  use ($_workpoint_from){
                         $query->whereHas('celler', function($query) use ($_workpoint_from){
@@ -253,8 +253,8 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $storePrinter = new MiniPrinterController('192.168.1.36'/* $printer->ip */);
-                $storePrinter->requisitionTicket($requisition);
+                $storePrinter = new MiniPrinterController('192.168.1.36');
+                $storePrinter->requisitionTicket($requisition); */
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
@@ -273,6 +273,16 @@ class RequisitionController extends Controller{
                 return true;
             break;
             case 9:
+                $_workpoint_from = $requisition->_workpoint_from;
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
+                    $query->with(['locations' => function($query)  use ($_workpoint_from){
+                        $query->whereHas('celler', function($query) use ($_workpoint_from){
+                            $query->where('_workpoint', $_workpoint_from);
+                        });
+                    }]);
+                }]);
+                $storePrinter = new MiniPrinterController('192.168.1.36');
+                $storePrinter->requisitionTicket($requisition);
                 $requisition->log()->attach(9, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
