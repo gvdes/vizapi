@@ -356,16 +356,17 @@ class LocationController extends Controller{
             $withoutStocks = json_decode(curl_exec($client), true);
             curl_close($client);
             if($withoutStocks){
-                $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($withStocks){
-                    return array_search($product['code'], array_column($withStocks, 'code'));
+                $codes_withStock = array_column($withStocks, 'code');
+                $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($codes_withStock){
+                    return array_search($product['code'], $codes_withStock);
                 })->count();
                 
-                $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($withStocks){
-                    return array_search($product['code'], array_column($withStocks, 'code'));
+                $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($codes_withStock){
+                    return array_search($product['code'], $codes_withStock);
                 })->count();
-        
-                $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($withoutStocks){
-                    return array_search($product['code'], array_column($withoutStocks, 'code'));
+                $codes_withoutStock = array_column($withoutStocks, 'code');
+                $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($codes_withoutStock){
+                    return array_search($product['code'], $codes_withoutStock);
                 })->count();
                 return response()->json([
                     "withStock" => [
