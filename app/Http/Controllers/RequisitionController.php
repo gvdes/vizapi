@@ -417,13 +417,17 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }])->whereHas('stocks', function($query){
+        }])/* ->whereHas('stocks', function($query){
             $query->where([
                 ['_workpoint', $this->account->_workpoint],
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)->whereIn('_category', $categories)->get();
+        }, '>', 0) */->whereIn('_category', $categories)->get();
+        $count = $products->map(function ($product){
+            return $product->stocks->count();
+        });
+        return response()->json($count);
         $workpoint = WorkPoint::find($this->account->_workpoint);
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
@@ -494,7 +498,7 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 6789];
                 break;
             case 5:
-                return ["domain" => $dominio, "port" => 9376];
+                return ["domain" => $dominio, "port" => 9303];
                 break;
             case 6:
                 return ["domain" => $dominio, "port" => 9309];

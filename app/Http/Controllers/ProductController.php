@@ -266,4 +266,27 @@ class ProductController extends Controller{
         $id = [$category->id];
         return array_merge($children_ids, $id);
     }
+
+    public function getCategory(Request $request){
+        $products = collect($request->products);
+        /* return response()->json($products); */
+        $res = $products->map(function($p){
+            $product = Product::with('category')->where('code',$p['pro_code'])->orWhere('name',$p['pro_code'])->first();
+            if($product){
+                return [
+                    'id' => $product->id,
+                    'code' => $product->code,
+                    'location'=> $p['pro_location'],
+                    'description' => $product->description,
+                    'category' => $product->category->name
+                ];
+            }
+            return [
+                'code' => $p['pro_code'],
+                'location'=> $p['pro_location'],
+                'description' => $p['pro_largedesc'],
+            ];
+        });
+        return response()->json($res);
+    }
 }

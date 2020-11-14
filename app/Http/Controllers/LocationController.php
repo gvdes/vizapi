@@ -53,12 +53,16 @@ class LocationController extends Controller{
      */
     public function createSection(Request $request){
         $sections = [];
+        $increment = isset($request->autoincrement) ? $request->autoincrement : false;
         if($request->root>0){
             $siblings = \App\CellerSection::where('root', $request->root)->count();
             $root = \App\CellerSection::find($request->root);
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
+                if($increment){
+                    $index = '';
+                }
                 $section = \App\CellerSection::create([
                     'name' => $request->name.' '.$index,
                     'alias' => $request->alias.''.$index,
@@ -78,6 +82,9 @@ class LocationController extends Controller{
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
+                if($increment){
+                    $index = '';
+                }
                 $section = \App\CellerSection::create([
                     'name' => $request->name.' '.$index,
                     'alias' => $request->alias.''.$index,
@@ -94,6 +101,27 @@ class LocationController extends Controller{
         return response()->json([
             'success' => true,
             'celler' => $sections
+        ]);
+    }
+
+    public function deleteSection(Request $request){
+        $section = CellerSection::find($request->_section);
+        if($section){
+            if($section->products->count()==0){
+                $res = $section->delete();
+                return response()->json([
+                    'success' => $res
+                ]);
+            }else{
+                return response()->json([
+                    'success' => false,
+                    'msg' => 'No se ha eliminado la sección debido a que tienen productos ubicados'
+                ]);
+            }
+        }
+        return response()->json([
+            'success' => false,
+            'msg' => 'No se ha encontrado la sección'
         ]);
     }
 
@@ -482,11 +510,11 @@ class LocationController extends Controller{
         $res = [];
         $location = [];
         foreach($products as $code){
-            $product = Product::whereHas('variants', function(Builder $query) use ($code){
+            $product = Product::find($code['id'])/* whereHas('variants', function(Builder $query) use ($code){
                 $query->where('barcode', 'like', '%'.$code['code'].'%');
             })
             ->orWhere('name', 'like','%'.$code['code'].'%')
-            ->orWhere('code', 'like','%'.$code['code'].'%')->first();
+            ->orWhere('code', 'like','%'.$code['code'].'%')->first() */;
             $path = $code['path'];
             /* $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
             $path = $path[0].'-P'.substr($path,1,strlen($path)); */

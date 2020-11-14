@@ -76,6 +76,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/tree', 'ProductController@categoryTree');
         $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
+        $router->post('/getCategories', 'ProductController@getCategory');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
