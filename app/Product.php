@@ -82,11 +82,11 @@ class Product extends Model{
      * MUTATORS
      */
 
-    /* public function getDimensionsAttribute($value){
+    public function getDimensionsAttribute($value){
         $values = json_decode($value);
         $values->length = floatval($values->length) ?  floatval($values->length) : floatval(0);
         $values->height = floatval($values->height) ?  floatval($values->height) : floatval(0);
         $values->width = floatval($values->width) ?  floatval($values->width) : floatval(0);
         return $values;
-    } */
+    }
 }
