@@ -486,10 +486,10 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
-                return ["domain" => "192.168.1.115", "port" => 9100];
+                return ["domain" => "192.168.1.36", "port" => 9100];
                 break;
             case 2:
-                return ["domain" => "192.168.1.115", "port" => 9100];
+                return ["domain" => "192.168.1.36", "port" => 9100];
                 break;
             case 3:
                 return ["domain" => "192.168.1.79", "port" => 9100];
