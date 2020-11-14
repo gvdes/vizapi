@@ -19,16 +19,14 @@ class OrderController extends Controller{
 
     public function created(Request $request){
         try{
-            $name = $request->name;
-            $account = $this->account;
-            $order = DB::transaction( function () use ($account, $name){
+            $order = DB::transaction( function () use ($request){
                 $now = new \DateTime();
-                $num_ticket = Order::where('_workpoint_from', $account->_workpoint)->whereDate('created_at', $now)->count()+1;
+                $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
                 $order = Order::create([
                     'num_ticket' => $num_ticket,
-                    'name' => $name ? $name : "Pedido ".$num_ticket,
-                    '_created_by' => $account->_account,
-                    'workpoint_from' => $account->_workpoint,
+                    'name' => isset($request->name) ? $request->name : "Pedido ".$num_ticket,
+                    '_created_by' => $this->account->_account,
+                    'workpoint_from' => $this->account->_workpoint,
                     'time_life' => '00:30:00',
                     '_status' => 1
                 ]);
