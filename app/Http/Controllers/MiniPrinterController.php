@@ -77,12 +77,10 @@ class MiniPrinterController extends Controller{
             $printer->text("GRUPO VIZCARRA\n");
             $printer->feed(1);
             $printer->cut();
-            /* $printer->close(); */
+            $printer->close();
             return true;
         } catch(\Exception $e){
             return false;
-        } finally{
-            $printer->close();
         }
     }
 
@@ -238,8 +236,6 @@ class MiniPrinterController extends Controller{
             return true;
         }catch(\Exception $e){
             return false;
-        } finally{
-            $printer->close();
         }
     }
 
