@@ -392,7 +392,7 @@ class RequisitionController extends Controller{
     public function reimpresion(Request $request){
         $requisition = Requisition::find($request->_requisition);
         $_workpoint_to = $requisition->_workpoint_to;
-        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+        $requisition->load(['created_by' ,'log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
                     $query->where('_workpoint', $_workpoint_to);

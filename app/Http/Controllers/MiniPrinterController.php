@@ -112,32 +112,34 @@ class MiniPrinterController extends Controller{
             $finished_at = $finished_at[sizeof($finished_at) - 1];
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             if($requisition->printed>0){
-                $printer->setTextSize(2,2);
+                $printer->setTextSize(2,1);
                 $printer->setReverseColors(true);
-                $printer->text(" REIMPRESION \n");
-                $printer->feed(1);
+                $printer->text("REIMPRESION \n");
                 $printer->setReverseColors(false);
             }
-            $printer->setTextSize(1,2);
+            $printer->setTextSize(2,2);
             $printer->setEmphasis(true);
             $printer->setReverseColors(true);
-            $printer->text(" Pedido para ".$requisition->from->alias." \n");
+            $printer->text(" Pedido para ".$requisition->from->alias." #".$requisition->id." \n");
             $printer->setReverseColors(false);
             if($requisition->notes){
-                $printer->text(" $requisition->notes \n");
+                $printer->setTextSize(1,1);
+                $printer->text("$requisition->notes \n");
             }
-            $printer->setTextSize(1,2);
+            $printer->setTextSize(1,1);
             $printer->text("----------------------------------------\n");
-            $printer->text(" Generado: ".$finished_at->pivot->created_at." Hrs ");
-            $printer->setTextSize(2,2);
+            $printer->text("Generado: ".$finished_at->pivot->created_at." Hrs por: ".$requisition->created_by->names."\n");
+            /* $printer->setTextSize(2,2);
             $printer->setReverseColors(true);
             $printer->text("#".$requisition->id."\n");
-            $printer->setReverseColors(false);
+            $printer->setReverseColors(false); */
             $printer->setTextSize(1,2);
             $printer->text("----------------------------------------\n");
             $y = 1;
             $product = collect($requisition->products);
-            $groupBy = $product->map(function($product){
+            $groupBy = $product->filter(function($product){
+                return $product->pivot->stock>0;
+            })->map(function($product){
                 $product->locations->sortBy('id');
                 return $product;
             })->groupBy(function($product){
