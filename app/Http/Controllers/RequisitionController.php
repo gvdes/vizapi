@@ -391,7 +391,8 @@ class RequisitionController extends Controller{
 
     public function reimpresion(Request $request){
         $requisition = Requisition::find($request->_requisition);
-        $_workpoint_to = $requisition->_workpoint_to;
+        $workpoint_to_print = Workpoint::find($this->account->_workpoint);
+        $_workpoint_to = $workpoint_to_print->id;
         $requisition->load(['created_by' ,'log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
@@ -399,7 +400,6 @@ class RequisitionController extends Controller{
                 });
             }]);
         }]);
-        $workpoint_to_print = Workpoint::find($this->account->_workpoint);
         $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
         $cellerPrinter = new MiniPrinterController(/* '192.168.1.36' */$printer['domain'], $printer['port']);
         $res = $cellerPrinter->requisitionTicket($requisition);
