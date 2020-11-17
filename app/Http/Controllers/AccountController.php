@@ -307,4 +307,24 @@ class AccountController extends Controller{
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
     }
+
+    public function deletePermissions(Request $request){
+        $accounts = Account::all();
+        $total = 0;
+        foreach($accounts as $account){
+            $account->permissions()->detach($request->permissions);
+            $total++;
+        }
+        return response()->json(["changed" => $total]);
+    }
+
+    public function addPermissions(Request $request){
+        $accounts = Account::all();
+        $total = 0;
+        foreach($accounts as $account){
+            $account->permissions()->attach($request->permissions);
+            $total++;
+        }
+        return response()->json(["changed" => $total]);
+    }
 }

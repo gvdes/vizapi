@@ -175,6 +175,7 @@ class InitSeeder extends Seeder{
             ['_rol'=> 7, '_permission'=> 23],
             ['_rol'=> 7, '_permission'=> 24],
             ['_rol'=> 7, '_permission'=> 25],
+            ['_rol'=> 7, '_permission'=> 26],
             ['_rol'=> 7, '_permission'=> 34],
             /* Modulo de administrador de sucursal */
                 /* Modulo de usuarios */
@@ -220,7 +221,7 @@ class InitSeeder extends Seeder{
                 ['_rol'=> 4, '_permission'=> 33],
                     /* Modulo de almacenes */
                 ['_rol'=> 4, '_permission'=> 21],
-                ['_rol'=> 7, '_permission'=> 34],
+                ['_rol'=> 4, '_permission'=> 34],
         ]);
 
         /**CREAR ROOT */

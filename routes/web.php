@@ -26,6 +26,8 @@ $router->group(['prefix' => 'account'], function () use ($router){
         $router->get('/general', 'AccountController@getAllUsers');
         $router->get('/profile', 'AccountController@profile');
         $router->post('/', 'AccountController@create');
+        $router->post('/addPermissions', 'AccountController@addPermissions');
+        $router->post('/deletePermissions', 'AccountController@deletePermissions');
         $router->put('/status', 'AccountController@updateStatus');
         $router->put('/password', 'AccountController@updatePassword');
         $router->put('/profile/{id}', 'AccountController@updateProfile');
