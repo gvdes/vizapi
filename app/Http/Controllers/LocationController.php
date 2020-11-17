@@ -153,7 +153,9 @@ class LocationController extends Controller{
                 },[]);
                 $products = \App\Product::whereHas('locations', function($query) use ($sections){
                     return $query->whereIn('_location', $sections);
-                })->with('locations')->paginate($paginate);
+                })->with(['locations' => function($query) use ($sections){
+                    return $query->whereIn('_location', $sections);
+                }])->paginate($paginate);
             }
         }else{
             $section->sections = \App\CellerSection::where('root', $section->id)->get();
@@ -161,7 +163,9 @@ class LocationController extends Controller{
                 $sections = $this->getSectionsChildren($section->id);
                 $products = \App\Product::whereHas('locations', function($query) use ($sections){
                     return $query->whereIn('_location', $sections);
-                })->with('locations')->paginate($paginate);
+                })->with(['locations' => function($query) use ($sections){
+                    return $query->whereIn('_location', $sections);
+                }])->paginate($paginate);
             }
         }
         return response()->json([
