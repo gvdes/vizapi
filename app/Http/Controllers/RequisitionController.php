@@ -30,7 +30,7 @@ class RequisitionController extends Controller{
                 $_workpoint_from = $this->account->_workpoint;
                 switch ($request->_type){
                     case 2:
-                        $data = $this->getToSupplyFromStore($this->account->_account);
+                        $data = $this->getToSupplyFromStore($this->account->_workpoint);
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
@@ -76,7 +76,8 @@ class RequisitionController extends Controller{
             });
             return response()->json([
                 "success" => true,
-                "order" => new RequisitionResource($requisition)
+                "order" => $requisition
+                //"order" => new RequisitionResource($requisition)
             ]);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido crear el pedido"]);
@@ -542,15 +543,15 @@ class RequisitionController extends Controller{
     public function getToSupplyFromStore($workpoint_id){
         $workpoint = WorkPoint::find($workpoint_id);
         $categories = array_merge(range(37,57), range(130,184));
-        $products = Product::with(['stocks' => function($query){
+        $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
-                ['_workpoint', $this->account->_workpoint],
+                ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }])->whereHas('stocks', function($query){
+        }])->whereHas('stocks', function($query) use($workpoint_id){
             $query->where([
-                ['_workpoint', $this->account->_workpoint],
+                ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
@@ -587,7 +588,7 @@ class RequisitionController extends Controller{
                     }
                 }
             }
-            return ["products" => $toSupply];
+            return ["products" => $toSupply, "wp" => $workpoint_id];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
 
