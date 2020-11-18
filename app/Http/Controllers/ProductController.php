@@ -96,7 +96,7 @@ class ProductController extends Controller{
         try{
             DB::transaction(function() use ($products){
                 foreach($products as $product){
-                    $instance = Product::updateOrCreate([
+                    $instance = Product::firstOrCreate([
                         'code'=> $product['code']
                     ], [
                         'name' => $product['name'],
@@ -107,6 +107,10 @@ class ProductController extends Controller{
                         '_provider' => $product['_provider'],
                         '_unit' => $product['_unit']
                     ]);
+                    $instance->description = $product['description'];
+                    $instance->pieces = $product['pieces'];
+                    $instance->_provider = $product['_provider'];
+                    $instance->save();
                     $prices = [];
                     foreach($product['prices'] as $price){
                         $prices[$price['_type']] = ['price' => $price['price']];
