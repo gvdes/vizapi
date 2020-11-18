@@ -27,14 +27,20 @@ class RequisitionController extends Controller{
     public function create(Request $request){
         try{
             $requisition = DB::transaction(function() use ($request){
+                $_workpoint_from = $this->account->_workpoint;
                 switch ($request->_type){
                     case 2:
                         $data = $this->getToSupplyFromStore($this->account->_account);
                     break;
                     case 3:
-                        $workpoint_to_ask = isset($request->store) ? $request->store : $this->account->_workpoint;
-                        $data = $this->getVentaFromStore($request->folio, $workpoint_to_ask);
-                        $request->notes ? $request->notes : $data['notes'];
+                        $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
+                        $data = $this->getVentaFromStore($request->folio, $_workpoint_from);
+                        $request->notes = $request->notes ? $request->notes : $data['notes'];
+                    break;
+                    case 4:
+                        $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
+                        $data = $this->getPedidoFromStore($request->folio, $_workpoint_from);
+                        $request->notes = $request->notes ? $request->notes : $data['notes'];
                     break;
                 }
                 if(isset($data['msg'])){
@@ -47,7 +53,7 @@ class RequisitionController extends Controller{
                 $num_ticket = Requisition::where('_workpoint_to', $request->_workpoint_to)
                                             ->whereDate('created_at', $now)
                                             ->count()+1;
-                $num_ticket_store = Requisition::where('_workpoint_from', $this->account->_workpoint)
+                $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
                                                 ->whereDate('created_at', $now)
                                                 ->count()+1;
                 $requisition =  Requisition::create([
@@ -55,7 +61,7 @@ class RequisitionController extends Controller{
                     "num_ticket" => $num_ticket,
                     "num_ticket_store" => $num_ticket_store,
                     "_created_by" => $this->account->_account,
-                    "_workpoint_from" => $this->account->_workpoint,
+                    "_workpoint_from" => $_workpoint_from,
                     "_workpoint_to" => $request->_workpoint_to,
                     "_type" => $request->_type,
                     "printed" => 0,
@@ -460,7 +466,7 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
-                return ["domain" => "192.168.1.115", "port" => 9100];
+                return ["domain" => "192.168.1.36", "port" => 9100];
                 break;
             case 2:
                 return ["domain" => "192.168.1.36", "port" => 9100];
@@ -504,7 +510,7 @@ class RequisitionController extends Controller{
     public function getVentaFromStore($folio, $workpoint_id){
         $client = curl_init();
         $workpoint = WorkPoint::find($workpoint_id);
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas");
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/folio");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client, CURLOPT_POST, 1);
@@ -513,10 +519,11 @@ class RequisitionController extends Controller{
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         $venta = json_decode(curl_exec($client), true);
         if($venta){
-            if($venta->msg){
-                return ["msg" => $venta->msg];
+            if(isset($venta['msg'])){
+                return ["msg" => $venta['msg']];
             }
-            $venta->products->map(function($row){
+            $toSupply = [];
+            foreach($venta['products'] as $row){
                 $product = Product::where('code', $row['code'])->first();
                 $required = $row['req'];
                 if($product->_unit == 3){
@@ -524,12 +531,10 @@ class RequisitionController extends Controller{
                     $required = floor($required/$pieces);
                 }
                 if($required > 0){
-                    if(($product->_unit == 1 && $required>5) || $product->_unit!=1){
-                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
-                    }
+                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
                 }
-            });
-            return ["notes" => "Pedido tienda #".$folio, "products" => $venta->products];
+            }
+            return ["notes" => "Pedido tienda #".$folio, "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }
@@ -632,5 +637,37 @@ class RequisitionController extends Controller{
                 }
             }
         } */
+    }
+
+    public function getPedidoFromStore($folio, $workpoint_id){
+        $client = curl_init();
+        $workpoint = WorkPoint::find($workpoint_id);
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/preventa/folio");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,40);
+        $data = http_build_query(["folio" => $folio]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        $venta = json_decode(curl_exec($client), true);
+        if($venta){
+            if(isset($venta['msg'])){
+                return ["msg" => $venta['msg']];
+            }
+            $toSupply = [];
+            foreach($venta['products'] as $row){
+                $product = Product::where('code', $row['code'])->first();
+                $required = $row['req'];
+                if($product->_unit == 3){
+                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                    $required = floor($required/$pieces);
+                }
+                if($required > 0){
+                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                }
+            }
+            return ["notes" => "Pedido tienda #".$folio, "products" => $toSupply];
+        }
+        return ["msg" => "No se tenido conexión con la tienda"];
     }
 }
