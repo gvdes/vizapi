@@ -120,10 +120,10 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(2,2);
             $printer->setEmphasis(true);
             $printer->setReverseColors(true);
-            $printer->text(" Pedido para ".$requisition->from->alias." #".$requisition->id." \n");
+            $printer->text("Pedido para ".$requisition->from->alias." #".$requisition->id." \n");
             $printer->setReverseColors(false);
             if($requisition->notes){
-                $printer->setTextSize(1,1);
+                $printer->setTextSize(2,1);
                 $printer->text("$requisition->notes \n");
             }
             $printer->setTextSize(1,1);
@@ -171,11 +171,11 @@ class MiniPrinterController extends Controller{
                         }, '');
                         $printer->setJustification(Printer::JUSTIFY_LEFT);
                         $printer->setTextSize(2,1);
-                        $printer->text($y."█ ".trim($locations)."█".$product->code." \n");
+                        $printer->text($y."█ ".trim($locations)."█ ".$product->code." \n");
                         $printer->setTextSize(1,1);
                         $printer->text($product->description." \n");
                         if($product->units->id == 3){
-                            $printer->text(" CAJAS SOLICITADAS: ");
+                            $printer->text("CAJAS SOLICITADAS: ");
                             $printer->setTextSize(2,1);
                             $printer->text($product->pivot->units."\r\n");
                             $printer->setJustification(Printer::JUSTIFY_RIGHT);
