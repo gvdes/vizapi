@@ -137,9 +137,9 @@ class MiniPrinterController extends Controller{
             $printer->text("----------------------------------------\n");
             $y = 1;
             $product = collect($requisition->products);
-            $groupBy = $product->filter(function($product){
+            $groupBy = $product/* ->filter(function($product){
                 return $product->pivot->stock>0;
-            })->map(function($product){
+            }) */->map(function($product){
                 $product->locations->sortBy('id');
                 return $product;
             })->groupBy(function($product){
@@ -149,7 +149,6 @@ class MiniPrinterController extends Controller{
                     return '';
                 }
             })->sortKeys();
-            /* return $groupBy; */
             $piso_num = 1;
             foreach($groupBy as $piso){
                 if($piso_num>1){
@@ -165,7 +164,7 @@ class MiniPrinterController extends Controller{
                 }
                 foreach($piso as $product){
                     $pieces = 1;
-                    if(intval($product->pivot->stock)>0){
+                    if($requisition->_type ==3 || intval($product->pivot->stock)>0){
                         $locations = $product->locations->reduce(function($res, $location){
                             return $res.$location->path.",";
                         }, '');

@@ -35,7 +35,7 @@ class RequisitionController extends Controller{
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
-                        $data = $this->getVentaFromStore($request->folio, $_workpoint_from);
+                        $data = $this->getVentaFromStore($request->folio, $_workpoint_from, $request->caja);
                         $request->notes = $request->notes ? $request->notes : $data['notes'];
                     break;
                     case 4:
@@ -509,7 +509,7 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function getVentaFromStore($folio, $workpoint_id){
+    public function getVentaFromStore($folio, $workpoint_id, $caja){
         $client = curl_init();
         $workpoint = WorkPoint::find($workpoint_id);
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/folio");
@@ -517,7 +517,7 @@ class RequisitionController extends Controller{
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client, CURLOPT_POST, 1);
         curl_setopt($client,CURLOPT_TIMEOUT,40);
-        $data = http_build_query(["folio" => $folio]);
+        $data = http_build_query(["folio" => $folio, "caja" => $caja]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         $venta = json_decode(curl_exec($client), true);
         if($venta){
