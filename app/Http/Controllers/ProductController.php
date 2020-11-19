@@ -167,6 +167,7 @@ class ProductController extends Controller{
                         })
                         ->orWhere('name', 'like','%'.$code.'%')
                         ->orWhere('code', 'like','%'.$code.'%')
+                        ->orWhere('description', 'like','%'.$code.'%')
                         ->limit('20')->get();
         return response()->json($products);
     }

@@ -31,6 +31,7 @@ class RequisitionController extends Controller{
                 switch ($request->_type){
                     case 2:
                         $data = $this->getToSupplyFromStore($this->account->_workpoint);
+                        return $data;
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
@@ -77,7 +78,7 @@ class RequisitionController extends Controller{
             return response()->json([
                 "success" => true,
                 "order" => $requisition
-                //"order" => new RequisitionResource($requisition)
+                /* "order" => new RequisitionResource($requisition) */
             ]);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido crear el pedido"]);
@@ -659,15 +660,15 @@ class RequisitionController extends Controller{
             foreach($venta['products'] as $row){
                 $product = Product::where('code', $row['code'])->first();
                 $required = $row['req'];
-                if($product->_unit == 3){
+                /* if($product->_unit == 3){
                     $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                     $required = floor($required/$pieces);
-                }
+                } */
                 if($required > 0){
                     $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
                 }
             }
-            return ["notes" => "Pedido tienda #".$folio, "products" => $toSupply];
+            return ["notes" => "Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }
