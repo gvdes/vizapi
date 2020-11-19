@@ -77,8 +77,8 @@ class RequisitionController extends Controller{
             });
             return response()->json([
                 "success" => true,
-                "order" => $requisition
-                /* "order" => new RequisitionResource($requisition) */
+                /* "order" => $requisition */
+                "order" => new RequisitionResource($requisition)
             ]);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido crear el pedido"]);
@@ -530,7 +530,7 @@ class RequisitionController extends Controller{
                 $required = $row['req'];
                 if($product->_unit == 3){
                     $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                    $required = floor($required/$pieces);
+                    $required = round($required/$pieces, 2);
                 }
                 if($required > 0){
                     $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];

@@ -177,14 +177,14 @@ class MiniPrinterController extends Controller{
                         if($product->units->id == 3){
                             $printer->text("CAJAS SOLICITADAS: ");
                             $printer->setTextSize(2,1);
-                            $printer->text($product->pivot->units."\r\n");
+                            $printer->text(round($product->pivot->units)."\r\n");
                             $printer->setJustification(Printer::JUSTIFY_RIGHT);
                             $pieces = $product->pieces;
                         }
                         $printer->setTextSize(1,1);
                         $printer->text("UF: ");
                         $printer->setTextSize(2,1);
-                        $printer->text($product->pivot->units*$pieces);
+                        $printer->text(round($product->pivot->units*$pieces));
                         $printer->setTextSize(1,1);
                         $printer->text(" - UD: ");
                         $printer->setTextSize(2,1);
@@ -210,7 +210,7 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(1,1);
             $printer->text(" Piezas: ");
             $printer->setTextSize(2,1);
-            $printer->text($summary['articles']."\n");
+            $printer->text(round($summary['articles'])."\n");
             $printer->setTextSize(1,1);
             $printer->text("Volumen ".$summary['volumen']." m^3\n");
             $printer->text($summary['sinVolumen']." cajas sin contabilizar\n");
@@ -222,7 +222,7 @@ class MiniPrinterController extends Controller{
                 $printer->setTextSize(1,1);
                 $printer->text("Piezas agotadas: ");
                 $printer->setTextSize(2,1);
-                $printer->text($summary['articlesSouldOut']."\n");
+                $printer->text(round($summary['articlesSouldOut'])."\n");
             }
             $printer->setTextSize(1,1);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
