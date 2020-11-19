@@ -31,7 +31,6 @@ class RequisitionController extends Controller{
                 switch ($request->_type){
                     case 2:
                         $data = $this->getToSupplyFromStore($this->account->_workpoint);
-                        return $data;
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
@@ -589,7 +588,7 @@ class RequisitionController extends Controller{
                     }
                 }
             }
-            return ["products" => $toSupply, "wp" => $workpoint_id];
+            return ["products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
 
