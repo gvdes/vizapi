@@ -188,9 +188,9 @@ class MiniPrinterController extends Controller{
                     $printer->text(" - UD: ");
                     $printer->setTextSize(2,1);
                     $printer->text($product->pivot->stock."\n");
-                    if($product->pivot->notes){
+                    if($product->pivot->comments){
                         $printer->setTextSize(1,1);
-                        $printer->text($product->pivot->notes."\n");
+                        $printer->text("Notas: ".$product->pivot->comments."\n");
                     }
                     $printer->feed(1);
                     $y++;
@@ -256,7 +256,7 @@ class MiniPrinterController extends Controller{
                     $printer->text($product->pivot->stock."\n");
                     if($product->pivot->comments){
                         $printer->setTextSize(1,1);
-                        $printer->text($product->pivot->comments."\n");
+                        $printer->text("Notas: ".$product->pivot->comments."\n");
                     }
                     $printer->feed(1);
                     $y++;
