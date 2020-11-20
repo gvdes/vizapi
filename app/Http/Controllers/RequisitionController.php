@@ -470,6 +470,7 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
+                /* return ["domain" => "192.168.1.36", "port" => 9100]; */
                 if($for == 4 || $for == 5 || $for == 6 || $for == 9 || $for == 10){
                     return ["domain" => "192.168.1.34", "port" => 9100];
                 }else{
