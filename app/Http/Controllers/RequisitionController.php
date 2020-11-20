@@ -34,7 +34,10 @@ class RequisitionController extends Controller{
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
-                        $data = $this->getVentaFromStore($request->folio, $_workpoint_from, $request->caja);
+                        $cadena = explode('-', $request->folio);
+                        $folio = count($cadena)>1 ? $cadena[1] : '0';
+                        $caja = count($cadena)>0 ? $cadena[0] : '0';
+                        $data = $this->getVentaFromStore($folio, $_workpoint_from, $caja);
                         $request->notes = $request->notes ? $request->notes : $data['notes'];
                     break;
                     case 4:

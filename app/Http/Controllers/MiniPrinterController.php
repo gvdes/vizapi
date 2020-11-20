@@ -199,7 +199,10 @@ class MiniPrinterController extends Controller{
             $piso_num++;
         }
         if($requisition->_type==3 || $requisition->_type==4 || $requisition->_type==1){
-            $printer->text("-------AGOTADOS-------\n");
+            $printer->setTextSize(1,1);
+            $printer->text("----------------------------------------------\n");
+            $printer->text("---------------AGOTADOS---------------\n");
+            $printer->text("----------------------------------------------\n");
             $agotados = $product2->filter(function($product){
                 return $product->pivot->stock<=0;
             })->map(function($product){
