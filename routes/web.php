@@ -100,6 +100,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
+    $router->group(['prefix' => 'workpoints'], function () use ($router){
+        $router->get('/', 'WorkpointController@index');
+    });
+
 });
         $router->group(['prefix' => 'reports'], function () use ($router){
             /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
