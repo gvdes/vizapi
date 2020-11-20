@@ -291,14 +291,25 @@ class RequisitionController extends Controller{
 
     public function index(Request $request){
         $workpoints = WorkPoint::where('_type', 1)->get();
-        $account = Account::with(['permissions'=> function($query){
-            $query->whereIn('id', [29,30])->get();
-        }])->find($this->account->id);
-        $permissions = $account->permissions->map(function($permission){
+        $account = Account::with(['permissions'])->find($this->account->id);
+        $permissions = array_column($account->permissions->toArray(), 'id')/* $account->permissions->map(function($permission){
             $id = $permission->id - 28;
             return [$id];
-        });
-        $types = Type::whereIn('id', $permissions)->get();
+        }) */;
+        $_types = [];
+        if(in_array(29,$permissions)){
+            array_push($_types, 1);
+        }
+        if(in_array(30,$permissions)){
+            array_push($_types, 2);
+        }
+        if(in_array(38,$permissions)){
+            array_push($_types, 3);
+        }
+        if(in_array(39,$permissions)){
+            array_push($_types, 4);
+        }
+        $types = Type::whereIn('id', $_types)->get();
         $status = Process::all();
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]

@@ -14,9 +14,9 @@ class WorkpointController extends Controller{
     public function __construct(){
         //
     }
-    
+
     public function index(){
-        $workpoint = WorkPoint::all();
+        $workpoint = WorkPoint::with('type')->get();
         return response()->json($workpoint);
     }
 }

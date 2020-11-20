@@ -123,6 +123,8 @@ class InitSeeder extends Seeder{
             ['id'=> 35, '_module'=> 19, 'name'=> 'Iniciar surtido'],
             ['id'=> 36, '_module'=> 19, 'name'=> 'Iniciar envio'],
             ['id'=> 37, '_module'=> 18, 'name'=> 'Comfirmar pedido'],
+            ['id'=> 38, '_module'=> 18, 'name'=> 'Resurtido venta tienda'],
+            ['id'=> 39, '_module'=> 18, 'name'=> 'Resurtido preventa'],
             /* ['id'=> 32, '_module'=> 21, 'name'=> 'Acceso'], */
             ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
             /* ['id'=> 11, '_module'=> 4, 'name'=> 'Creación de pedido'],
