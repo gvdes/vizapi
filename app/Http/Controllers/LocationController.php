@@ -224,7 +224,7 @@ class LocationController extends Controller{
                     $query->where([
                         ['_workpoint', $workpoint->id],
                     ]);
-                },'category', 'status', 'units'])/* ->with() */->find($product->product->id);
+                },'category', 'status', 'units'])->find($product->product->id);
             }
         }
         if($product){
@@ -236,10 +236,13 @@ class LocationController extends Controller{
             $access = json_decode(curl_exec($client), true);
             if($access){
                 $product->stock = intval($access['ACTSTO']);
-                $product->min = $product->stocks[0]->pivot->min;
-                $product->max = $product->stocks[0]->pivot->max;
-                /* $product->min = intval($access['MINSTO']);
-                $product->max = intval($access['MAXSTO']); */
+                if(count($product->stocks)>0){
+                    $product->min = $product->stocks[0]->pivot->min;
+                    $product->max = $product->stocks[0]->pivot->max;
+                }else{
+                    $product->min = intval($access['MINSTO']);
+                    $product->max = intval($access['MAXSTO']);
+                }
             }else{
                 $product->stock = '--';
                 $product->min = '--';

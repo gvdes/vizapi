@@ -559,8 +559,10 @@ class RequisitionController extends Controller{
         if($stocks){
             $toSupply = [];
             foreach($products as $key => $product){
-                $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
-                $max = intval($product->stocks[0]->pivot->max);
+                $stock = intval($stocks[$key]['stock'])>=0 ? intval($stocks[$key]['stock']) : 0;
+                //$max = intval($product->stocks[0]->pivot->max);
+                $max = intval($stocks[$key]['max']);
+                $min = intval($stocks[$key]['min']);
                 if($max>$stock){
                     $required = $max - $stock;
                 }else{
@@ -572,7 +574,7 @@ class RequisitionController extends Controller{
                     $required = floor($required/$pieces);
                 }
                 if($required > 0){
-                    if(($product->_unit == 1 && $required>5) || $product->_unit!=1){
+                    if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
                         $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
                     }
                 }
@@ -580,53 +582,6 @@ class RequisitionController extends Controller{
             return ["products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
-
-        /* if($requisition->_type == 2){
-            $workpoint = WorkPoint::find($requisition->_workpoint_from);
-            //$categories = array_merge(range(37,57), range(130,184));
-            $products = Product::with(['stocks' => function($query){
-                $query->where([
-                    ['_workpoint', $this->account->_workpoint],
-                    ['min', '>', 0],
-                    ['max', '>', 0]
-                ]);
-            }])->whereHas('stocks', function($query){
-                $query->where([
-                    ['_workpoint', $this->account->_workpoint],
-                    ['min', '>', 0],
-                    ['max', '>', 0]
-                ]);
-            }, '>', 0)->whereIn('_category', $categories)->get();
-            $client = curl_init();
-            $workpoint = WorkPoint::find($requisition->_workpoint_from);
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,100);
-            $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
-            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-            $stocks = json_decode(curl_exec($client), true);
-            if($stocks){
-                $toSupply = [];
-                foreach($products as $key => $product){
-                    $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
-                    $max = intval($product->stocks[0]->pivot->max);
-                    if($max>$stock){
-                        $required = $max - $stock;
-                    }else{
-                        $required = 0;
-                    }
-
-                    if($product->_unit == 3){
-                        $required = floor($required/$product->pieces);
-                    }
-                    if($required > 0){
-                        $requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
-                    }
-                }
-            }
-        } */
     }
 
     public function getPedidoFromStore($folio, $workpoint_id){

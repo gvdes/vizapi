@@ -70,7 +70,7 @@ class ProductController extends Controller{
     public function getMaximum(){
         $start = microtime(true);
         //$workpoint = \App\WorkPoint::find($this->account->_workpoint);
-        $workpoint = \App\WorkPoint::find(5);
+        $workpoint = \App\WorkPoint::find(11);
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
