@@ -181,7 +181,11 @@ class MiniPrinterController extends Controller{
                     if($product->units->id == 3){
                         $printer->text("CAJAS SOLICITADAS: ");
                         $printer->setTextSize(2,1);
-                        $printer->text(round($product->pivot->units)."\r\n");
+                        $printer->text(round($product->pivot->units));
+                        $printer->setTextSize(1,1);
+                        $printer->text(" x: ");
+                        $printer->setTextSize(2,2);
+                        $printer->text("[   ]\n");
                         $printer->setJustification(Printer::JUSTIFY_RIGHT);
                         $pieces = $product->pieces;
                     }

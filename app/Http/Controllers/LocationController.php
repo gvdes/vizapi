@@ -210,13 +210,21 @@ class LocationController extends Controller{
         $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $product = \App\Product::with(['locations' => function($query)use($cellers){
             $query->whereIn('_celler', $cellers);
-        }])->with('category', 'status', 'units')->where('code', $code)->orWhere('name', $code)->first();
+        },'stocks' => function($query) use($workpoint){
+            $query->where([
+                ['_workpoint', $workpoint->id]
+            ]);
+        },'category', 'status', 'units'])/* ->with('category', 'status', 'units') */->where('code', $code)->orWhere('name', $code)->first();
         if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
                 $product = \App\Product::with(['locations' => function($query)use($cellers){
                     $query->whereIn('_celler', $cellers);
-                }])->with('category', 'status', 'units')->find($product->product->id);
+                },'stocks' => function($query) use($workpoint){
+                    $query->where([
+                        ['_workpoint', $workpoint->id],
+                    ]);
+                },'category', 'status', 'units'])/* ->with() */->find($product->product->id);
             }
         }
         if($product){
@@ -228,8 +236,10 @@ class LocationController extends Controller{
             $access = json_decode(curl_exec($client), true);
             if($access){
                 $product->stock = intval($access['ACTSTO']);
-                $product->min = intval($access['MINSTO']);
-                $product->max = intval($access['MAXSTO']);
+                $product->min = $product->stocks[0]->pivot->min;
+                $product->max = $product->stocks[0]->pivot->max;
+                /* $product->min = intval($access['MINSTO']);
+                $product->max = intval($access['MAXSTO']); */
             }else{
                 $product->stock = '--';
                 $product->min = '--';
@@ -538,5 +548,40 @@ class LocationController extends Controller{
             }
         }
         return response()->json(["success"=>$added, "notFound" => $res, "locationNotFound" => $location]);
+    }
+
+    public function getStocksFromStores(Request $request){
+        $products = Product::whereIn('id', $request->_products)->get();
+        $stores = Workpoint::whereIn('id', $request->_stores)->get();
+        $codes = array_column($products->toArray(), 'code');
+        $stocks = [];
+        foreach($stores as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
+        }
+        $result = $products->map(function($product, $key) use($stocks, $stores){
+            $data = [
+                'code' => $product->code,
+                'scode' => $product->name,
+                'category'=> $product->category->name,
+                'descripción' => $product->description
+            ];
+            foreach($stores as $workpoint){
+                if($stocks[$workpoint->alias]){
+                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
+                }else{
+                    $data[$workpoint->alias] = '--';
+                }
+            }
+            return $data;
+        })->toArray();
+        return response()->json($result);
     }
 }

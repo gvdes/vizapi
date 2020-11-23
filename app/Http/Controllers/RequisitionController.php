@@ -128,6 +128,36 @@ class RequisitionController extends Controller{
         }
     }
 
+    public function addMassiveProduct(Request $request){
+        $requisition = Requisition::find($request->_requisition);
+        $added = 0;
+        $fail = 0;
+        if($requisition){
+            $products = $request->products;
+            foreach($products as $row){
+                $code = $row['modelo'];
+                $product = Product::whereHas('variants', function($query) use ($code){
+                    $query->where('barcode', 'like', '%'.$code.'%');
+                })
+                ->orWhere('name', 'like','%'.$code.'%')
+                ->orWhere('code', 'like','%'.$code.'%')->first();
+                if($product){
+                    $required = $row['piezas'];
+                    if($product->_unit == 3){
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                        $required = round($required/$pieces, 2);
+                    }
+                    $added++;
+                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => ""]]);
+                }else{
+                    $fail++;
+                }
+            }
+
+        }
+        return response()->json(["added" => $added, "fail" => $fail]);
+    }
+
     public function removeProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
@@ -396,70 +426,11 @@ class RequisitionController extends Controller{
             }]);
         }]);
         $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-        $cellerPrinter = new MiniPrinterController(/* '192.168.1.36' */$printer['domain'], $printer['port']);
+        $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
         $res = $cellerPrinter->requisitionTicket($requisition);
         return response()->json(["success" => $res]);
         $requisition->printed = $requisition->printed +1;
         return response()->json(["success" => $requisition->save()]);
-    }
-
-    public function test(){
-        //$categories = array_merge(range(37,57), range(130,184));
-        $categories = range(37,57);
-        $products = Product::with(['stocks' => function($query){
-            $query->where([
-                ['_workpoint', $this->account->_workpoint],
-                ['min', '>', 0],
-                ['max', '>', 0]
-            ]);
-        }])/* ->whereHas('stocks', function($query){
-            $query->where([
-                ['_workpoint', $this->account->_workpoint],
-                ['min', '>', 0],
-                ['max', '>', 0]
-            ]);
-        }, '>', 0) */->whereIn('_category', $categories)->get();
-        $count = $products->map(function ($product){
-            return $product->stocks->count();
-        });
-        return response()->json($count);
-        $workpoint = WorkPoint::find($this->account->_workpoint);
-        $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,100);
-        $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        $stocks = json_decode(curl_exec($client), true);
-        /* return response()->json($stocks); */
-        if($stocks){
-            $toSupply = [];
-            $notSupply = [];
-            foreach($products as $key => $product){
-                $stock = intval($stocks[$key]['stock'])>0 ? intval($stocks[$key]['stock']) : 0;
-                $max = intval($product->stocks[0]->pivot->max);
-                $min = intval($product->stocks[0]->pivot->min);
-                if($max>$stock){
-                    $required = $max - $stock;
-                    array_push($toSupply, ['code' => $product->code, "scode" => $product->name, "description" => $product->description, "ipack" => $product->pieces, "stock" => $stock, "min" =>$min, "max" => $max]);
-                }/* else{
-                    $required = 0;
-                }
-
-                if($product->_unit == 3){
-                    $required = floor($required/$product->pieces);
-                }
-                if($required > 0){
-                    array_push($toSupply, [$product->code => ['units' => $required, 'comments' => '', 'stock' => 0]]);
-                    //$requisition->products()->syncWithoutDetaching([ $product->id => ['units' => $required, 'comments' => '', 'stock' => 0]]);
-                }else{
-                    array_push($notSupply, [$product->code => ['units' => $required, 'comments' => '', 'stock' => 0]]);
-                } */
-            }
-            return response()->json(["supply"=> $toSupply/* , "notSupply"=> $notSupply */]);
-        }
     }
 
     public function search(Request $request){
@@ -481,11 +452,10 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
-                /* return ["domain" => "192.168.1.36", "port" => 9100]; */
                 if($for == 4 || $for == 5 || $for == 6 || $for == 9 || $for == 10){
-                    return ["domain" => "192.168.1.34", "port" => 9100];
+                    return ["domain" => env("PRINTER_ARRIBA"), "port" => 9100];
                 }else{
-                    return ["domain" => "192.168.1.115", "port" => 9100];
+                    return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
                 }
                 break;
             case 2:

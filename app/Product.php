@@ -83,10 +83,10 @@ class Product extends Model{
      */
 
     public function getDimensionsAttribute($value){
-        $values = json_decode($value);
-        $values->length = floatval($values->length) ?  floatval($values->length) : floatval(0);
-        $values->height = floatval($values->height) ?  floatval($values->height) : floatval(0);
-        $values->width = floatval($values->width) ?  floatval($values->width) : floatval(0);
+        $values = is_null($value) ? $value : json_decode($value);
+        $values->length =  is_null($values) ? floatval(0) : floatval($values->length);
+        $values->height = is_null($values) ? floatval(0) : floatval($values->height);
+        $values->width = is_null($values) ? floatval(0) : floatval($values->width);
         return $values;
     }
 }

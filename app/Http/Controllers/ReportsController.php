@@ -167,12 +167,15 @@ class ReportsController extends Controller{
     }
 
     public function chechStocks(Request $request){
-        $stores = $request->stores; 
-        $codes = $request->codes;
-        /* $codes = array_column($codes, 'code'); */
+        /* $stores = $request->stores; 
+        $codes = $request->codes; */
+        $categories = range(156,184)/* array_merge(range(130,184), ) */;
+        $products = Product::whereIn('_category', $categories)->get()->toArray();
+        $codes = array_column($products, 'code');
+        $stores = "all";
         switch($stores){
             case "navidad": 
-                $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,7,9])->get();
+                $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
                 /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
             case "juguete": 
@@ -191,7 +194,7 @@ class ReportsController extends Controller{
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,90);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
             $data = http_build_query(["products" => $codes]);
             curl_setopt($client, CURLOPT_POSTFIELDS, $data);
             $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
@@ -200,13 +203,16 @@ class ReportsController extends Controller{
             $data = [
                 'code' => $product->code,
                 'scode' => $product->name,
+                'category'=> $product->category->name,
                 'descripción' => $product->description
             ];
             foreach($workpoints as $workpoint){
                 if($stocks[$workpoint->alias]){
                     $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
-                    /* $data['min'] = $stocks[$workpoint->alias][$key]['min'];
-                    $data['max'] = $stocks[$workpoint->alias][$key]['max']; */
+                    $min = "min".$workpoint->alias;
+                    $max = "max".$workpoint->alias;
+                    $data[$min] = $stocks[$workpoint->alias][$key]['min'];
+                    $data[$max] = $stocks[$workpoint->alias][$key]['max'];
                 }else{
                     $data[$workpoint->alias] = '--';
                 }
@@ -217,11 +223,38 @@ class ReportsController extends Controller{
         return $result;
     }
 
-    public function test(){
-        $export = new StocksExport([
-            [1,2,3],
-            [4,5,6]
-        ]);
-        return Excel::download($export, 'invoices.xlsx');
+    public function test(Request $request){
+        $products = Product::whereIn('id', $request->_products)->get();
+        $stores = Workpoint::whereIn('id', $request->_stores)->get();
+        $codes = array_column($products->toArray(), 'code');
+        $stocks = [];
+        foreach($stores as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
+        }
+        $result = $products->map(function($product, $key) use($stocks, $stores){
+            $data = [
+                'code' => $product->code,
+                'scode' => $product->name,
+                'category'=> $product->category->name,
+                'descripción' => $product->description
+            ];
+            foreach($stores as $workpoint){
+                if($stocks[$workpoint->alias]){
+                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
+                }else{
+                    $data[$workpoint->alias] = '--';
+                }
+            }
+            return $data;
+        })->toArray();
+        return response()->json($result);
     }
 }

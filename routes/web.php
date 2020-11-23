@@ -62,6 +62,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/setMassive', 'LocationController@setMasiveLocation');
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
         $router->post('/stocks', 'LocationController@getStocks');
+        $router->post('/stocksFromStores', 'LocationController@getStocksFromStores');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
     });
@@ -95,6 +96,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/{id}', 'RequisitionController@find');
         $router->post('/', 'RequisitionController@create');
         $router->post('/add', 'RequisitionController@addProduct');
+        $router->post('/addMassive', 'RequisitionController@addMassiveProduct');
         $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
