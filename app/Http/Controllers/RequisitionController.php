@@ -112,7 +112,7 @@ class RequisitionController extends Controller{
                             "price" => $price->pivot->price,
                         ];
                     }),
-                    "pieces" => $product->pieces.' '.$product->units->alias,
+                    "pieces" => $product->pieces,
                     "ordered" => [
                         "amount" => $amount,
                         "comments" => $request->comments,
