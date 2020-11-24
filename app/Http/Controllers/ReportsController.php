@@ -169,12 +169,26 @@ class ReportsController extends Controller{
     public function chechStocks(Request $request){
         /* $stores = $request->stores; 
         $codes = $request->codes; */
-        $categories = range(156,184)/* array_merge(range(130,184), ) */;
-        $products = Product::whereIn('_category', $categories)->get()->toArray();
-        $codes = array_column($products, 'code');
-        $stores = "all";
+        $categories = range(130,160)/* array_merge(range(130,184), ) */;
+        /* $products = Product::whereIn('_category', $categories)->get()->toArray(); */
+        $products = Product::/* with(['stocks' => function($query){
+            $query->where([
+                ['_workpoint', 4],
+                ['min', '>', 0],
+                ['max', '>', 0]
+            ]);
+        }])->whereHas('stocks', function($query){
+            $query->where([
+                ['_workpoint', 4],
+                ['min', '>', 0],
+                ['max', '>', 0]
+            ]);
+        }, '>', 0)-> */whereIn('_category', $categories)->get();
+        /* $codes = array_column($products, 'code'); */
+        $stores = "navidad";
         switch($stores){
             case "navidad": 
+                /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
                 $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
                 /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
@@ -185,7 +199,7 @@ class ReportsController extends Controller{
                 $workpoints = WorkPoint::all();
         }
         /* $products = Product::whereIn('code', array_column($codes, 'code'))->get(); */
-        $products = Product::whereIn('code', $codes)->get();
+        /* $products = Product::whereIn('code', $codes)->get(); */
         $codes = array_column($products->toArray(), 'code');
         $stocks = [];
         foreach($workpoints as $workpoint){
@@ -203,6 +217,7 @@ class ReportsController extends Controller{
             $data = [
                 'code' => $product->code,
                 'scode' => $product->name,
+                'pieces' => $product->pieces,
                 'category'=> $product->category->name,
                 'descripción' => $product->description
             ];
