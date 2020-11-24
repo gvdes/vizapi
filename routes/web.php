@@ -110,6 +110,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->group(['prefix' => 'reports'], function () use ($router){
             /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
             $router->get('/stocks', 'ReportsController@chechStocks');
-            $router->get('/ventas', 'ReportsController@chechStocks');
+            $router->post('/ventas', 'ReportsController@ventas');
             $router->get('/test', 'ReportsController@test');
         });

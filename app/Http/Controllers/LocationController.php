@@ -541,7 +541,7 @@ class LocationController extends Controller{
                     $query->where('_workpoint', $this->account->_workpoint);
                 })->where('path', $path)->first();
                 if($section){
-                    $product->locations()->toggle($section->id);
+                    $product->locations()->syncWithoutDetaching([$section->id]);
                     $added++;
                 }else{
                     array_push($location, ["code" => $code['code'], "location" => $path]);

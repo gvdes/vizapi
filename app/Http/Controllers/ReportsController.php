@@ -272,4 +272,46 @@ class ReportsController extends Controller{
         })->toArray();
         return response()->json($result);
     }
+
+    public function ventas(Request $request){
+        $products = collect($request->products);
+        $products2 = $request->products;
+        /* $codes = array_column($products->toArray(), 'code'); */
+        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
+        $stocks = [];
+        foreach($workpoints as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,200);
+            $data = http_build_query(["codes" => $products2]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $ventas[$workpoint->alias] = json_decode(curl_exec($client), true);
+        }
+        $result = $products->map(function($product, $key) use($ventas, $workpoints){
+            /* $data = [
+                'code' => $product->code,
+                'scode' => $product->name,
+                'pieces' => $product->pieces,
+                'category'=> $product->category->name,
+                'descripción' => $product->description
+            ]; */
+            foreach($workpoints as $workpoint){
+                if($ventas[$workpoint->alias]){
+                    $product[$workpoint->alias] = $ventas[$workpoint->alias][$key]['total'];
+                    /* $min = "min".$workpoint->alias;
+                    $max = "max".$workpoint->alias;
+                    $data[$min] = $stocks[$workpoint->alias][$key]['min'];
+                    $data[$max] = $stocks[$workpoint->alias][$key]['max']; */
+                }else{
+                    $product[$workpoint->alias] = '--';
+                }
+            }
+            return $product;
+        })->toArray();
+
+        return $result;
+    }
 }
