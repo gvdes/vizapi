@@ -142,7 +142,7 @@ class RequisitionController extends Controller{
                 ->orWhere('name', 'like','%'.$code.'%')
                 ->orWhere('code', 'like','%'.$code.'%')->first();
                 if($product){
-                    if($row['piezas']){
+                    if(isset($row['piezas'])){
                         $required = $row['piezas'];
                         if($product->_unit == 3){
                             $pieces = $product->pieces == 0 ? 1 : $product->pieces;
