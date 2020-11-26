@@ -142,10 +142,14 @@ class RequisitionController extends Controller{
                 ->orWhere('name', 'like','%'.$code.'%')
                 ->orWhere('code', 'like','%'.$code.'%')->first();
                 if($product){
-                    $required = $row['piezas'];
-                    if($product->_unit == 3){
-                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                        $required = round($required/$pieces, 2);
+                    if($row['piezas']){
+                        $required = $row['piezas'];
+                        if($product->_unit == 3){
+                            $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                            $required = round($required/$pieces, 2);
+                        }
+                    }else{
+                        $required = $row['cajas'];
                     }
                     $added++;
                     $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => ""]]);
