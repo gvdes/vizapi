@@ -142,20 +142,37 @@ class MiniPrinterController extends Controller{
         })->map(function($product){
             $product->locations->sortBy('path');
             return $product;
-        })->sortBy(function($product){
-            if(count($product->locations)>0){
-                return $product->locations[0]->path;
-            }
-            return '';
         })->groupBy(function($product){
             if(count($product->locations)>0){
                 return explode('-',$product->locations[0]->path)[0];
             }else{
                 return '';
             }
-        })->sortKeys();
+        })/* ->sortBy(function($product){
+            if(count($product->locations)>0){
+                return $product->locations[0]->path;
+            }
+            return '';
+        }) */->sortKeys();
         $piso_num = 1;
         foreach($groupBy as $piso){
+            $products = $piso->sortBy(function($product){
+                if(count($product->locations)>0){
+                    $location = $product->locations[0]->path;
+                    $res = '';
+                    $parts = explode('-', $location);
+                    foreach($parts as $part){
+                        $numbers = preg_replace('/[^0-9]/', '', $part);
+                        $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                        if(strlen($numbers)==1){
+                            $numbers = '0'.$numbers;
+                        }
+                        $res = $res.$letters.$numbers.'-';
+                    }
+                    return $res;
+                }
+                return '';
+            });
             if($piso_num>1){
                 $printer->setJustification(Printer::JUSTIFY_LEFT);
                 $printer->setTextSize(1,1);
@@ -167,7 +184,7 @@ class MiniPrinterController extends Controller{
                 $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
                 $printer->feed(1);
             }
-            foreach($piso as $product){
+            foreach($products as $product){
                 $pieces = 1;
                 if(intval($product->pivot->stock)>0){
                     $locations = $product->locations->reduce(function($res, $location){
@@ -216,7 +233,18 @@ class MiniPrinterController extends Controller{
                 return $product;
             })->sortBy(function($product){
                 if(count($product->locations)>0){
-                    return $product->locations[0]->path;
+                    $location = $product->locations[0]->path;
+                    $res = '';
+                    $parts = explode('-', $location);
+                    foreach($parts as $part){
+                        $numbers = preg_replace('/[^0-9]/', '', $part);
+                        $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                        if(strlen($numbers)==1){
+                            $numbers = '0'.$numbers;
+                        }
+                        $res = $res.$letters.$numbers.'-';
+                    }
+                    return $res;
                 }
                 return '';
             })->groupBy(function($product){
@@ -233,6 +261,12 @@ class MiniPrinterController extends Controller{
                 $y = 1;
                 $piso_num = 1;
                 foreach($agotados as $piso){
+                    $products = $piso->sortByDesc(function($product){
+                        if(count($product->locations)>0){
+                            return $product->locations[0]->path;
+                        }
+                        return '';
+                    });
                     if($piso_num>1){
                         $printer->setJustification(Printer::JUSTIFY_LEFT);
                         $printer->setTextSize(1,1);
@@ -244,7 +278,7 @@ class MiniPrinterController extends Controller{
                         $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
                         $printer->feed(1);
                     }
-                    foreach($piso as $product){
+                    foreach($products as $product){
                         $pieces = 1;
                         $locations = $product->locations->reduce(function($res, $location){
                             return $res.$location->path.",";

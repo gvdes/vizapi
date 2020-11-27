@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Product;
 use App\WorkPoint;
+use App\CellerSection;
+use App\Celler;
 
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -18,7 +20,7 @@ class ReportsController extends Controller{
      */
     public $account = null;
     public function __construct(){
-        /* $this->account = Auth::payload()['workpoint']; */
+        $this->account = Auth::payload()['workpoint'];
     }
 
     public function getReports(Request $request){
@@ -79,29 +81,42 @@ class ReportsController extends Controller{
     }
 
     public function sinUbicaciones(Request $request){
-        $sections = CellerSection::where('_workpoint', $this->account->_workpoint)->get();
-        $ids_sections = array_column($sections->toArray(), 'id');
+        $workpoint = WorkPoint::find($this->account->_workpoint);
+        $celler = Celler::with('sections')->where([
+            ['_workpoint', $this->account->_workpoint],
+            ['_type', 1]
+            ])->first();
+        $ids_sections = array_column($celler->sections->toArray(), 'id');
         if($request->_category){
-            $ids_categories = []; //calcular
+            $ids_categories = range(130,157); //calcular
             
             $products = Product::whereIn('_category', $ids_categories)->whereHas('locations', function(Builder $query) use($ids_sections){
                 $query->whereIn('_location', $ids_sections);
             },'<=',0)->get();
         }
-        $products = Product::whereHas('locations', function(Builder $query) use($ids_sections){
+        $ids_categories = array_merge(range(130,157)); //calcular
+        $products = Product::whereIn('_category', $ids_categories)->whereHas('locations', function($query) use($ids_sections){
             $query->whereIn('_location', $ids_sections);
         },'<=',0)->get();
         $codes = array_column($products->toArray(), 'code');
-        $stocks = false;
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,10);
+        $data = http_build_query(["products" => $codes]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        $stocks = json_decode(curl_exec($client), true);
         if($stocks){
-            $result = $products->map(function($product) use($stocks){
+            $result = $products->map(function($product, $key) use($stocks){
                 $product->stock = $stocks[$key]['stock'];
                 $product->min = $stocks[$key]['min'];
                 $product->max = $stocks[$key]['max'];
                 return $product;
             })->filter(function($product){
                 return $product->stock > 0;
-            });
+            })->values()->all();
             return response()->json($result);
         }
         return response()->json([

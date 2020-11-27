@@ -131,7 +131,7 @@ class RequisitionController extends Controller{
     public function addMassiveProduct(Request $request){
         $requisition = Requisition::find($request->_requisition);
         $added = 0;
-        $fail = 0;
+        $fail = [];
         if($requisition){
             $products = $request->products;
             foreach($products as $row){
@@ -154,7 +154,7 @@ class RequisitionController extends Controller{
                     $added++;
                     $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => ""]]);
                 }else{
-                    $fail++;
+                    array_push($fail, $row['modelo']);
                 }
             }
 
@@ -432,9 +432,10 @@ class RequisitionController extends Controller{
         $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
         $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
         $res = $cellerPrinter->requisitionTicket($requisition);
-        return response()->json(["success" => $res]);
         $requisition->printed = $requisition->printed +1;
-        return response()->json(["success" => $requisition->save()]);
+        $requisition->save();
+        return response()->json(["success" => $res]);
+        /* return response()->json(["success" => $requisition->save()]); */
     }
 
     public function search(Request $request){
@@ -618,5 +619,10 @@ class RequisitionController extends Controller{
             return ["notes" => "Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
+    }
+
+    public function test(Request $request){
+        $products = collect($request->products)->sortByDesc('locations')->values()->all();
+        return response()->json(array_column($products, "locations"));
     }
 }
