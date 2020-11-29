@@ -245,8 +245,21 @@ class LocationController extends Controller{
                 }
             }else{
                 $product->stock = '--';
-                $product->min = '--';
-                $product->max = '--';
+            }
+            if(isset($request->stocks)){
+                if($request->stocks){
+                    $client = curl_init();
+                    curl_setopt($client, CURLOPT_URL, "http://192.168.1.224:1618/access/public/product/max/".$product->code);
+                    curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+                    curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+                    curl_setopt($client,CURLOPT_TIMEOUT,8);
+                    $access = json_decode(curl_exec($client), true);
+                    if($access){
+                        $product->stocks_stores = [["alias" => "CEDISSP", "stocks" => $access['ACTSTO']]];
+                    }else{
+                        $product->stocks_stores = ["CEDISSP" => "--"];
+                    }
+                }
             }
             return response()->json($product);
             
@@ -528,11 +541,11 @@ class LocationController extends Controller{
         $res = [];
         $location = [];
         foreach($products as $code){
-            $product = Product::find($code['id'])/* whereHas('variants', function(Builder $query) use ($code){
+            $product = Product::/* find($code['id']) */whereHas('variants', function(Builder $query) use ($code){
                 $query->where('barcode', 'like', '%'.$code['code'].'%');
             })
             ->orWhere('name', 'like','%'.$code['code'].'%')
-            ->orWhere('code', 'like','%'.$code['code'].'%')->first() */;
+            ->orWhere('code', 'like','%'.$code['code'].'%')->first();
             $path = $code['path'];
             /* $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
             $path = $path[0].'-P'.substr($path,1,strlen($path)); */
@@ -550,7 +563,7 @@ class LocationController extends Controller{
                 array_push($res, ["code" => $code['code'], "location" => $path]);
             }
         }
-        return response()->json(["success"=>$added, "notFound" => $res, "locationNotFound" => $location]);
+        return response()->json(["success" => $added, "notFound" => $res, "locationNotFound" => $location]);
     }
 
     public function getStocksFromStores(Request $request){

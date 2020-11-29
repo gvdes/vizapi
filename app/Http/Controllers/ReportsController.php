@@ -204,7 +204,7 @@ class ReportsController extends Controller{
         switch($stores){
             case "navidad": 
                 /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
+                $workpoints = WorkPoint::whereIn('id', [2])->get();
                 /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
             case "juguete": 
@@ -215,7 +215,9 @@ class ReportsController extends Controller{
         }
         /* $products = Product::whereIn('code', array_column($codes, 'code'))->get(); */
         /* $products = Product::whereIn('code', $codes)->get(); */
-        $codes = array_column($products->toArray(), 'code');
+        $products = $request->products;
+        $products2 = collect($request->products);
+        $codes = array_column($products, 'code');
         $stocks = [];
         foreach($workpoints as $workpoint){
             $client = curl_init();
@@ -228,13 +230,13 @@ class ReportsController extends Controller{
             curl_setopt($client, CURLOPT_POSTFIELDS, $data);
             $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
         }
-        $result = $products->map(function($product, $key) use($stocks, $workpoints){
+        $result = $products2->map(function($product, $key) use($stocks, $workpoints){
             $data = [
-                'code' => $product->code,
-                'scode' => $product->name,
+                'code' => $product['code'],
+                /* 'scode' => $product->name,
                 'pieces' => $product->pieces,
                 'category'=> $product->category->name,
-                'descripción' => $product->description
+                'descripción' => $product->description */
             ];
             foreach($workpoints as $workpoint){
                 if($stocks[$workpoint->alias]){

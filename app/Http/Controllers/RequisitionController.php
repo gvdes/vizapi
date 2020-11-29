@@ -536,7 +536,7 @@ class RequisitionController extends Controller{
 
     public function getToSupplyFromStore($workpoint_id){
         $workpoint = WorkPoint::find($workpoint_id);
-        $categories = array_merge(range(37,57), range(130,184));
+        $categories = range(37,57)/* array_merge(range(37,57), range(130,184)) */;
         $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
