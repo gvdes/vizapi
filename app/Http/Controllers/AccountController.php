@@ -319,7 +319,7 @@ class AccountController extends Controller{
     }
 
     public function addPermissions(Request $request){
-        $accounts = Account::where('_rol', $request->_rol);
+        $accounts = Account::where('_rol', $request->_rol)->get();
         $total = 0;
         foreach($accounts as $account){
             $account->permissions()->syncWithoutDetaching($request->permissions);
