@@ -319,10 +319,10 @@ class AccountController extends Controller{
     }
 
     public function addPermissions(Request $request){
-        $accounts = Account::all();
+        $accounts = Account::where('_rol', $request->_rol);
         $total = 0;
         foreach($accounts as $account){
-            $account->permissions()->attach($request->permissions);
+            $account->permissions()->syncWithoutDetaching($request->permissions);
             $total++;
         }
         return response()->json(["changed" => $total]);

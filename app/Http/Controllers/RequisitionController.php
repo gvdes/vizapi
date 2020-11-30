@@ -439,6 +439,7 @@ class RequisitionController extends Controller{
     }
 
     public function search(Request $request){
+        $folio = '';
         $where = [];
         $note = '';
         $created_by = '';

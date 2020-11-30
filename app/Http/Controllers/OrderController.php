@@ -88,9 +88,9 @@ class OrderController extends Controller{
         try{
             $order = Requisition::find($request->_order);
             if($this->account->_account == $order->_created_by){
-                $product = Product::/* with(['prices' => function($query){
+                $product = Product::with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                }, 'units'])-> */find($request->_product);
+                }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1;
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'price' => ""]]);
