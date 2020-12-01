@@ -615,11 +615,17 @@ class RequisitionController extends Controller{
                     $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                     $required = floor($required/$pieces);
                 } */
+                if(($row['units'] == 1 || $row['units'] == 2) && $product->_unit == 3){
+                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                    $required = round($required/$pieces, 2);
+                }elseif($row['units'] == 3 && $product->_unit == 3){
+                    $required = .5;
+                }
                 if($required > 0){
                     $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
                 }
             }
-            return ["notes" => "Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
+            return ["notes" => " Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }

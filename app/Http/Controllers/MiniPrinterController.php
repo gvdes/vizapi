@@ -198,7 +198,11 @@ class MiniPrinterController extends Controller{
                     if($product->units->id == 3){
                         $printer->text("CAJAS SOLICITADAS: ");
                         $printer->setTextSize(2,1);
-                        $printer->text(round($product->pivot->units));
+                        if($requisition->_type == 4){
+                            $printer->text($product->pivot->units);
+                        }else{
+                            $printer->text(round($product->pivot->units));
+                        }
                         $printer->setTextSize(1,1);
                         $printer->text(" x: ");
                         $printer->setTextSize(2,2);
