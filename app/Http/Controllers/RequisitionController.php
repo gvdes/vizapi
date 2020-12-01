@@ -521,13 +521,15 @@ class RequisitionController extends Controller{
             $toSupply = [];
             foreach($venta['products'] as $row){
                 $product = Product::where('code', $row['code'])->first();
-                $required = $row['req'];
-                if($product->_unit == 3){
-                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                    $required = round($required/$pieces, 2);
-                }
-                if($required > 0){
-                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                if($product){
+                    $required = $row['req'];
+                    if($product->_unit == 3){
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                        $required = round($required/$pieces, 2);
+                    }
+                    if($required > 0){
+                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                    }
                 }
             }
             return ["notes" => "Pedido tienda #".$folio, "products" => $toSupply];

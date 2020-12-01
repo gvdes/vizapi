@@ -109,7 +109,9 @@ class OrderController extends Controller{
                     }),
                     "ordered" => [
                         "amount" => $amount,
-                        "unit" => $amount,
+                        "kit" => "",
+                        "_price_list" => "",
+                        "_unit" => $amount,
                         "comments" => $request->comments,
                         "price" => 0
                     ],
@@ -120,5 +122,48 @@ class OrderController extends Controller{
         }catch(Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto"]);
         }
+    }
+
+    public function index(Request $request){
+        $now =  new \DateTime();
+        if(isset($request->date)){
+            $now = $request->date;
+        }
+        $status = OrderProcess::all();
+        $printers = Printers::where('_workpoint', $this->account->_workpoint)->get();
+        $clause = [
+            ['_workpoint', $this->account->_workpoint]
+        ];
+
+        if($this->account->_rol == 4 || $this->account->_rol == 5 || $this->account->_rol == 7){
+            array_push($clause, ['_created_by', $this->account->_account]);
+        }
+        $orders = Order::where($clause)->whereDate('created_at', $now)->get();
+
+        return response()->json([
+            'status' => $status,
+            'printers' => $printers,
+            'orders' => $orders
+        ]);
+    }
+
+    public function config(){
+        $status = OrderProcess::all();
+        return response()->json([
+            'status' => $status,
+        ]);
+    }
+
+    public function changeConfig(Request $request){
+        $status = OrderProcess::find($request->_status);
+        if($status->allow){
+            $status->active = !$status->active;
+            return response()->json(["success" => $status->save()]);
+        }
+        return response()->json(["msg" => "No se permite desactivar el status", "success" => false]);
+    }
+
+    public function migrateToRequesition(){
+
     }
 }

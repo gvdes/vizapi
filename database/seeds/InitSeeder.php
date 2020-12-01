@@ -69,7 +69,7 @@ class InitSeeder extends Seeder{
             ['id'=> 3, 'name'=> 'Gestión de usuarios', 'deep'=> 1, 'root'=> 1, 'path'=> 'perfiles'],
             ['id'=> 4, 'name'=> 'Preventa', 'deep'=> 0, 'root'=> 0, 'path'=> 'preventa'],
             /* ['id'=> 6, 'name'=> 'Validación', 'deep'=> 1, 'root'=> 4, 'path'=> 'validate'], */
-            ['id'=> 7, 'name'=> 'Dashboard', 'deep'=> 1, 'root'=> 4, 'path'=> 'bodega'],
+            ['id'=> 7, 'name'=> 'Dashboard', 'deep'=> 1, 'root'=> 4, 'path'=> 'dashboard'],
             /* ['id'=> 8, 'name'=> 'Salida de bodega', 'deep'=> 1, 'root'=> 4, 'path'=> 'salida/bodega'],
             ['id'=> 9, 'name'=> 'Caja', 'deep'=> 1, 'root'=> 4, 'path'=> 'caja'],
             ['id'=> 10, 'name'=> 'Salida de caja', 'deep'=> 1, 'root'=> 4, 'path'=> 'salida/caja'], */
