@@ -102,6 +102,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
     });
 
+    $router->group(['prefix' => 'order'], function () use ($router){
+        $router->get('/', 'OrderController@index');
+        $router->post('/', 'OrderController@create');
+    });
+
     $router->group(['prefix' => 'workpoints'], function () use ($router){
         $router->get('/', 'WorkpointController@index');
     });

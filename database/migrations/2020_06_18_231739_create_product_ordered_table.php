@@ -18,11 +18,9 @@ class CreateProductOrderedTable extends Migration{
             $table->float('price', 8, 2);
             $table->unsignedInteger('_product');
             $table->unsignedInteger('_order');
-            $table->unsignedInteger('_supply_by');
             $table->unsignedTinyInteger('_price_list');
             $table->foreign('_product')->references('id')->on('products');
             $table->foreign('_order')->references('id')->on('orders');
-            $table->foreign('_supply_by')->references('id')->on('account_workpoints');
             $table->foreign('_price_list')->references('id')->on('price_list');
         });
     }

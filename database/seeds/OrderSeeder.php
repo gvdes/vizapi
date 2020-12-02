@@ -41,10 +41,10 @@ class OrderSeeder extends Seeder{
         ]);
 
         DB::table('printers')->insert([
-            ['id' => 1, 'name'=> 'Preventa', 'ip'=> '192.168.1.36', '_workpoint' => 1, '_type' => 1],
-            ['id' => 2, 'name'=> 'Bodega', 'ip'=> '192.168.1.36', '_workpoint' => 1, '_type' => 2],
-            ['id' => 3, 'name'=> 'Bodega / carrito', 'ip'=> '192.168.1.36', '_workpoint' => 1, '_type' => 3],
-            ['id' => 4, 'name'=> 'Caja', 'ip'=> '192.168.1.36', '_workpoint' => 1, '_type' => 4]
+            ['id' => 1, 'name'=> 'Preventa', 'ip'=> '192.168.1.200', '_workpoint' => 1, '_type' => 1],
+            ['id' => 2, 'name'=> 'Bodega', 'ip'=> '192.168.1.200', '_workpoint' => 1, '_type' => 2],
+            ['id' => 3, 'name'=> 'Bodega / carrito', 'ip'=> '192.168.1.200', '_workpoint' => 1, '_type' => 3],
+            ['id' => 4, 'name'=> 'Caja', 'ip'=> '192.168.1.200', '_workpoint' => 1, '_type' => 4]
         ]);
     }
 }
