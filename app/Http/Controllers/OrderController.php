@@ -8,6 +8,9 @@ use App\Order;
 use App\OrderProcess;
 use App\Printer;
 use App\Account;
+use App\Product;
+
+use App\Http\Resources\Order as OrderResource;
 
 class OrderController extends Controller{
     /**
@@ -35,9 +38,13 @@ class OrderController extends Controller{
                 ]);
                 $this->log(1, $order);
                 $this->log(2, $order);
-                return $order;
+                return $order->fresh(['products' => function($query){
+                    $query->with(['prices' => function($query){
+                        $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+                    },'variants']);
+                }]);
             });
-            return response()->json($order);
+            return response()->json(new OrderResource($order));
         }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido crear el pedido"]);
         }
@@ -90,15 +97,18 @@ class OrderController extends Controller{
 
     public function addProduct(Request $request){
         try{
-            $order = Requisition::find($request->_order);
+            $order = Order::find($request->_order);
             if($this->account->_account == $order->_created_by){
                 $product = Product::with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
                 }, 'units'])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1;
-                $units = $this->getAmount($product, $amount);
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $request->comments, 'price' => 0, "total" => 0]]);
+                $units = $this->getAmount($product, $amount, $_supply_by);
+                $price_list = $this->calculatePriceList($product, $units);
+                $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
+                $price = $product->prices[$index_price]->pivot->price;
+                $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $request->comments, 'price' => $price, "total" => ($units * $price)]]);
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -113,11 +123,14 @@ class OrderController extends Controller{
                         ];
                     }),
                     "ordered" => [
-                        "kit" => "",
-                        "_price_list" => "",
-                        "units" => $amount,
                         "comments" => $request->comments,
-                        "price" => 0
+                        "amount" => $amount,
+                        "_supply_by" => $_supply_by,
+                        "units" => $units,
+                        "_price_list" => $price_list,
+                        "price" => $price,
+                        "total" => $units * $price,
+                        "kit" => "",
                     ],
                 ]);
             }else{
@@ -145,8 +158,16 @@ class OrderController extends Controller{
         }
     }
 
-    public function calculatePrice($product, $amount){
-        
+    public function calculatePriceList($product, $units){
+        if($units>=$product->pieces){
+            return 5;
+        }elseif($units>=round($product->pieces/2)){
+            return 3;
+        }elseif($units>=3){
+            return 2;
+        }else{
+            return 1;
+        }
     }
 
     public function index(Request $request){
@@ -163,13 +184,27 @@ class OrderController extends Controller{
         if($this->account->_rol == 4 || $this->account->_rol == 5 || $this->account->_rol == 7){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
-        $orders = Order::where($clause)->whereDate('created_at', $now)->get();
+        $orders = Order::with(['products' => function($query){
+            $query->with(['prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+            }, 'units', 'variants']);
+        }])->where($clause)->whereDate('created_at', $now)->get();
 
         return response()->json([
             'status' => $status,
             'printers' => $printers,
             'orders' => $orders
         ]);
+    }
+
+    public function find($id){
+        $order = Order::with(['products' => function($query){
+            $query->with(['prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+            },'variants']);
+        }])->find($id);
+
+        return response()->json(new OrderResource($order));
     }
 
     public function config(){
@@ -190,5 +225,26 @@ class OrderController extends Controller{
 
     public function migrateToRequesition(){
 
+    }
+
+    public function reimpresion(Request $request){
+        
+        $order = Order::find($request->_order);
+        $_workpoint_to = $order->_workpoint_from;
+        $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where('_workpoint', $_workpoint_to);
+                });
+            }]);
+        }, 'history']);
+        $cellerPrinter = new MiniPrinterController("192.168.1.10", 9100);
+        /* $res = $cellerPrinter->ticket($order); */
+        $res = $cellerPrinter->orderTicket($order);
+        if($res){
+            $order->printed = $order->printed +1;
+            $order->save();
+        }
+        return response()->json(["success" => $res]);
     }
 }

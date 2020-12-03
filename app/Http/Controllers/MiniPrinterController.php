@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Mike42\Escpos\Printer;
 use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
 use App\Requisition;
+use App\Order;
 
 class MiniPrinterController extends Controller{
     /**
@@ -359,18 +360,217 @@ class MiniPrinterController extends Controller{
         } */
     }
 
-    public function test(Requisition $requisition){
-        $product = collect($requisition->products);
-        $groupBy = $product->map(function($product){
-            $product->locations->sortBy('id');
-            return $product;
-        })->groupBy(function($product){
-            if(count($product->locations)>0){
-                return explode('-',$product->locations[0]->path)[0];
-            }else{
-                return '';
+    public function ticket(Order $order){
+        try{
+            $printer = $this->printer;
+            if(!$printer){
+                return false;
             }
-        })->sortKeys();
-        return $groupBy;
+            $summary = $order->products->reduce(function($summary, $product){
+                $summary['models'] = $summary['models'] + 1;
+                $summary['articles'] = $summary['articles'] + $product->pivot->units;
+                return $summary;
+            }, ["models" => 0, "articles" => 0]);
+            if($order->printed>0){
+                $finished_at = $order->history->filter(function($log){
+                    return $log->pivot->_status = 2;
+                });
+                $finished_at = $finished_at[sizeof($finished_at) - 1]->pivot->created_at;
+            }else{
+                $finished_at = "now";
+            }
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setTextSize(1,1);
+            $printer->text("██████ ");
+            $printer->setTextSize(2,1);
+            $printer->text("Gracias $order->name ($order->num_ticket)");
+            $printer->setTextSize(1,1);
+            $printer->text(" ██████\n"); 
+            $printer->setTextSize(2,1);
+            $printer->setEmphasis(true);
+            $printer->setUnderline(true);
+            $printer->text("Pase a ");
+            $printer->setReverseColors(true);
+            $printer->setTextSize(2,2);
+            $printer->text("caja 1");
+            $printer->setTextSize(2,1);
+            $printer->setReverseColors(false);
+            $printer->text(" a recoger su mercancia\n");
+            $printer->setUnderline(false);
+            $printer->setEmphasis(false);
+            $printer->setTextSize(1,1);
+            $printer->text("--------------------------------------------\n");
+            $printer->text(" Te atendio: ".$order->created_by->names."\n");
+            $printer->text(" Fecha/Hora ".$finished_at." Hrs \n");
+            $printer->setEmphasis(true);
+            $printer->setTextSize(1,1);
+            $printer->text("Modelos: ");
+            $printer->setTextSize(2,1);
+            $printer->text($summary['models']);
+            $printer->setTextSize(1,1);
+            $printer->text(" Piezas: ");
+            $printer->setTextSize(2,1);
+            $printer->text($summary['articles']."\n");
+            $printer->setTextSize(1,1);
+            $printer->text("--------------------------------------------\n");
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setBarcodeHeight(100);
+            $printer->setBarcodeWidth(4);
+            $printer->barcode($order->id);
+            $printer->feed(1);
+            $printer->setTextSize(2,1);
+            $printer->text("GRUPO VIZCARRA\n");
+            $printer->setTextSize(1,1);
+            $printer->feed(1);
+            $printer->cut();
+            $printer->close();
+            return true;
+        } catch(\Exception $e){
+            return false;
+        }
+    }
+
+    public function orderTicket(Order $order){
+        $printer = $this->printer;
+        if(!$printer){
+            return false;
+        }
+        $summary = $order->products->reduce(function($summary, $product){
+            $summary['models'] = $summary['models'] + 1;
+            $summary['articles'] = $summary['articles'] + $product->pivot->units;
+            return $summary;
+        }, ["models" => 0, "articles" => 0]);
+        if($order->printed>0){
+            $finished_at = $order->history->filter(function($log){
+                return $log->pivot->_status = 2;
+            });
+            $finished_at = $finished_at[sizeof($finished_at) - 1]->pivot->created_at;
+        }else{
+            $finished_at = "now";
+        }
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        if($order->printed>0){
+            $printer->setTextSize(1,1);
+            $printer->text("████████ ");
+            $printer->setTextSize(2,2);
+            $printer->text("REIMPRESION ");
+            $printer->setTextSize(1,1);
+            $printer->text("████████ \n");
+        }
+        $printer->setTextSize(1,1);
+        $printer->text("--- Pedido para ");
+        $printer->setTextSize(2,1);
+        $printer->setEmphasis(true);
+        $printer->text("$order->name ($order->num_ticket) ");
+        $printer->setEmphasis(false);
+        $printer->setTextSize(1,1);
+        $printer->text("--- \n");
+        $printer->text("----------------------------------------\n");
+        $printer->text("Generado: ".$finished_at." Hrs por: ".$order->created_by->names."\n");
+        $printer->setTextSize(1,2);
+        $printer->text("----------------------------------------\n");
+        $y = 1;
+        $products = collect($order->products);
+        $groupBy = $products->map(function($product){
+            $product->locations = $product->locations->sortBy(function($location){
+                $res = '';
+                $parts = explode('-', $location);
+                foreach($parts as $part){
+                    $numbers = preg_replace('/[^0-9]/', '', $part);
+                    $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                    if(strlen($numbers)==1){
+                        $numbers = '0'.$numbers;
+                    }
+                    $res = $res.$letters.$numbers.'-';
+                }
+                return $res;
+            });
+            return $product;
+        })->sortBy(function($product){
+            if(count($product->locations)>0){
+                $location = $product->locations[0]->path;
+                $res = '';
+                $parts = explode('-', $location);
+                foreach($parts as $part){
+                    $numbers = preg_replace('/[^0-9]/', '', $part);
+                    $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                    if(strlen($numbers)==1){
+                        $numbers = '0'.$numbers;
+                    }
+                    $res = $res.$letters.$numbers.'-';
+                }
+                return $res;
+            }
+            return '';
+        });
+        foreach($groupBy as $product){
+            $pieces = 1;
+            $locations = $product->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->setTextSize(2,1);
+            $printer->text($y."█ ".trim($locations)." █ ".$product->code." █\n");
+            $printer->setTextSize(1,1);
+            $printer->text($product->description." \n");
+            /* if($product->units->id == 3){
+                $printer->text("CAJAS SOLICITADAS: ");
+                $printer->setTextSize(2,1);
+                if($requisition->_type == 4){
+                    $printer->text($product->pivot->units);
+                }else{
+                    $printer->text(round($product->pivot->units));
+                }
+                $printer->setTextSize(1,1);
+                $printer->text(" x: ");
+                $printer->setTextSize(2,2);
+                $printer->text("[   ]\n");
+                $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                $pieces = $product->pieces;
+            } */
+            $printer->setTextSize(1,1);
+            $printer->text("UF: ");
+            $printer->setTextSize(2,1);
+            $printer->text(round($product->pivot->units));
+            $printer->setTextSize(1,1);
+            $printer->text(" - UD: ");
+            $printer->setTextSize(2,1);
+            $printer->text($product->pivot->stock."\n");
+            if($product->pivot->comments){
+                $printer->setTextSize(1,1);
+                $printer->text("Notas: ".$product->pivot->comments."\n");
+            }
+            $printer->feed(1);
+            $y++;
+        }
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(1,1);
+        $printer->text("--------------------------------------------\n");
+        $printer->text("Modelos: ");
+        $printer->setTextSize(2,1);
+        $printer->text($summary['models']);
+        $printer->setTextSize(1,1);
+        $printer->text(" Piezas: ");
+        $printer->setTextSize(2,1);
+        $printer->text(round($summary['articles'])."\n");
+
+        $printer->setTextSize(1,1);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text("--------------------------------------------\n");
+        $printer->setBarcodeHeight(80);
+        $printer->setBarcodeWidth(4);
+        $printer->barcode($order->num_ticket);
+        $printer->feed(1);
+        $printer->text("GRUPO VIZCARRA ");
+        $printer->setEmphasis(true);
+        $printer->text($order->workpoint->name."\n");
+        $printer->feed(1);
+        $printer->cut();
+        $printer->close();
+        return true;
+        /* try{
+        }catch(\Exception $e){
+            return false;
+        } */
     }
 }
