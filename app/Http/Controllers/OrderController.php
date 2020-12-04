@@ -37,7 +37,6 @@ class OrderController extends Controller{
                     '_status' => 1
                 ]);
                 $this->log(1, $order);
-                $this->log(2, $order);
                 return $order->fresh(['products' => function($query){
                     $query->with(['prices' => function($query){
                         $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
@@ -64,17 +63,32 @@ class OrderController extends Controller{
                 $order->history()->attach(2, ["details" => json_encode([
                     "responsable" => $responsable
                 ])]);
-            break;
-            case 3:
-                $process = OrderProcess::find(4); //Verificar si la validación es necesaria
-                if($process->active){
+                $validate = OrderProcess::find(3); //Verificar si la validación es necesaria
+                if($validate->active){
                     $order->history()->attach(3, ["details" => json_encode([
                         "responsable" => $responsable
                     ])]);
                 }else{
-
+                    $end_to_supply = OrderProcess::find(7);
+                    if($end_to_supply->active){
+                        $bodegueros = 4;
+                        $tickets = 3;
+                        $in_suppling = Order::where([
+                            ['_workpoint_from', $this->_account->_workpoint],
+                            ['_status', 6]
+                        ])->count();
+                        if($in_suppling>=($bodegueros*$tickets)){
+                            //poner en status 4 (el pedido ha llegado en bodega)
+                        }else{
+                            //poner en status 5 (el pedido se esta surtiendo)
+                        }
+                    }else{
+                        //DETERMINAR CAJA
+                    }
                 }
-
+            break;
+            case 3:
+                
             break;
         }
     }

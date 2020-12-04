@@ -205,7 +205,7 @@ class LocationController extends Controller{
      * @param int request[].code
      */
     public function getProduct(Request $request){
-        $code = $request->code;
+        $code = $request->id;
         $workpoint = WorkPoint::find($this->account->_workpoint);
         $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $product = \App\Product::with(['locations' => function($query)use($cellers){
@@ -214,7 +214,7 @@ class LocationController extends Controller{
             $query->where([
                 ['_workpoint', $workpoint->id]
             ]);
-        },'category', 'status', 'units'])/* ->with('category', 'status', 'units') */->where('code', $code)->orWhere('name', $code)->first();
+        },'category', 'status', 'units'])->/* ->with('category', 'status', 'units') *//* ->where('code', $code)->orWhere('name', $code)->first() */find($id);
         if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
