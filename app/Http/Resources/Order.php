@@ -29,8 +29,8 @@ class Order extends JsonResource{
             '_created_by' => $this->when($this->created_by, function(){
                 return $this->_created_by;
             }),
-            'from' => $this->whenLoaded('from'),
-            '_workpoint_from' => $this->when($this->from, function(){
+            'from' => $this->whenLoaded('workpoint'),
+            '_workpoint_from' => $this->when($this->workpoint, function(){
                 return $this->_workpoint_from;
             }),
             'log' => $this->whenLoaded('historic', function(){
