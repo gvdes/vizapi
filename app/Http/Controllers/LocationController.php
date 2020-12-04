@@ -214,7 +214,7 @@ class LocationController extends Controller{
             $query->where([
                 ['_workpoint', $workpoint->id]
             ]);
-        },'category', 'status', 'units'])->/* ->with('category', 'status', 'units') *//* ->where('code', $code)->orWhere('name', $code)->first() */find($id);
+        },'category', 'status', 'units'])->/* ->with('category', 'status', 'units') *//* ->where('code', $code)->orWhere('name', $code)->first() */find($code);
         if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
