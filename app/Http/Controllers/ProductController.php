@@ -108,11 +108,13 @@ class ProductController extends Controller{
                         '_status' => 1,
                         '_provider' => $product['_provider'],
                         '_unit' => $product['_unit'],
+                        'created_at' => new \DateTime(),
                         'updated_at' => new \DateTime()
                     ]);
                     $instance->description = $product['description'];
                     $instance->pieces = $product['pieces'];
                     $instance->_provider = $product['_provider'];
+                    $instance->updated_at = new \DateTime();
                     $instance->save();
                     $prices = [];
                     foreach($product['prices'] as $price){
