@@ -102,11 +102,13 @@ class ProductController extends Controller{
                     ], [
                         'name' => $product['name'],
                         'description' => $product['description'],
+                        'dimensions' => $product['dimensions'],
                         'pieces' => $product['pieces'],
                         '_category' => $product['_category'],
                         '_status' => 1,
                         '_provider' => $product['_provider'],
-                        '_unit' => $product['_unit']
+                        '_unit' => $product['_unit'],
+                        'updated_at' => new \DateTime()
                     ]);
                     $instance->description = $product['description'];
                     $instance->pieces = $product['pieces'];
