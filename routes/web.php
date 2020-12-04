@@ -121,5 +121,5 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/ventas', 'ReportsController@ventas');
             $router->get('/test', 'RequisitionController@test');
             $router->get('/sinUbicacion', 'ReportsController@sinUbicaciones');
-            
+            $router->get('/sinMaximos', 'ReportsController@sinMaximos');
         });

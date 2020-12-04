@@ -58,26 +58,53 @@ class ReportsController extends Controller{
         }
     }
 
-    public function sinMaximos(Request $request){
-        $ids_categories = []; //calcular
-        $products = Product::whereIn('_category', $ids_categories)->get();
+    public function sinMaximos(){
+        $ids_categories = array_merge(range(37,57), range(130,184)); //calcular
         $workpoint = WorkPoint::find($this->account->_workpoint);
-        $codes = array_column($products->toArray(), 'code');
-        $stocks = false;
-        if($stocks){
-            $result = $products->map(function($product) use($stocks){
-                $product->stock = $stocks[$key]['stock'];
-                $product->min = $stocks[$key]['min'];
-                $product->max = $stocks[$key]['max'];
-                return $product;
-            })->filter(function($product){
-                return $product->min<= 0 || $product->max<=0;
-            });
-            return response()->json($result);
+        $products = Product::with(['category', 'stocks' => function($query){
+            $query->where('_workpoint', $this->account->_workpoint);
+        }])->where('_status', 1)->whereIn('_category', $ids_categories)->whereHas('stocks', function($query){
+            $query->where([
+                ['_workpoint', $this->account->_workpoint],
+                ['min', '<=', 0],
+                ['max', '<=', 0]
+            ]);
+        })->get();
+        $res = [];
+        foreach (array_chunk($products->toArray(), 2000) as $key => $part) {
+            $codes = array_column($part , 'code');
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT, 20);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks = json_decode(curl_exec($client), true);
+            if($stocks){
+                $res = array_merge($res, $stocks);
+            }else{
+                return response()->json(["msg"=> "No se han podido obtener todos los stocks"]);
+            }
         }
-        return response()->json([
-            "msg" => "No se han podido obtener los maximos"
-        ]);
+        $p = $products->map(function($product, $key) use($res){
+            return [
+                "code" => $product->code,
+                "scode" => $product->name,
+                "category" => $product->category->name,
+                "description" => $product->description,
+                "pieces" => $product->pieces,
+                "stock" => $res[$key]['stock'],
+                "min" => strval($product->stocks[0]->pivot->max),
+                "max" => strval($product->stocks[0]->pivot->max),
+            ];
+        })->filter(function($product){
+            return $product['stock']>0;
+        })->values()->all();
+        $export = new ArrayExport($p);
+        $date = new \DateTime();
+        return Excel::download($export, "sinMaximos.xlsx");
     }
 
     public function sinUbicaciones(Request $request){

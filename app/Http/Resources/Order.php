@@ -33,8 +33,8 @@ class Order extends JsonResource{
             '_workpoint_from' => $this->when($this->workpoint, function(){
                 return $this->_workpoint_from;
             }),
-            'log' => $this->whenLoaded('historic', function(){
-                return $this->log->map(function($event){
+            'log' => $this->whenLoaded('history', function(){
+                return $this->history->map(function($event){
                     return [
                         "id" => $event->id,
                         "name" => $event->name,

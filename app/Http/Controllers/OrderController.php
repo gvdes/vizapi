@@ -202,7 +202,7 @@ class OrderController extends Controller{
             $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
             }, 'units', 'variants']);
-        }, 'status', 'created_by', 'workpoint'])->where($clause)->whereDate('created_at', $now)->get();
+        }, 'status', 'created_by', 'workpoint', "history"])->where($clause)->whereDate('created_at', $now)->get();
 
         return response()->json([
             'status' => $status,
