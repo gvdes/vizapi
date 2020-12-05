@@ -408,9 +408,8 @@ class RequisitionController extends Controller{
             $result = $this->log($status, $requisition);
             if($result){
                 $requisition->_status= $status;
-                $requisition->printer= $requisition->printer;
                 $requisition->save();
-                $requisition->fresh();
+                $requisition->refresh();
                 $requisition->load(['type', 'status', 'products', 'to', 'from', 'created_by', 'log']);
             }
             return response()->json(["success" => $result, 'order' => new RequisitionResource($requisition)]);
