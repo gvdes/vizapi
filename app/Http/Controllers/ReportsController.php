@@ -107,69 +107,100 @@ class ReportsController extends Controller{
         return Excel::download($export, "sinMaximos.xlsx");
     }
 
-    public function sinUbicaciones(Request $request){
+    public function sinUbicaciones(){
         $workpoint = WorkPoint::find($this->account->_workpoint);
         $celler = Celler::with('sections')->where([
             ['_workpoint', $this->account->_workpoint],
             ['_type', 1]
             ])->first();
         $ids_sections = array_column($celler->sections->toArray(), 'id');
-        if($request->_category){
-            $ids_categories = range(130,157); //calcular
-            
-            $products = Product::whereIn('_category', $ids_categories)->whereHas('locations', function(Builder $query) use($ids_sections){
-                $query->whereIn('_location', $ids_sections);
-            },'<=',0)->get();
-        }
-        $ids_categories = array_merge(range(130,157)); //calcular
-        $products = Product::whereIn('_category', $ids_categories)->whereHas('locations', function($query) use($ids_sections){
+        $ids_categories = array_merge(range(37,57), range(130,184)); //calcular
+        $products = Product::where('_status', 1)->whereIn('_category', $ids_categories)->whereHas('locations', function($query) use($ids_sections){
             $query->whereIn('_location', $ids_sections);
         },'<=',0)->get();
-        $codes = array_column($products->toArray(), 'code');
-        $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,10);
-        $data = http_build_query(["products" => $codes]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        $stocks = json_decode(curl_exec($client), true);
-        if($stocks){
-            $result = $products->map(function($product, $key) use($stocks){
-                $product->stock = $stocks[$key]['stock'];
-                $product->min = $stocks[$key]['min'];
-                $product->max = $stocks[$key]['max'];
-                return $product;
-            })->filter(function($product){
-                return $product->stock > 0;
-            })->values()->all();
-            return response()->json($result);
+        
+        $res = [];
+        foreach (array_chunk($products->toArray(), 2000) as $key => $part) {
+            $codes = array_column($part , 'code');
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT, 20);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks = json_decode(curl_exec($client), true);
+            if($stocks){
+                $res = array_merge($res, $stocks);
+            }else{
+                return response()->json(["msg"=> "No se han podido obtener todos los stocks"]);
+            }
         }
-        return response()->json([
-            "msg" => "No se han podido obtener los maximos"
-        ]);
+        $p = $products->map(function($product, $key) use($res){
+            return [
+                "code" => $product->code,
+                "scode" => $product->name,
+                "category" => $product->category->name,
+                "description" => $product->description,
+                "pieces" => $product->pieces,
+                "stock" => $res[$key]['stock'],
+                "location"=> "",
+            ];
+        })->filter(function($product){
+            return $product['stock']>0;
+        })->values()->all();
+        $export = new ArrayExport($p);
+        $date = new \DateTime();
+        return Excel::download($export, "sinUbicaciones.xlsx");
     }
 
     public function comparativoGeneralExhibicion(){
-        $ids_categories = []; //calcular
+        $ids_categories = array_merge(range(37,57), range(130,184)); //calcular
         $products = Product::whereIn('_category', $ids_categories)->get();
-        $workpoint = WorkPoint::find($this->account->_workpoint);
-        $codes = array_column($products->toArray(), 'code');
-        $stocks = false;
-        if($stocks){
-            $result = $products->map(function($product, $key) use($stocks){
-                return [
-                    'code' => $product->name,
-                    'scode' => $product->code,
-                    'description' => $product->description,
-                    'general' => $stocks_cedis[$key]['stock_general'],
-                    'exhibición' => $stocks_store[$key]['stock_exhibicion']
-                ];
-            });
-            return $result;
-        }
-        return response()->json(['msg' => 'No se ha obtenido conexión a las tiendas']);
+        /* $workpoint = WorkPoint::find($this->account->_workpoint);
+        foreach (array_chunk($products->toArray(), 2000) as $key => $part) {
+            $codes = array_column($part , 'code');
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/allStocks");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT, 20);
+            $data = http_build_query(["products" => $codes]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks = json_decode(curl_exec($client), true);
+            if($stocks){
+                $result = $products->map(function($product, $key) use($stocks){
+                    return [
+                        'code' => $product->name,
+                        'scode' => $product->code,
+                        'description' => $product->description,
+                        'general' => $stocks[$key]['stock_general'],
+                        'exhibición' => $stocks[$key]['stock_exhibicion']
+                    ];
+                });
+                return $result;
+            }else{
+                return response()->json(["msg"=> "No se han podido obtener todos los stocks"]);
+            }
+        } */
+        $result = $products->map(function($product){
+            return [
+                "code" => $product->code,
+                "scode" => $product->name,
+                "category" => $product->category->name,
+                "description" => $product->description,
+                "pieces" => $product->pieces,
+                "stock_general" => rand(-10,200)/* $res[$key]['stock_general'] */,
+                "stock_exhibicion" => rand(-10,200)/* $res[$key]['stock_exhibicion'] */,
+            ];
+        })->filter(function($product){
+            return $product["stock_general"]>0 && $product["stock_exhibicion"]<=0;
+        });
+        $export = new ArrayExport($result);
+        $date = new \DateTime();
+        return Excel::download($export, "exhibicionVsGeneral.xlsx");
     }
 
     public function comparativoCedisGeneral(){
