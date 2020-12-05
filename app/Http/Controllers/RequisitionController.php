@@ -229,19 +229,17 @@ class RequisitionController extends Controller{
                     $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
                     /* $cellerPrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
                     if($cellerPrinter->requisitionTicket($requisition)){
-                        $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                        $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                        $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                        /* $storePrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
-                        $storePrinter->requisitionReceipt($requisition);
                         $requisition->printed = $requisition->printed +1;
                         $requisition->save();
-                        $requisition->log()->attach(2, [ 'details' => json_encode([
-                            "responsable" => $responsable
-                        ])]);
-                    }else{
-                        return false;
                     }
+                    $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
+                    $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                    $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                    /* $storePrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
+                    $storePrinter->requisitionReceipt($requisition);
+                    $requisition->log()->attach(2, [ 'details' => json_encode([
+                        "responsable" => $responsable
+                    ])]);
                     return true;
                 }
                 return false;
@@ -273,8 +271,9 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $storePrinter = new MiniPrinterController('192.168.1.36');
-                $storePrinter->requisitionTicket($requisition); */
+                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
+                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                $printer->requisitionTicket($requisition); */
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
