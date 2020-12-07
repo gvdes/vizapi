@@ -19,7 +19,7 @@ class VentasController extends Controller{
     $ventas = $workpoints->map(function($workpoint){
       $workpoint->venta = rand(10000,50000);
       $workpoint->tickets = rand(20,60);
-      $workpoint->tickets_promedio = round($workpoint->venta / $workpoint->tickets,2);
+      $workpoint->ticket_promedio = round($workpoint->venta / $workpoint->tickets,2);
       return $workpoint;
     });
 
