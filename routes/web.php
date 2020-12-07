@@ -123,3 +123,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/sinUbicacion', 'ReportsController@sinUbicaciones');
             $router->get('/sinMaximos', 'ReportsController@sinMaximos');
         });
+
+        $router->group(['prefix' => 'ventas'], function () use ($router){
+            $router->get('/', 'VentasController@index');
+        });
