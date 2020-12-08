@@ -331,4 +331,14 @@ class AccountController extends Controller{
         }
         return response()->json(["changed" => $total]);
     }
+
+    public function addAcceso(Request $request){
+        $users = User::where('_rol', 1)->get();
+        $total = 0;
+        foreach($users as $user){
+            $user->workpoints()->syncWithoutDetaching([$request->_workpoint => ['_rol' => $user->_rol, '_status' => 1]]);
+            $total++;
+        }
+        return response()->json(["add" => $total]);
+    }
 }

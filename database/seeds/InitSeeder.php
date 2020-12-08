@@ -86,8 +86,8 @@ class InitSeeder extends Seeder{
             /* ['id'=> 20, 'name'=> 'Solicitud', 'deep'=> 1 , 'root'=> 18, 'path'=> 'solicitud'], */
             /* ['id'=> 21, 'name'=> 'Resumen', 'deep'=> 1 , 'root'=> 18, 'path'=> ''], */
             ['id'=> 22, 'name'=> 'Etiquetas', 'deep'=> 0 , 'root'=> 0, 'path'=> 'etiquetas'],
-            ['id'=> 23, 'name'=> 'Reportes', 'deep'=> 0 , 'root'=> 0, 'path'=> 'reportes'],
-            ['id'=> 24, 'name'=> 'Reportes', 'deep'=> 1 , 'root'=> 23, 'path'=> 'ventas'],
+            ['id'=> 24, 'name'=> 'Reportes', 'deep'=> 0 , 'root'=> 0, 'path'=> 'reportes'],
+            ['id'=> 25, 'name'=> 'Ventas', 'deep'=> 1 , 'root'=> 24, 'path'=> 'ventas'],
         ]);
 
         DB::table('permissions')->insert([
@@ -133,7 +133,7 @@ class InitSeeder extends Seeder{
             ['id'=> 38, '_module'=> 18, 'name'=> 'Resurtido venta tienda'],
             ['id'=> 39, '_module'=> 18, 'name'=> 'Resurtido preventa'],
             ['id'=> 33, '_module'=> 22, 'name'=> 'Acceso'],
-            ['id'=> 47, '_module'=> 24, 'name'=> 'Acceso'],
+            ['id'=> 47, '_module'=> 25, 'name'=> 'Acceso'],
         ]);
         $permissions = DB::table('permissions')->get();
         $arr_to_insert = $permissions->map(function( $permission){
