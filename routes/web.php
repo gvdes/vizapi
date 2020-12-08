@@ -125,5 +125,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         });
 
         $router->group(['prefix' => 'ventas'], function () use ($router){
-            $router->get('/', 'VentasController@index');
+            $router->post('/', 'VentasController@index');
+            $router->post('/tienda', 'VentasController@tienda');
+            $router->post('/folio', 'VentasController@venta');
         });

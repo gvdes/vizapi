@@ -43,17 +43,40 @@ class VentasController extends Controller{
 
   public function tienda(Request $request){
     $workpoint = WorkPoint::find($request->id);
-    $venta = rand(10000,50000);
-    $tickets_promedio = rand(20,60);
     $cajeros = rand(1,6);
-    $caj = [];
-    for($i=0; $i<$cajeros; $i++){
-      $caj[$i] = [
+    $venta = rand(10000,50000);
+    $tickets_num = rand(20,60);
+    $tickets = [];
+    for($i=0; $i<$tickets_num; $i++){
+      $tickets[$i] = [
         "id" => $i,
-        "name" => $i,
-        "tickets" => "",
-        "venta" => ""
+        "_cajero" => "",
+        "folio" => "",
+        "created_at" => "",
+        "_cliente" => "",
+        "_price_list" => "",
+        "total" => "",
+        "_forma_pago" => ""
       ];
     }
+    /* $res_tickets = $tickets;
+    $res_venta = $venta; */
+    $caj = [];
+    for($i=1; $i<=$cajeros; $i++){
+      $caj[$i-1] = [
+        "id" => $i,
+        "name" => "Cajero ".$i,
+        "tickets" => $i == $cajeros ? $tickets : rand(0, $tickets),
+        "venta" => $i == $cajeros ? $venta : rand(0, $venta)
+      ];
+    }
+    return response()->json([
+      "id" => $workpoint->id,
+      "name" => $workpoint->name,
+      "alias" => $workpoint->alias,
+      "tickets" => $tickets,
+      "venta" => $venta,
+      "cajeros" => $caj
+    ]);
   }
 }
