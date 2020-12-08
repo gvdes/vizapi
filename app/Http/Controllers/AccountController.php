@@ -319,7 +319,11 @@ class AccountController extends Controller{
     }
 
     public function addPermissions(Request $request){
-        $accounts = Account::where('_rol', $request->_rol)->get();
+        if(isset($request->_workpoint)){
+            $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
+        }else{
+            $accounts = Account::where('_rol', $request->_rol)->get();
+        }
         $total = 0;
         foreach($accounts as $account){
             $account->permissions()->syncWithoutDetaching($request->permissions);
