@@ -67,6 +67,49 @@ class ProductController extends Controller{
         }
     }
 
+    public function updatePrices(){
+        try{
+            $start = microtime(true);
+            $client = curl_init();
+            $products = Product::all()->toArray();
+            /* return response()->json($products); */
+            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/prices");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            $prices = collect(json_decode(curl_exec($client), true));
+            curl_close($client);
+            if($products && $prices){
+                DB::transaction(function() use ($products, $prices){
+                    //array prices
+                    $codes =  array_column($products, 'code');
+                    $prices_insert = $prices->map(function($price) use($products, $codes){
+                        $index_product = array_search($price['code'], $codes);
+                        if($index_product === 0 || $index_product > 0){
+                            return [
+                                '_product' => $products[$index_product]["id"],
+                                'price' => $price['price'],
+                                '_type' => $price['_type']
+                            ];
+                        }
+                    })->filter(function($prices){
+                        return !is_null($prices);
+                    })->values()->all();
+                    foreach (array_chunk($prices_insert, 1000) as $insert) {
+                        $success = DB::table('product_prices')->insert($insert);
+                    }
+                });
+                return response()->json([
+                    "success" => true,
+                    "products" => count($products),
+                    "time" => microtime(true) - $start
+                ]);
+            }
+            return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
+        }catch(Exception $e){
+            return response()->json(["message" => "No se ha podido poblar la base de datos"]);
+        }
+    }
+
     public function getMaximum(){
         $start = microtime(true);
         //$workpoint = \App\WorkPoint::find($this->account->_workpoint);
