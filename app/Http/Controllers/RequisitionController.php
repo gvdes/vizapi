@@ -497,7 +497,7 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 9100];
                 break;
             case 13:
-                return ["domain" => $dominio, "port" => 9601];
+                return ["domain" => $dominio, "port" => 9605];
                 break;
         }
     }

@@ -126,8 +126,13 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/sinMaximos', 'ReportsController@sinMaximos');
         });
 
+        $router->group(['prefix' => 'clients'], function () use ($router){
+            $router->get('/seeder', 'ClientController@Seeder');
+        });
+
         $router->group(['prefix' => 'ventas'], function () use ($router){
             $router->post('/', 'VentasController@index');
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
+            $router->get('/seeder', 'VentasController@getVentas');
         });

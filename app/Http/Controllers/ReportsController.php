@@ -244,7 +244,7 @@ class ReportsController extends Controller{
         $codes = $request->codes; */
         $categories = range(130,160)/* array_merge(range(130,184), ) */;
         /* $products = Product::whereIn('_category', $categories)->get()->toArray(); */
-        $products = Product::/* with(['stocks' => function($query){
+        /* $products = Product::with(['stocks' => function($query){
             $query->where([
                 ['_workpoint', 4],
                 ['min', '>', 0],
@@ -256,13 +256,13 @@ class ReportsController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)-> */whereIn('_category', $categories)->get();
+        }, '>', 0)->whereIn('_category', $categories)->get(); */
         /* $codes = array_column($products, 'code'); */
         $stores = "navidad";
         switch($stores){
             case "navidad": 
                 /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [2])->get();
+                $workpoints = WorkPoint::whereIn('id', [3,4,5,7,9])->get();
                 /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
             case "juguete": 
@@ -271,11 +271,11 @@ class ReportsController extends Controller{
             case "all":
                 $workpoints = WorkPoint::all();
         }
-        /* $products = Product::whereIn('code', array_column($codes, 'code'))->get(); */
         /* $products = Product::whereIn('code', $codes)->get(); */
-        $products = $request->products;
-        $products2 = collect($request->products);
-        $codes = array_column($products, 'code');
+        /* $products = $request->products;
+        $products2 = collect($request->products); */
+        $codes = array_column($request->products, 'code');
+        $products = Product::whereIn('code', $codes)->get();
         $stocks = [];
         foreach($workpoints as $workpoint){
             $client = curl_init();
@@ -288,13 +288,13 @@ class ReportsController extends Controller{
             curl_setopt($client, CURLOPT_POSTFIELDS, $data);
             $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
         }
-        $result = $products2->map(function($product, $key) use($stocks, $workpoints){
+        $result = $products->map(function($product, $key) use($stocks, $workpoints){
             $data = [
                 'code' => $product['code'],
-                /* 'scode' => $product->name,
+                'scode' => $product->name,
                 'pieces' => $product->pieces,
                 'category'=> $product->category->name,
-                'descripción' => $product->description */
+                'descripción' => $product->description
             ];
             foreach($workpoints as $workpoint){
                 if($stocks[$workpoint->alias]){

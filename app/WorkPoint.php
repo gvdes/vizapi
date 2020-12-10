@@ -55,4 +55,11 @@ class WorkPoint extends Model{
     public function printers(){
         return $this->hasMany('App\Printer', '_workpoint');
     }
+
+    /**
+     * RELATIONSHIPS WITH VENTAS MODELS
+     */
+    public function cash(){
+        return $this->hasMany('App\CashRegister', '_workpoint');
+    }
 }
