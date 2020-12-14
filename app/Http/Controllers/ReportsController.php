@@ -102,6 +102,7 @@ class ReportsController extends Controller{
         })->filter(function($product){
             return $product['stock']>0;
         })->values()->all();
+        return response()->json($p);
         $export = new ArrayExport($p);
         $date = new \DateTime();
         return Excel::download($export, "sinMaximos.xlsx");
@@ -150,6 +151,7 @@ class ReportsController extends Controller{
         })->filter(function($product){
             return $product['stock']>0;
         })->values()->all();
+        return response()->json($p);
         $export = new ArrayExport($p);
         $date = new \DateTime();
         return Excel::download($export, "sinUbicaciones.xlsx");
@@ -262,7 +264,7 @@ class ReportsController extends Controller{
         switch($stores){
             case "navidad": 
                 /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [3,4,5,7,9])->get();
+                $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
                 /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
             break;
             case "juguete": 

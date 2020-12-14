@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 class Sales extends Model{
     
     protected $table = 'sales';
-    protected $fillable = ['num_ticket', 'name', 'created_at', '_cash', '_client', '_paid_by'];
+    protected $fillable = ['num_ticket', 'name', 'total', 'created_at', '_cash', '_client', '_paid_by'];
     
     /*****************
      * Relationships *
      *****************/
 
     public function cash(){
-      return $this->hasMany('App\CashRegister', '_cash');
+      return $this->belongsTo('App\CashRegister', '_cash');
     }
 
     public function products(){
@@ -23,5 +23,9 @@ class Sales extends Model{
     
     public function paid_by(){
       return $this->belongsTo('App\PaidMethod', '_paid_by');
+    }
+
+    public function client(){
+      return $this->belongsTo('App\Client', '_client');
     }
 }
