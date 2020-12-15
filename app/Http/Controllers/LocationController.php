@@ -269,7 +269,7 @@ class LocationController extends Controller{
                         curl_setopt($client,CURLOPT_TIMEOUT,8);
                         $access = json_decode(curl_exec($client), true);
                         if($access){
-                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => $access['ACTSTO']]);
+                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => intval($access['ACTSTO'])]);
                         }else{
                             array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => "---"]);
                         }

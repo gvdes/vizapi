@@ -258,13 +258,22 @@ class VentasController extends Controller{
 
   public function getLastVentas(Request $request){
     $workpoints = WorkPoint::where('_type', 2)->get();
-    /* foreach($workpoints as $workpoint){
-      $cash_registers = CashRegister::where('_workpoint', $workpoint->id);
-      foreach($cash_registers as $cash){
-        $sale = Sales::where('_cash', $cash->id)->max('num_ticket');
+    $resumen = [];
+    foreach($workpoints as $workpoint){
+      $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
+      $caja_x_ticket = [];
+      if(count($cash_registers)>0){
+        foreach($cash_registers as $cash){
+          $sale = Sales::where('_cash', $cash->id)->max('num_ticket');
+          if($sale){
+            array_push($caja_x_ticket, ["_cash" => $cash->id, "num_ticket" => $sale]);
+          }
+        }
+        $resumen[$workpoint->alias] = $caja_x_ticket;
       }
-    } */
-    $res = $workpoints->map(function($workpoint){
+    }
+    return response()->json($resumen);
+    /* $res = $workpoints->map(function($workpoint){
       $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
       $workpoint->cajas =$cash_registers->map(function($cash){
         $cash->ultima_venta = Sales::where('_cash', $cash->id)->max('num_ticket');
@@ -273,6 +282,6 @@ class VentasController extends Controller{
       return $workpoint;
     });
 
-    return response()->json($res);
+    return response()->json($res); */
   }
 }
