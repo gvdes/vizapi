@@ -248,7 +248,7 @@ class LocationController extends Controller{
             }
             if(isset($request->stocks)){
                 if($request->stocks){
-                    $client = curl_init();
+                    /* $client = curl_init();
                     curl_setopt($client, CURLOPT_URL, "http://192.168.1.224:1618/access/public/product/max/".$product->code);
                     curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
                     curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
@@ -258,7 +258,23 @@ class LocationController extends Controller{
                         $product->stocks_stores = [["alias" => "CEDISSP", "stocks" => $access['ACTSTO']]];
                     }else{
                         $product->stocks_stores = ["CEDISSP" => "--"];
+                    } */
+                    $workpoints = WorkPoint::where('id', 1)->orWhere('id', 13)->get();
+                    $stocks_stores = [];
+                    foreach($workpoints as $workpoint){
+                        $client = curl_init();
+                        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max/".$product->code);
+                        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+                        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+                        curl_setopt($client,CURLOPT_TIMEOUT,8);
+                        $access = json_decode(curl_exec($client), true);
+                        if($access){
+                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => $access['ACTSTO']]);
+                        }else{
+                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => "---"]);
+                        }
                     }
+                    $product->stocks_stores = $stocks_stores;
                 }
             }
             return response()->json($product);

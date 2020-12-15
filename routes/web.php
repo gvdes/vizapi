@@ -135,4 +135,5 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
             $router->get('/seeder', 'VentasController@getVentas');
+            $router->get('/lastVentas', 'VentasController@getLastVentas');
         });

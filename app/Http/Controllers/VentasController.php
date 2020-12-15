@@ -255,4 +255,24 @@ class VentasController extends Controller{
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
   }
+
+  public function getLastVentas(Request $request){
+    $workpoints = WorkPoint::where('_type', 2)->get();
+    /* foreach($workpoints as $workpoint){
+      $cash_registers = CashRegister::where('_workpoint', $workpoint->id);
+      foreach($cash_registers as $cash){
+        $sale = Sales::where('_cash', $cash->id)->max('num_ticket');
+      }
+    } */
+    $res = $workpoints->map(function($workpoint){
+      $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
+      $workpoint->cajas =$cash_registers->map(function($cash){
+        $cash->ultima_venta = Sales::where('_cash', $cash->id)->max('num_ticket');
+        return $cash;
+      });
+      return $workpoint;
+    });
+
+    return response()->json($res);
+  }
 }
