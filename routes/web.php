@@ -73,6 +73,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'product'], function () use ($router){
+        $router->get('/getStatus', 'ProductController@getStatus');
+        $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->get('/seeder', 'ProductController@seeder');
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/updatePrices', 'ProductController@updatePrices');

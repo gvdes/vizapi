@@ -10,6 +10,7 @@ use App\Product;
 use App\CashRegister;
 use App\Sales;
 use App\PaidMethod;
+use App\Client;
 
 class VentasController extends Controller{
   /**
@@ -21,23 +22,23 @@ class VentasController extends Controller{
   }
 
   public function index(Request $request){
-    $workpoints = WorkPoint::with(['cash' => function($query) use($request){
-      $query->with(['sales' => function($query) use($request){
-        if(isset($request->date_from) && isset($request->date_to)){
-          $date_from = new \DateTime($request->date_from);
-          $date_to = new \DateTime($request->date_to);
-          if($request->date_from == $request->date_to){
-            $date_from->setTime(0,0,0);
-            $date_to->setTime(23,59,59);
-          }
-        }else{
-          $date_from = new \DateTime();
-          $date_from->setTime(0,0,0);
-          $date_to = new \DateTime();
-          $date_to->setTime(23,59,59);
-        }
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+    $workpoints = WorkPoint::with(['cash' => function($query) use($date_from, $date_to){
+      $query->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)
-        ->where('created_at',"<=", $date_to)->with('products');
+        ->where('created_at',"<=", $date_to);
       }]);
     }])->where('_type', 2)->get();
     $paid_methods = PaidMethod::all();
@@ -45,25 +46,22 @@ class VentasController extends Controller{
       $method->total = 0;
       return $method;
     });
-    $ventas = $workpoints->map(function($workpoint) use($formas_pago){
-      $store = $workpoint->cash->map(function($cash){
-        $cash->sales->map(function($sale){
-          $sale->venta = $sale->products->sum(function($product){
-            return $product->pivot->total;
-          });
-          return $sale;
-        });
-        return $cash;
+    $ventas = $workpoints->map(function($workpoint) use($date_from, $date_to, $paid_methods){
+      $venta = Sales::where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas('cash', function($query) use($workpoint){
+          $query->where('_workpoint', $workpoint->id);
+        })->sum("total");
+
+      $p = collect(json_decode(json_encode($paid_methods)));
+      $metodos_pago = $p->map(function($method) use($date_from, $date_to, $workpoint){
+        $method->total = Sales::where([
+          ['created_at',">=", $date_from],
+          ['created_at',"<=", $date_to],
+          ['_paid_by', $method->id]
+        ])->whereHas('cash', function($query) use($workpoint){
+          $query->where('_workpoint', $workpoint->id);
+        })->sum("total");
+        return $method;
       });
-      $venta = $store->sum(function($cash){
-        return $cash->sales->sum("venta");
-      });
-      $metodos_pago = $store->reduce(function($res, $cash){
-        foreach($cash->sales as $sale){
-          $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->venta;
-        }
-        return $res;
-      },json_decode(json_encode($formas_pago)));
       
       $tickets = $workpoint->cash->sum(function($cash){
         return $cash->sales->count();
@@ -130,7 +128,7 @@ class VentasController extends Controller{
     })->with(['products'])->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
 
     $metodos_pago = collect($sales->reduce(function($res, $sale){
-      $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->venta;
+      $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->total;
       return $res;
     },json_decode(json_encode($formas_pago))));
 
@@ -147,52 +145,7 @@ class VentasController extends Controller{
         "ticket_promedio" => $venta/($tickets == 0 ? 1 : $tickets),
         "metodos_pago" => $metodos_pago,
         "cajas" => CashResource::collection($cash)
-      ],
-      /* "ventas" => $cash */
-    ]);
-
-    return response()->json([
-      "workpoint" => [
-        "id" => 3,
-        "name" => "San Pablo 1",
-        "alias" => "SP1",
-        "venta" => 0,
-        "tickets" => 0,
-        "ticket_promedio" => 0,
-        "metodos_pago" => [[
-          "id" => 1,
-          "name" => "Efectivo",
-          "alias" => "EFE",
-          "total" => 0
-        ]],
-        "cajas" => [[
-          "id" => 1,
-          "name" => "Caja 1",
-          "num_cash" => 1,
-          "sales" => [[
-            "id" => 1,
-            "num_ticket" => 1,
-            "name" => "",
-            "created_at" => "",
-            "updated_at" => "",
-            "client" => "",
-            "paid_by" => "",
-            "products" => [[
-              "id" =>   1,
-              "code" => "",
-              "name" => "",
-              "description" => "",
-              "sold" => [
-                "amount" => 0,
-                "costo" => 0,
-                "price" => 0,
-                "total" => 0,
-              ]
-            ]]
-          ]]
-        ]]
-      ],
-      "cash" => $cash
+      ]
     ]);
   }
 
@@ -201,6 +154,8 @@ class VentasController extends Controller{
       $start = microtime(true);
       $client = curl_init();
       $workpoint = WorkPoint::find($request->_workpoint);
+      $clientes = Client::all()->toArray();
+      $ids_clients = array_column($clientes, 'id');
       curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas");
       curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
       curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
@@ -211,7 +166,7 @@ class VentasController extends Controller{
         $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get()->toArray();
         $codes = array_column($products, 'code');
         $cajas = array_column($cash_registers, 'num_cash');
-        DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers){
+        DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
           foreach($ventas as $venta){
             $index_caja = array_search($venta['_cash'], $cajas);
             $instance = Sales::create([
@@ -219,7 +174,7 @@ class VentasController extends Controller{
               "_cash" => $cash_registers[$index_caja]['id'],
               "total" => $venta['total'],
               "created_at" => $venta['created_at'],
-              "_client" => $venta['_client'],
+              "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
               "_paid_by" => $venta['_paid_by'],
               "name" => $venta['name'],
             ]);
@@ -259,6 +214,10 @@ class VentasController extends Controller{
   public function getLastVentas(Request $request){
     $workpoints = WorkPoint::where('_type', 2)->get();
     $resumen = [];
+    $start = microtime(true);
+    $a = 0;
+    $clientes = Client::all()->toArray();
+    $ids_clients = array_column($clientes, 'id');
     foreach($workpoints as $workpoint){
       $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
       $caja_x_ticket = [];
@@ -266,13 +225,63 @@ class VentasController extends Controller{
         foreach($cash_registers as $cash){
           $sale = Sales::where('_cash', $cash->id)->max('num_ticket');
           if($sale){
-            array_push($caja_x_ticket, ["_cash" => $cash->id, "num_ticket" => $sale]);
+            array_push($caja_x_ticket, ["_cash" => $cash->num_cash, "num_ticket" => $sale]);
           }
         }
-        $resumen[$workpoint->alias] = $caja_x_ticket;
+        if(count($caja_x_ticket)>0){
+          /* $resumen[$workpoint->alias] = $caja_x_ticket; */
+          $client = curl_init();
+          curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/new");
+          curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client, CURLOPT_POST, 1);  
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            $data = http_build_query(["cash" => $caja_x_ticket]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $ventas = json_decode(curl_exec($client), true);
+            curl_close($client);
+            $resumen[$workpoint->alias] = $caja_x_ticket;
+          if($ventas){
+            $a++;
+            $products = Product::all()->toArray();
+            $codes = array_column($products, 'code');
+            $cajas = array_column($cash_registers->toArray(), 'num_cash');
+            DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
+              foreach($ventas as $venta){
+                $index_caja = array_search($venta['_cash'], $cajas);
+                $instance = Sales::create([
+                  "num_ticket" => $venta['num_ticket'],
+                  "_cash" => $cash_registers[$index_caja]['id'],
+                  "total" => $venta['total'],
+                  "created_at" => $venta['created_at'],
+                  "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
+                  "_paid_by" => $venta['_paid_by'],
+                  "name" => $venta['name'],
+                ]);
+                $insert = [];
+                foreach($venta['body'] as $row){
+                  $index = array_search($row['_product'], $codes);
+                  if($index === 0 || $index > 0){  
+                    $instance->products()->attach($products[$index]['id'], [
+                      "amount" => $row['amount'],
+                      "price" => $row['price'],
+                      "total" => $row['total'],
+                      "costo" => $row['costo']
+                    ]);
+                  }
+                }
+              }
+            });
+          }
+        }
       }
     }
-    return response()->json($resumen);
+    return response()->json([
+      "success" => true,
+      "time" => microtime(true) - $start,
+      "a" => $a,
+      "resumen" => $resumen
+      ]);
     /* $res = $workpoints->map(function($workpoint){
       $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
       $workpoint->cajas =$cash_registers->map(function($cash){

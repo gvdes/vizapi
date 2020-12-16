@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\ProductCategory;
+use App\ProductStatus;
+
 use App\Http\Resources\Product as ProductResource;
 
 class ProductController extends Controller{
@@ -209,7 +211,7 @@ class ProductController extends Controller{
         $code = $request->code;
         $products = Product::with(['prices' => function($query){
                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                        }, 'units', 'variants'])
+                        }, 'units', 'variants', 'status'])
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
                         })
@@ -341,5 +343,19 @@ class ProductController extends Controller{
             ];
         });
         return response()->json($res);
+    }
+
+    public function updateStatus(Request $request){
+        $product = Product::find($request->_product);
+        if($product){
+            $product->_status = $request->_status;
+            return response()->json(["success" => $product->save()]);
+        }
+        return response()->json(["success" => false]);
+    }
+
+    public function getStatus(Request $request){
+        $status = ProductStatus::all();
+        return response()->json(["status" => $status]);
     }
 }
