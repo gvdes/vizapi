@@ -89,10 +89,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyTwoMinutes();
-
-        $schedule->call(function(){
-            DB::table('demo')->insert(["number" => 1]);
-        })->everyMinute();
+        })->everyFiveMinutes();
     }
 }
