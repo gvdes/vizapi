@@ -5,6 +5,12 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
+use App\WorkPoint;
+use App\Product;
+use App\CashRegister;
+use App\Sales;
+use App\PaidMethod;
+use App\Client;
 
 class Kernel extends ConsoleKernel
 {
@@ -84,5 +90,9 @@ class Kernel extends ConsoleKernel
                 }
             }
         })->everyTwoMinutes();
+
+        $schedule->call(function(){
+            DB::table('demo')->insert(["number" => 1]);
+        })->everyMinute();
     }
 }
