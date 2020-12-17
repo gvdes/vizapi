@@ -336,8 +336,26 @@ class AccountController extends Controller{
         $users = User::where('_rol', 1)->get();
         $total = 0;
         foreach($users as $user){
-            $user->workpoints()->syncWithoutDetaching([$request->_workpoint => ['_rol' => $user->_rol, '_status' => 1]]);
-            $total++;
+            $account = \App\Account::where([
+                ["_account", $user->id],
+                ["_workpoint", $request->_workpoint]
+            ])->first();
+            if(!$account){
+                $account = \App\Account::create([
+                    '_account' => $user->id,
+                    '_workpoint' => $request->_workpoint,
+                    '_rol' => $request->rol,
+                    '_status' => 1,
+                ]);
+                $permissions = \App\Roles::with('permissions_default')->find($account->_rol);
+                //Asociar permisos con cuentas
+                $permissions_default = collect($permissions->permissions_default);
+                $insert = $permissions_default->map(function($permission){
+                    return $permission->id;
+                })->toArray();
+                $account->permissions()->attach($insert);
+                $total++;
+            }
         }
         return response()->json(["add" => $total]);
     }
