@@ -455,7 +455,7 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
-                if($for == 8 || $for == 11 || $for == 13){
+                if($for == 8 || $for == 11 || $for == 13 || $for == 14){
                     return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
                 }else{
                     return ["domain" => env("PRINTER_ARRIBA"), "port" => 9100];
