@@ -227,7 +227,6 @@ class RequisitionController extends Controller{
                     $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
                     $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
                     $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                    /* $cellerPrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
                     if($cellerPrinter->requisitionTicket($requisition)){
                         $requisition->printed = $requisition->printed +1;
                         $requisition->save();
@@ -235,7 +234,6 @@ class RequisitionController extends Controller{
                     $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
                     $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
                     $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                    /* $storePrinter = new MiniPrinterController('192.168.1.36'$printer->ip); */
                     $storePrinter->requisitionReceipt($requisition);
                     $requisition->log()->attach(2, [ 'details' => json_encode([
                         "responsable" => $responsable
@@ -457,7 +455,7 @@ class RequisitionController extends Controller{
         $dominio = explode(':', $who->dominio)[0];
         switch($who->id){
             case 1:
-                if($for == 8 || $for == 11){
+                if($for == 8 || $for == 11 || $for == 13){
                     return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
                 }else{
                     return ["domain" => env("PRINTER_ARRIBA"), "port" => 9100];
