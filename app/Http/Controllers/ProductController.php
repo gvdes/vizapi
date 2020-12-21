@@ -210,7 +210,7 @@ class ProductController extends Controller{
     public function autocomplete(Request $request){
         $code = $request->code;
         $products = Product::with(['prices' => function($query){
-                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                            $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
                         }, 'units', 'variants', 'status'])
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
@@ -219,7 +219,8 @@ class ProductController extends Controller{
                         ->orWhere('code', 'like','%'.$code.'%')
                         ->orWhere('description', 'like','%'.$code.'%')
                         ->limit('20')->get();
-        return response()->json($products);
+        /* return response()->json($products); */
+        return response()->json(ProductResource::collection($products));
     }
 
     public function getProductByCategory(Request $request){

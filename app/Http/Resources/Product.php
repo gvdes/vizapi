@@ -29,7 +29,25 @@ class Product extends JsonResource{
                         "value" => $attribute->pivot->value
                     ];
                 });
-            })
+            }),
+            'prices' => $this->whenLoaded('prices', function(){
+                return $this->prices->map(function($price){
+                    return [
+                        "id" => $price->id,
+                        "name" => $price->name,
+                        "alias" => $price->alias,
+                        "price" => $price->pivot->price
+                    ];
+                });
+            }),
+            'status' => $this->when($this->status, function(){
+                return $this->status;
+            }),
+            'units' => $this->when($this->units, function(){
+                return $this->units;
+            })/* ,
+            "created_at" => $this->created_at->format('Y-m-d H:i'),
+            "updated_at" => $this->updated_at->format('Y-m-d H:i'), */
         ];
     }
 }

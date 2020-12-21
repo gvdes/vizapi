@@ -7,7 +7,7 @@ class Product extends Model{
     
     protected $table = 'products';
     protected $fillable = ['code', 'name', 'description', 'stock', '_category', '_status', '_unit', '_provider', 'pieces', 'dimensions', 'weight'];
-    public $timestamps = false;
+    /* public $timestamps = false; */
     
     /*****************
      * Relationships *
