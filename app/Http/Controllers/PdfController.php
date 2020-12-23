@@ -15,12 +15,14 @@ class PdfController extends Controller{
   }
 
   public function getPdfsToEtiquetas(Request $request){
-    return response()->json(["types" => [
+    $types = [
       ["id" => 1, "name" => "Estrella x1"],
       ["id" => 2, "name" => "Estrella x2"],
       ["id" => 3, "name" => "Estrella x3"],
       ["id" => 4, "name" => "Estrella x4"]
-    ]]);
+    ];
+    $priceList = \App\PriceList::all();
+    return response()->json(["types" => $types, "price_list" => $priceList]);
   }
 
   public function generatePdf(Request $request){
