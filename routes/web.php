@@ -118,6 +118,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/', 'WorkpointController@index');
     });
 
+    $router->group(['prefix' => 'pdf'], function () use ($router){
+        $router->get('/', 'PdfController@getPdfsToEtiquetas');
+        $router->post('/etiquetas', 'PdfController@generatePdf');
+    });
+
 });
         $router->group(['prefix' => 'reports'], function () use ($router){
             /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */

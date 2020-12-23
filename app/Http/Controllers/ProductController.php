@@ -44,7 +44,7 @@ class ProductController extends Controller{
                     }
                     $codes =  array_column($products, 'code');
                     $prices_insert = $prices->map(function($price) use($products, $codes){
-                        $index_product = array_search($price['code'], $codes);
+                        $index_product = array_search($price['code'], $codes, true);
                         if($index_product == 0 || $index_product > 0){
                             return [
                                 '_product' => $products[$index_product]['id'],
@@ -85,7 +85,7 @@ class ProductController extends Controller{
                     //array prices
                     $codes =  array_column($products, 'code');
                     $prices_insert = $prices->map(function($price) use($products, $codes){
-                        $index_product = array_search($price['code'], $codes);
+                        $index_product = array_search($price['code'], $codes, true);
                         if($index_product === 0 || $index_product > 0){
                             return [
                                 '_product' => $products[$index_product]["id"],

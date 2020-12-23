@@ -5,3 +5,4 @@ Homestead.yaml
 .env
 .phpunit.result.cache
 vs_code.code-workspace
+/files
