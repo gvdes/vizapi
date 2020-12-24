@@ -223,6 +223,31 @@ class ProductController extends Controller{
         return response()->json(ProductResource::collection($products));
     }
 
+    public function getMassiveProducts(Request $request){
+        $codes = $request->codes;
+        $products = Product::with(['prices' => function($query){
+            $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+        }, 'units', 'variants', 'status'])
+        ->whereHas('variants', function(Builder $query) use ($codes){
+            $query->whereIn('barcode', $codes);
+        })
+        ->orWhere(function($query) use($codes){
+            $query->whereIn('name', $codes);
+        })
+        ->orWhere(function($query) use($codes){
+            $query->whereIn('code', $codes);
+        })
+        ->get();
+
+        return response()->json([
+            "products" => ProductResource::collection($products),
+            "fails" => [
+                "notFound" => [],
+                "repeat" => []
+            ]
+        ]);
+    }
+
     public function getProductByCategory(Request $request){
         /* return response()->json($request); */
         $products = [];

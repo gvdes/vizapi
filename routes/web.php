@@ -79,6 +79,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/updatePrices', 'ProductController@updatePrices');
         $router->get('/autocomplete', 'ProductController@autocomplete');
+        $router->get('/getMassive', 'ProductController@getMassiveProducts');
         $router->post('/catalog', 'ProductController@getProductByCategory');
         $router->get('/tree', 'ProductController@categoryTree');
         $router->get('/seederMax', 'ProductController@getMaximum');
