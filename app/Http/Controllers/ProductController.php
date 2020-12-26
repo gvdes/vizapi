@@ -225,25 +225,36 @@ class ProductController extends Controller{
 
     public function getMassiveProducts(Request $request){
         $codes = $request->codes;
-        $products = Product::with(['prices' => function($query){
-            $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-        }, 'units', 'variants', 'status'])
-        ->whereHas('variants', function(Builder $query) use ($codes){
-            $query->whereIn('barcode', $codes);
-        })
-        ->orWhere(function($query) use($codes){
-            $query->whereIn('name', $codes);
-        })
-        ->orWhere(function($query) use($codes){
-            $query->whereIn('code', $codes);
-        })
-        ->get();
-
+        $products = [];
+        $notFound = [];
+        $uniques = array_unique(array_map("strtoupper", $codes));
+        $repeat = array_values(array_diff_assoc($codes, $uniques));
+        foreach($uniques as $code){
+            $product = Product::with(['prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+            }, 'units', 'variants', 'status'])
+            ->whereHas('variants', function(Builder $query) use ($code){
+                $query->where('barcode', $code);
+            })
+            ->orWhere(function($query) use($code){
+                $query->where('name', $code);
+            })
+            ->orWhere(function($query) use($code){
+                $query->where('code', $code);
+            })
+            ->first();
+            if($product){
+                array_push($products, $product);
+            }else{
+                array_push($notFound, $code);
+            }
+        }
+        
         return response()->json([
             "products" => ProductResource::collection($products),
             "fails" => [
-                "notFound" => [],
-                "repeat" => []
+                "notFound" => $notFound,
+                "repeat" => $repeat
             ]
         ]);
     }
