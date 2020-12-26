@@ -227,7 +227,7 @@ class ProductController extends Controller{
         $codes = $request->codes;
         $products = [];
         $notFound = [];
-        $uniques = array_unique(array_map("strtoupper", $codes));
+        $uniques = array_unique($codes);
         $repeat = array_values(array_diff_assoc($codes, $uniques));
         foreach($uniques as $code){
             $product = Product::with(['prices' => function($query){
@@ -249,7 +249,7 @@ class ProductController extends Controller{
                 array_push($notFound, $code);
             }
         }
-        
+
         return response()->json([
             "products" => ProductResource::collection($products),
             "fails" => [
