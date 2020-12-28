@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
+use App\Account;
+use Illuminate\Support\Facades\Auth;
 use PDF;
 
 class PdfController extends Controller{
@@ -11,7 +13,7 @@ class PdfController extends Controller{
    * @return void
    */
   public function __construct(){
-      //
+    $this->account = Auth::payload()['workpoint'];
   }
 
   public function getPdfsToEtiquetas(Request $request){
@@ -19,7 +21,8 @@ class PdfController extends Controller{
       ["id" => 1, "name" => "Estrella x1"],
       ["id" => 2, "name" => "Estrella x2"],
       ["id" => 3, "name" => "Estrella x3"],
-      ["id" => 4, "name" => "Estrella x4"]
+      ["id" => 4, "name" => "Estrella x4"],
+      ["id" => 5, "name" => "Bodega"]
     ];
     $priceList = \App\PriceList::all();
     return response()->json(["types" => $types, "price_list" => $priceList]);
@@ -38,6 +41,9 @@ class PdfController extends Controller{
         break;
       case 4:
         return $this->pdf_star_4($request->products, $request->isInnerPack);
+        break;
+      case 5:
+        return $this->pdf_bodega($request->products);
         break;
     }
   }
@@ -91,13 +97,26 @@ class PdfController extends Controller{
         PDF::Image($image, $x, $y, $width, $height, '', '', '', false, 300, '', false, $star);
     }
     PDF::MultiCell($width, $height, $content, $border=0, $align="center", $fill=0, $ln=0, $x, $y+2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
-}
+  }
+
+  public function setImageBackground_bordered($image, $content, $width, $height, $cols, $rows, $top_space, $sides_space, $position){
+    $bucle = floor(($position)/($rows*$cols));
+    $position = $position-($bucle*$cols*$rows);
+    $x = 5+(($position%$cols)*($width))+$sides_space;
+    $y = 10+(intval(($position/$cols))*$height)+$top_space;
+    if($image){
+      $star = PDF::Image($image, 0, 0, 0, '', '', '', '', false, 700, '', true);
+      PDF::Image($image, $x, $y, $width, $height, '', '', '', false, 300, '', false, $star);
+    }
+    PDF::MultiCell($width, $height, $content, $border=1, $align="center", $fill=0, $ln=0, $x, $y+2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+  }
 
   public function pdf_big_star($products, $isInnerPack){
     PDF::SetTitle('Pdf estrella gigante');
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
-    $person = "";
+    $account = Account::with('user')->find($this->account->_account);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     $counter = 0;
     //etiquetas por hoja
     $pzHoja = 2;
@@ -213,7 +232,8 @@ class PdfController extends Controller{
     $counter = 0;
     //etiquetas por hoja
     $pzHoja = 8;
-    $person = '';
+    $account = Account::with('user')->find($this->account->_account);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
@@ -327,7 +347,8 @@ class PdfController extends Controller{
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
     $counter = 0;
-    $person = '';
+    $account = Account::with('user')->find($this->account->_account);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     //etiquetas por hoja
     $pzHoja = 18;
     foreach($std as $key => $product){
@@ -435,7 +456,8 @@ class PdfController extends Controller{
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
     $counter = 0;
-    $person = '';
+    $account = Account::with('user')->find($this->account->_account);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     //etiquetas por hoja
     $pzHoja = 24;
     foreach($std as $key => $product){
@@ -531,6 +553,62 @@ class PdfController extends Controller{
       'pages_off' => ceil($totalOff/$pzHoja),
       'pages_std' => ceil($totalStd/$pzHoja),
       'total' => ceil($totalStd/$pzHoja) + ceil($totalOff/$pzHoja),
+      'file' => $nameFile,
+    ]);
+  }
+
+  public function pdf_bodega($products){
+    $account = Account::with('user')->find($this->account->_account);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    PDF::SetTitle('Pdf bodega');
+    $counter = 0;
+    //etiquetas por hoja
+    $pzHoja = 18;
+    foreach($products as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).' naranja. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $tool = '';
+        /* if($product['tool']){
+          $tool = '+'.$product['tool'];
+        } */
+        $font_size_code = 3.8;
+        if(strlen($product['code'])>13){
+          $font_size_code = 2.4;
+        }
+        else if(strlen($product['code'])>12){
+          $font_size_code = 2.6;
+        }
+        else if(strlen($product['code'])>11){
+          $font_size_code = 3.1;
+        }else{
+          $font_size_code = 3.4;
+        }
+        $content = '<span style="text-align: center;">
+                      <span style="font-size:'.$font_size_code.'em; font-weight: bold;">'.$product['code'].'</span><span style="font-size:.1em"><br/></span>
+                      <span style="font-size:2.7em; font-weight: bold;">'.$product['name'].$tool.'</span>
+                    </span>';
+
+        $this->setImageBackground_bordered(null, $content, 103, 30, 2, 9, 1, -4, $key+$counter);
+      }
+    }
+    
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $products = collect($products);
+    $total = $products->reduce( function($total, $product){
+      return $total = $total +$product['copies'];
+    });
+    return response()->json([
+      'total' => ceil($total/$pzHoja),
       'file' => $nameFile,
     ]);
   }
