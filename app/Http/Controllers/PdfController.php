@@ -46,14 +46,14 @@ class PdfController extends Controller{
     $products = collect($products);
     return $products->filter(function($product){
       return $product['type'] == 'std' || $product['type'] == 'may';
-    });
+    })->values()->all();
   }
 
   public function getOffProducts($products){
     $products = collect($products);
     return $products->filter(function($product){
       return $product['type'] == 'off';
-    });
+    })->values()->all();
   }
 
   public function customPrices($prices, $br, $ex = false){

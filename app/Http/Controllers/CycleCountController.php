@@ -22,17 +22,45 @@ class CycleCountController extends Controller{
             $payload = Auth::payload();
             $counter = DB::transaction(function() use($payload, $request){
                 $counter = CycleCount::create([
-                    'workpoint' => $payload['workpoint']->_workpoint,
-                    'created_by' => $payload['workpoint']->_account,
+                    '_workpoint' => $payload['workpoint']->_workpoint,
+                    '_created_by' => $payload['workpoint']->_account,
                     '_type' => $request->_type,
-                    'status' => 1,
-                    'details' => json_encode()
+                    '_status' => 1
                 ]);
                 return $counter;
             });
+            return response()->json(["success" => true, "inventory" => $counter]);
         }catch(\Exception $e){
             return response()->json(["message"=> "No se ha podido crear el contador"]);
         }
+    }
+
+    public function addResponsable(Request $request){
+
+    }
+
+    public function index(Request $request){
+        return response()->json([
+            "type" => [],
+            "status" => [],
+            "inventory" => []
+        ]);
+    }
+
+    public function find(Request $request){
+
+    }
+
+    public function nextStep(Request $request){
+
+    }
+
+    public function addProducts(Request $request){
+
+    }
+
+    public function saveValue(Request $request){
+
     }
 
     public function saveDetails(Request $request){
