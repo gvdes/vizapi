@@ -264,8 +264,8 @@ class ReportsController extends Controller{
         switch($stores){
             case "navidad": 
                 /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get();
-                /* $workpoints = WorkPoint::whereIn('id', [2])->get(); */
+                /* $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get(); */
+                $workpoints = WorkPoint::whereIn('id', [11])->get();
             break;
             case "juguete": 
                 $workpoints = WorkPoint::whereIn('id', [1,2,6,8])->get();
@@ -299,12 +299,14 @@ class ReportsController extends Controller{
                 'descripción' => $product->description
             ];
             foreach($workpoints as $workpoint){
+                $arr_provicional = array_column($stocks[$workpoint->alias],'code');
                 if($stocks[$workpoint->alias]){
-                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
+                    $key_pro = array_search($data['code'], $arr_provicional);
+                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key_pro]['stock'];
                     $min = "min".$workpoint->alias;
                     $max = "max".$workpoint->alias;
-                    $data[$min] = $stocks[$workpoint->alias][$key]['min'];
-                    $data[$max] = $stocks[$workpoint->alias][$key]['max'];
+                    $data[$min] = $stocks[$workpoint->alias][$key_pro]['min'];
+                    $data[$max] = $stocks[$workpoint->alias][$key_pro]['max'];
                 }else{
                     $data[$workpoint->alias] = '--';
                 }

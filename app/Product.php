@@ -57,6 +57,11 @@ class Product extends Model{
                     ->withPivot(['stock', 'stock_acc', 'details']);
     }
 
+    public function sales(){
+        return $this->belongsToMany('App\Sales', 'product_sold', '_product', '_sale')
+                    ->withPivot('amount', 'costo', 'price', 'total');
+    }
+
     public function attributes(){
         return $this->belongsToMany('App\CategoryAttribute', 'product_attributes', '_product', '_attribute')
                     ->withPivot('value');

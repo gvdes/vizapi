@@ -309,7 +309,7 @@ class AccountController extends Controller{
     }
 
     public function deletePermissions(Request $request){
-        $accounts = Account::all();
+        $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
         $total = 0;
         foreach($accounts as $account){
             $account->permissions()->detach($request->permissions);

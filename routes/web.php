@@ -142,6 +142,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/', 'VentasController@index');
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
+            $router->post('/articulos', 'VentasController@VentasxArticulos');
             $router->get('/seeder', 'VentasController@getVentas');
             $router->get('/lastVentas', 'VentasController@getLastVentas');
         });

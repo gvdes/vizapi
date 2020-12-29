@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\CycleCount;
+use App\CycleCountStatus;
+use App\CycleCountType;
 use Illuminate\Support\Facades\Auth;
 
 class CycleCountController extends Controller{
@@ -36,13 +38,18 @@ class CycleCountController extends Controller{
     }
 
     public function addResponsable(Request $request){
-
+        $inventory = CycleCount::find($request->_inventory);
+        if($inventory){
+            $res = $inventory->responsables()->toggle($request->_responsable);
+            return response()->json(["success" => $res]);
+        }
+        return response()->json(["msg" => "Folio de inventario no encontrado"]);
     }
 
     public function index(Request $request){
         return response()->json([
-            "type" => [],
-            "status" => [],
+            "type" => CycleCountType::all(),
+            "status" => CycleCountStatus::all(),
             "inventory" => []
         ]);
     }

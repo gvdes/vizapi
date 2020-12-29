@@ -293,4 +293,84 @@ class VentasController extends Controller{
 
     return response()->json($res); */
   }
+
+  public function VentasxArticulos(Request $request){
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+    
+    $workpoint = WorkPoint::find($request->_workpoint);
+
+    $cash = CashRegister::where('_workpoint', $request->_workpoint)/* ->with(['sales' => function($query) use($date_from, $date_to){
+      $query->with('products', 'client')->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+    }]) */->get()->toArray();
+    /* return response()->json(array_column($cash, 'id')); */
+
+    $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
+      $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
+    })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){
+      $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
+    }])->get();
+    
+    /* return response()->json($products); */
+
+    $result = $products->map(function($product){
+      $vendidos = $product->sales->reduce(function($total, $sale){
+        return $total + $sale->pivot->amount;
+      }, 0);
+
+      $tickets = count($product->sales->toArray());
+      return [
+        "code" => $product->code,
+        "name" => $product->name,
+        "description" => $product->description,
+        "pieces" => $product->pieces,
+        "vendidos" => $vendidos,
+        "tickets" => $tickets
+      ];
+    });
+
+    return response()->json($result);
+    
+    /* $paid_methods = PaidMethod::all();
+    $formas_pago = $paid_methods->map(function($method){
+      $method->total = 0;
+      return $method;
+    });
+
+    $sales = Sales::whereHas("cash", function($query) use($workpoint){
+      $query->where('_workpoint', $workpoint->id);
+    })->with(['products'])->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
+
+    $metodos_pago = collect($sales->reduce(function($res, $sale){
+      $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->total;
+      return $res;
+    },json_decode(json_encode($formas_pago))));
+
+    $venta = $metodos_pago->sum('total');
+    $tickets = $sales->count(); */
+
+    return response()->json([
+      "workpoint" => [
+        "id" => $workpoint->id,
+        "name" => $workpoint->name,
+        "alias" => $workpoint->alias,
+        "venta" => $venta,
+        "tickets" => $tickets,
+        "ticket_promedio" => $venta/($tickets == 0 ? 1 : $tickets),
+        "metodos_pago" => $metodos_pago,
+        "cajas" => CashResource::collection($cash)
+      ]
+    ]);
+  }
 }
