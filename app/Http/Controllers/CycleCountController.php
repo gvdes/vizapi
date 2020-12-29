@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\User;
 use App\CycleCount;
 use App\CycleCountStatus;
 use App\CycleCountType;
+use App\Account;
+use App\Http\Resources\Inventory as InventoryResource;
 use Illuminate\Support\Facades\Auth;
 
 class CycleCountController extends Controller{
@@ -16,7 +19,7 @@ class CycleCountController extends Controller{
      * @return void
      */
     public function __construct(){
-        //
+        $this->account = Auth::payload()['workpoint'];
     }
 
     public function create(Request $request){
@@ -24,14 +27,16 @@ class CycleCountController extends Controller{
             $payload = Auth::payload();
             $counter = DB::transaction(function() use($payload, $request){
                 $counter = CycleCount::create([
+                    'notes' => $request->notes/* isset($request->notes) ? $request->notes : "" */,
                     '_workpoint' => $payload['workpoint']->_workpoint,
                     '_created_by' => $payload['workpoint']->_account,
                     '_type' => $request->_type,
                     '_status' => 1
                 ]);
-                return $counter;
+                $this->log(1, $counter);
+                return $counter->fresh('workpoint', 'created_by', 'type', 'status', 'responsables');
             });
-            return response()->json(["success" => true, "inventory" => $counter]);
+            return response()->json(["success" => true, "inventory" => new InventoryResource($counter)]);
         }catch(\Exception $e){
             return response()->json(["message"=> "No se ha podido crear el contador"]);
         }
@@ -47,15 +52,32 @@ class CycleCountController extends Controller{
     }
 
     public function index(Request $request){
+        $account = User::find($this->account->_account);
+        $now = new \DateTime();
+        if(isset($request->date)){
+            $now = $request->date;
+        }
+        $invetories = CycleCount::where('_created_by', $this->account->_account)
+                                ->orWhere(function($query){
+                                    $query->whereHas('responsables', function($query){
+                                        $query->where('_account', $this->account->_account);
+                                    });
+                                })
+                                ->whereDate('created_at', $now)
+                                ->get();
         return response()->json([
             "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
-            "inventory" => []
+            "inventory" => $invetories
         ]);
     }
 
-    public function find(Request $request){
-
+    public function find($id){
+        $inventory = CycleCount::with('workpoint', 'created_by', 'type', 'status', 'responsables')->find($id);
+        if($inventory){
+            return response()->json(["success" => true, "inventory" => new InventoryResource($inventory)]);
+        }
+        return response()->json(["success" => false, "msg" => "El folio no existe"]);
     }
 
     public function nextStep(Request $request){
@@ -94,6 +116,45 @@ class CycleCountController extends Controller{
             }
         } catch(\Exception $e){
             return response()->json(["message" => "No se ha podido"]);
+        }
+    }
+
+    public function log($case, CycleCount $inventory){
+        $account = Account::with('user')->find($this->account->id);
+        $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+        switch($case){
+            case 1:
+                $inventory->log()->attach(1, [ 
+                    'details' => json_encode([
+                        "responsable" => $responsable
+                    ]),
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            break;
+            case 2:
+                $inventory->log()->attach(2, [ 
+                    'details' => json_encode([
+                        "responsable" => $responsable
+                    ]),
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            break;
+            case 3:
+                $inventory->log()->attach(3, [ 
+                    'details' => json_encode([
+                        "responsable" => $responsable
+                    ]),
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            break;
+            case 4:
+                $inventory->log()->attach(4, [ 
+                    'details' => json_encode([
+                        "responsable" => $responsable
+                    ]),
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            break;
         }
     }
 }

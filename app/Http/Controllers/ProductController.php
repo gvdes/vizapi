@@ -395,4 +395,21 @@ class ProductController extends Controller{
         $status = ProductStatus::all();
         return response()->json(["status" => $status]);
     }
+
+    public function getProductsWithCodes(Request $request){
+        $products = Product::with('variants')->has('variants', '>', 0)->whereIn('_category', range(130,137))->get();
+        $map = $products->map(function($product){
+            return [
+                "id" => $product->id,
+                "code" => $product->code,
+                "scode" => $product->name,
+                "description" => $product->description,
+                "variants" => $product->variants->reduce(function($res, $variant){
+                    array_push($res, $variant->barcode);
+                    return $res; 
+                }, []),
+            ];
+        });
+        return response()->json(["products" => $map]);
+    }
 }

@@ -68,6 +68,13 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/section', 'LocationController@createSection');
     });
 
+    $router->group(['prefix' => 'inventory'], function () use ($router){
+        $router->get('/', 'CycleCountController@index');
+        $router->get('/{id}', 'CycleCountController@find');
+        $router->post('/', 'CycleCountController@create');
+        $router->post('/responsable', 'CycleCountController@addResponsable');
+    });
+
     $router->group(['prefix' => 'mail'], function () use ($router){
         $router->get('/', 'MailController@welcome');
     });
@@ -89,6 +96,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
         $router->get('/seeder', 'RelatesCodeController@seeder');
+        $router->get('/products', 'ProductController@getProductsWithCodes');
     });
 
     $router->group(['prefix' => 'provider'], function () use ($router){

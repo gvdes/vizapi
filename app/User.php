@@ -84,6 +84,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return $this->hasMany('App\CycleCount', '_created_by', 'id');
     }
 
+    public function cyclecounts_responsable(){
+        return $this->belongsToMany('App\CycleCount', 'cyclecount_responsables', '_account', '_cyclecount');
+    }
+
     /**
      * RELATIONSHIPS WITH REQUISITION'S MODELS
      */
