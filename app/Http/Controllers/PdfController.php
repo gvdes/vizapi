@@ -115,7 +115,7 @@ class PdfController extends Controller{
     PDF::SetTitle('Pdf estrella gigante');
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
-    $account = Account::with('user')->find($this->account->_account);
+    $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     $counter = 0;
     //etiquetas por hoja
@@ -232,7 +232,7 @@ class PdfController extends Controller{
     $counter = 0;
     //etiquetas por hoja
     $pzHoja = 8;
-    $account = Account::with('user')->find($this->account->_account);
+    $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
@@ -347,7 +347,7 @@ class PdfController extends Controller{
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
     $counter = 0;
-    $account = Account::with('user')->find($this->account->_account);
+    $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     //etiquetas por hoja
     $pzHoja = 18;
@@ -456,7 +456,7 @@ class PdfController extends Controller{
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
     $counter = 0;
-    $account = Account::with('user')->find($this->account->_account);
+    $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     //etiquetas por hoja
     $pzHoja = 24;
@@ -558,7 +558,7 @@ class PdfController extends Controller{
   }
 
   public function pdf_bodega($products){
-    $account = Account::with('user')->find($this->account->_account);
+    $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     PDF::SetTitle('Pdf bodega');
     $counter = 0;
