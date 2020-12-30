@@ -23,6 +23,7 @@ $router->group(['prefix' => 'account'], function () use ($router){
         $router->get('/', 'AccountController@me');
         $router->get('/dataToCreate', 'AccountController@dataToCreateUser');
         $router->get('/all', 'AccountController@getAccounts');
+        $router->get('/users', 'AccountController@getUsers');
         $router->get('/general', 'AccountController@getAllUsers');
         $router->get('/profile', 'AccountController@profile');
         $router->post('/', 'AccountController@create');

@@ -359,4 +359,13 @@ class AccountController extends Controller{
         }
         return response()->json(["add" => $total]);
     }
+
+    public function getUsers(Request $request){
+        if(isset($request->_rol)){
+            $users = User::whereIn("_rol", $request->_rol)->orderBy('names', 'asc')->get();
+        }else{
+            $users = User::orderBy('names', 'asc')->get();
+        }
+        return response()->json($users);
+    }
 }
