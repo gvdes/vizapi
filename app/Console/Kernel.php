@@ -39,7 +39,7 @@ class Kernel extends ConsoleKernel
                 $caja_x_ticket = [];
                 if(count($cash_registers)>0){
                     foreach($cash_registers as $cash){
-                        $sale = Sales::where('_cash', $cash->id)->whereYear('created_at', '2020')->max('num_ticket');
+                        $sale = Sales::where('_cash', $cash->id)->whereYear('created_at', '2021')->max('num_ticket');
                         if($sale){
                             array_push($caja_x_ticket, ["_cash" => $cash->num_cash, "num_ticket" => $sale]);
                         }

@@ -311,18 +311,19 @@ class VentasController extends Controller{
     
     $workpoint = WorkPoint::find($request->_workpoint);
 
-    $cash = CashRegister::where('_workpoint', $request->_workpoint)/* ->with(['sales' => function($query) use($date_from, $date_to){
-      $query->with('products', 'client')->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-    }]) */->get()->toArray();
-    /* return response()->json(array_column($cash, 'id')); */
-
-    $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
-      $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-    })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){
-      $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-    }])->get();
-    
-    /* return response()->json($products); */
+    /* $cash = CashRegister::where('_workpoint', $request->_workpoint)->get()->toArray(); */
+    if(isset($request->products)){
+      $products = Product::whereIn('code', array_column($request->products, "code"))
+      ->with(['sales' => function($query) use($date_from, $date_to){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+      }])->get();
+    }else{
+      $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
+      })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
+      }])->get();
+    }
 
     $result = $products->map(function($product){
       $vendidos = $product->sales->reduce(function($total, $sale){
@@ -336,41 +337,11 @@ class VentasController extends Controller{
         "description" => $product->description,
         "pieces" => $product->pieces,
         "vendidos" => $vendidos,
-        "tickets" => $tickets
+        "tickets" => $tickets,
+        "variants" => $product->variants
       ];
     });
 
     return response()->json($result);
-    
-    /* $paid_methods = PaidMethod::all();
-    $formas_pago = $paid_methods->map(function($method){
-      $method->total = 0;
-      return $method;
-    });
-
-    $sales = Sales::whereHas("cash", function($query) use($workpoint){
-      $query->where('_workpoint', $workpoint->id);
-    })->with(['products'])->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
-
-    $metodos_pago = collect($sales->reduce(function($res, $sale){
-      $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->total;
-      return $res;
-    },json_decode(json_encode($formas_pago))));
-
-    $venta = $metodos_pago->sum('total');
-    $tickets = $sales->count(); */
-
-    return response()->json([
-      "workpoint" => [
-        "id" => $workpoint->id,
-        "name" => $workpoint->name,
-        "alias" => $workpoint->alias,
-        "venta" => $venta,
-        "tickets" => $tickets,
-        "ticket_promedio" => $venta/($tickets == 0 ? 1 : $tickets),
-        "metodos_pago" => $metodos_pago,
-        "cajas" => CashResource::collection($cash)
-      ]
-    ]);
   }
 }

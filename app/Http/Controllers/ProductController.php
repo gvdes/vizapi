@@ -412,4 +412,36 @@ class ProductController extends Controller{
         });
         return response()->json(["products" => $map]);
     }
+
+    public function getProducts(Request $request){
+        $query = Product::query();
+        if(isset($request->limit)){
+            $query = $query->limit($request->limit);    
+        }
+
+        if(isset($request->_category)){
+            //obtener hijo
+            $_categories = [$request->_category];
+            $query = $query->whereIn('_category', $_categories);
+        }
+        
+        if(isset($request->_location)){
+            //obtener hijo
+            $_locations = [$request->_location];
+            $query = $query->whereHas('locations', function( Builder $query) use($_locations){
+                $query->whereIn('_location', $_locations);
+            });
+        }
+
+        if(isset($request->check_sales)){
+            //OBTENER FUNCIÓN DE CHECAR STOCKS
+        }
+
+        $products = $query->get();
+        if(isset($request->check_stock)){
+            //OBTENER FUNCIÓN DE CHECAR STOCKS
+        }
+
+        return response()->json($products);
+    }
 }
