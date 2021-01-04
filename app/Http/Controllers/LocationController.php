@@ -616,4 +616,33 @@ class LocationController extends Controller{
         })->toArray();
         return response()->json($result);
     }
+
+    public function updateStocks(){
+        $workpoints = WorkPoint::whereIn('id', [1,13])->get();
+        foreach($workpoints as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/celler/stock");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            $stocks = json_decode(curl_exec($client), true);
+            if($stocks){
+                $products = Product::with(["stocks" => function($query) use($workpoint){
+                    $query->where('_workpoint', $workpoint->id);
+                }])->where('_status', 1)->get();
+                $codes_stocks = array_column($stocks, 'code');
+                foreach($products as $product){
+                    $key = array_search($product->code, $codes_stocks, true);
+                    if($key === 0 || $key > 0){
+                        $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : false;
+                        if(gettype($stock) == "boolean"){
+                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0]);
+                        }elseif($stock != $stocks[$key]["stock"]){
+                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"]]);
+                        }
+                    }
+                }
+            }
+        }
+        return response()->json(["success" => true]);
+    }
 }

@@ -91,14 +91,17 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by){
+                $to = $requisition->_workpoint_to;
                 $product = Product::with(['prices' => function($query){
-                    $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                }, 'units'])->find($request->_product);
+                    $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+                }, 'units', 'stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
                 /* if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
                 } */
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments]]);
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => $product->stocks[0]->pivot->stock]]);
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -116,7 +119,7 @@ class RequisitionController extends Controller{
                     "ordered" => [
                         "amount" => $amount,
                         "comments" => $request->comments,
-                        "stock" => 0
+                        "stock" => $product->stocks[0]->pivot->stock
                     ],
                     "units" => $product->units
                 ]);
@@ -134,9 +137,13 @@ class RequisitionController extends Controller{
         $fail = [];
         if($requisition){
             $products = $request->products;
+            $to = $requisition->_workpoint_to;
             foreach($products as $row){
                 $code = $row['modelo'];
-                $product = Product::whereHas('variants', function($query) use ($code){
+                $product = Product::with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])
+                ->whereHas('variants', function($query) use ($code){
                     $query->where('barcode', 'like', '%'.$code.'%');
                 })
                 ->orWhere('name', 'like','%'.$code.'%')
@@ -152,7 +159,7 @@ class RequisitionController extends Controller{
                         $required = $row['cajas'];
                     }
                     $added++;
-                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => ""]]);
+                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => $requisition->stocks[0]->pivot->stock]]);
                 }else{
                     array_push($fail, $row['modelo']);
                 }
@@ -180,7 +187,7 @@ class RequisitionController extends Controller{
 
     public function log($case, Requisition $requisition){
         $account = Account::with('user')->find($this->account->id);
-        $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+        $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
         if($case != 1){
             $logs = $requisition->log->toArray();
@@ -197,50 +204,57 @@ class RequisitionController extends Controller{
                 ])]);
             break;
             case 2:
-                $client = curl_init();
+                /* $client = curl_init();
                 curl_setopt($client, CURLOPT_URL, $requisition->to->dominio."/access/public/product/stocks");
                 curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
                 curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
                 curl_setopt($client, CURLOPT_POST, 1);
-                curl_setopt($client,CURLOPT_TIMEOUT,90);
+                curl_setopt($client,CURLOPT_TIMEOUT, 90);
                 $data = http_build_query(["products" => array_column($requisition->products->toArray(), 'code')]);
                 curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-                $stocks = json_decode(curl_exec($client), true);
-                if($stocks){
-                    foreach($requisition->products as $key => $product){
-                        $requisition->products()->syncWithoutDetaching([
-                            $product->id => [
-                                'units' => $product->pivot->units,
-                                'comments' => $product->pivot->comments,
-                                'stock' => $stocks[$key]['stock']
-                            ]
-                        ]);
-                    }
-                    $_workpoint_to = $requisition->_workpoint_to;
-                    $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
-                        $query->with(['locations' => function($query)  use ($_workpoint_to){
-                            $query->whereHas('celler', function($query) use ($_workpoint_to){
-                                $query->where('_workpoint', $_workpoint_to);
-                            });
-                        }]);
+                $stocks = json_decode(curl_exec($client), true); */
+                /* foreach($requisition->products as $key => $product){
+                    $requisition->products()->syncWithoutDetaching([
+                        $product->id => [
+                            'units' => $product->pivot->units,
+                            'comments' => $product->pivot->comments,
+                            'stock' => $stocks[$key]['stock']
+                        ]
+                    ]);
+                } */
+                /* *
+                 * RECARGAR STOCKS DE LA REQUISISION
+                 */
+                //RECARGAR LA REQUISIÓN
+                $_workpoint_to = $requisition->_workpoint_to;
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where('_workpoint', $_workpoint_to);
+                        });
                     }]);
-                    $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
-                    $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                    $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                    if($cellerPrinter->requisitionTicket($requisition)){
-                        $requisition->printed = $requisition->printed +1;
-                        $requisition->save();
-                    }
-                    $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                    $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                    $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                    $storePrinter->requisitionReceipt($requisition);
-                    $requisition->log()->attach(2, [ 'details' => json_encode([
-                        "responsable" => $responsable
-                    ])]);
-                    return true;
+                }]);
+                
+                //IMPRESION EN LA BODEGA
+                $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
+                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                if($cellerPrinter->requisitionTicket($requisition)){
+                    $requisition->printed = $requisition->printed +1;
+                    $requisition->save();
                 }
-                return false;
+                //IMPRESION DE COMPROBANTE EN TIENDA
+                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
+                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+                $storePrinter->requisitionReceipt($requisition);
+                $requisition->log()->attach(2, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                ])]);
+                return true;
+                /* if($stocks){
+                }
+                return false; */
             break;
             case 3:
                 $requisition->log()->attach(3, [ 'details' => json_encode([
@@ -301,7 +315,6 @@ class RequisitionController extends Controller{
                 $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
                 $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
                 $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                /* $storePrinter = new MiniPrinterController('192.168.1.36'); */
                 $storePrinter->requisitionTicket($requisition);
                 $requisition->log()->attach(9, [ 'details' => json_encode([
                     "responsable" => $responsable
