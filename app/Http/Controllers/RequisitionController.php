@@ -79,7 +79,6 @@ class RequisitionController extends Controller{
             });
             return response()->json([
                 "success" => true,
-                /* "order" => $requisition */
                 "order" => new RequisitionResource($requisition)
             ]);
         }catch(Exception $e){
@@ -101,7 +100,7 @@ class RequisitionController extends Controller{
                 /* if($product->units->id == 3){
                     $amount = $amount * $product->pieces;
                 } */
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => $product->stocks[0]->pivot->stock]]);
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -159,7 +158,7 @@ class RequisitionController extends Controller{
                         $required = $row['cajas'];
                     }
                     $added++;
-                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => $requisition->stocks[0]->pivot->stock]]);
+                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
                 }else{
                     array_push($fail, $row['modelo']);
                 }
@@ -204,27 +203,8 @@ class RequisitionController extends Controller{
                 ])]);
             break;
             case 2:
-                /* $client = curl_init();
-                curl_setopt($client, CURLOPT_URL, $requisition->to->dominio."/access/public/product/stocks");
-                curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-                curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($client, CURLOPT_POST, 1);
-                curl_setopt($client,CURLOPT_TIMEOUT, 90);
-                $data = http_build_query(["products" => array_column($requisition->products->toArray(), 'code')]);
-                curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-                $stocks = json_decode(curl_exec($client), true); */
-                /* foreach($requisition->products as $key => $product){
-                    $requisition->products()->syncWithoutDetaching([
-                        $product->id => [
-                            'units' => $product->pivot->units,
-                            'comments' => $product->pivot->comments,
-                            'stock' => $stocks[$key]['stock']
-                        ]
-                    ]);
-                } */
-                /* *
-                 * RECARGAR STOCKS DE LA REQUISISION
-                 */
+                // RECARGAR STOCKS DE LA REQUISISION
+                $this->refreshStocks($requisition);
                 //RECARGAR LA REQUISIÓN
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -252,9 +232,6 @@ class RequisitionController extends Controller{
                     "responsable" => $responsable
                 ])]);
                 return true;
-                /* if($stocks){
-                }
-                return false; */
             break;
             case 3:
                 $requisition->log()->attach(3, [ 'details' => json_encode([
@@ -643,8 +620,22 @@ class RequisitionController extends Controller{
         return ["msg" => "No se tenido conexión con la tienda"];
     }
 
-    public function test(Request $request){
-        $products = collect($request->products)->sortByDesc('locations')->values()->all();
-        return response()->json(array_column($products, "locations"));
+    public function refreshStocks(Requisition $requisition){
+        $_workpoint_to = $requisition->_workpoint_to;
+        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['stocks' => function($query) use($_workpoint_to){
+                $query->where('_workpoint', $_workpoint_to);
+            }]);
+        }]);
+        foreach($requisition->products as $product){
+            $requisition->products()->syncWithoutDetaching([
+                $product->id => [
+                    'units' => $product->pivot->units,
+                    'comments' => $product->pivot->comments,
+                    'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0
+                ]
+            ]);
+        }
+        return true;
     }
 }

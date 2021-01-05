@@ -118,6 +118,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyTwoMinutes();
+        })->everyMinute();
     }
 }
