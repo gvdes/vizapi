@@ -42,7 +42,8 @@ class Sale extends JsonResource{
                   ]
                 ];
               });
-            })
+            }),
+            "total" => $this->total
         ];
     }
 }

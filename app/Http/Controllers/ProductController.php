@@ -415,19 +415,18 @@ class ProductController extends Controller{
 
     public function getProducts(Request $request){
         $query = Product::query();
-        if(isset($request->limit)){
-            $query = $query->limit($request->limit);    
-        }
 
         if(isset($request->_category)){
-            //obtener hijo
-            $_categories = [$request->_category];
+            $_categories = $this->getCategoriesChildren($request->_category);
             $query = $query->whereIn('_category', $_categories);
+        }
+
+        if(isset($request->_status)){
+            $query = $query->where('_status', $request->_status);
         }
         
         if(isset($request->_location)){
-            //obtener hijo
-            $_locations = [$request->_location];
+            $_locations = $this->getSectionsChildren($request->_location);
             $query = $query->whereHas('locations', function( Builder $query) use($_locations){
                 $query->whereIn('_location', $_locations);
             });
@@ -437,11 +436,62 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        $products = $query->get();
-        if(isset($request->check_stock)){
-            //OBTENER FUNCIÓN DE CHECAR STOCKS
+        if(isset($request->check_stock) && $request->check_stock){
+            $query->with(['stocks' => function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            }]);
+        }
+        
+        if(isset($request->with_stock)){
+            if($request->with_stock){
+                $query = $query->whereHas('stocks', function(Builder $query){
+                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '>', 0);
+                });
+            }else{
+                $query = $query->whereHas('stocks', function(Builder $query){
+                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '<=', 0);
+                });
+            }
+        }
+
+        if(isset($request->paginate)){
+            $products = $query->paginate($request->paginate);
+        }else{
+            $products = $query->get();
         }
 
         return response()->json($products);
+    }
+
+    public function getSectionsChildren($id){
+        $sections = \App\CellerSection::where('root', $id)->get();
+        if(count($sections)>0){
+            $res = $sections->map(function($section){
+                $children = $this->getSectionsChildren($section->id);
+                return $children;
+            })->reduce(function($res, $section){
+                return array_merge($res, $section);
+            }, []);
+            array_push($res,$id);
+            return $res;
+        }else {
+            return [$id];
+        }
+    }
+
+    public function getCategoriesChildren($id){
+        $categories = ProductCategory::where('root', $id)->get();
+        if(count($categories)>0){
+            $res = $categories->map(function($category){
+                $children = $this->getCategoriesChildren($category->id);
+                return $children;
+            })->reduce(function($res, $category){
+                return array_merge($res, $category);
+            }, []);
+            array_push($res,$id);
+            return $res;
+        }else {
+            return [$id];
+        }
     }
 }

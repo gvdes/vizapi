@@ -311,13 +311,14 @@ class VentasController extends Controller{
     
     $workpoint = WorkPoint::find($request->_workpoint);
 
-    /* $cash = CashRegister::where('_workpoint', $request->_workpoint)->get()->toArray(); */
     if(isset($request->products)){
       $products = Product::whereIn('code', array_column($request->products, "code"))
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();
     }else{
+      /* $cash = CashRegister::where('_workpoint', $request->_workpoint)->get()->toArray(); */
+      $cash = CashRegister::all()->toArray();
       $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){

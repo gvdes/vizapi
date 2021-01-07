@@ -74,6 +74,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/{id}', 'CycleCountController@find');
         $router->post('/', 'CycleCountController@create');
         $router->post('/responsable', 'CycleCountController@addResponsable');
+        $router->post('/add', 'CycleCountController@addProducts');
+        $router->post('/remove', 'CycleCountController@removeProducts');
     });
 
     $router->group(['prefix' => 'mail'], function () use ($router){

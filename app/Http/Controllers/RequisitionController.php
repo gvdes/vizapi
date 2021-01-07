@@ -172,8 +172,8 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by){
-                $product = Product::with('prices', 'units')->find($request->_product);
-                $amount = isset($request->amount) ? $request->amount : 1;
+                /* $product = Product::with('prices', 'units')->find($request->_product);
+                $amount = isset($request->amount) ? $request->amount : 1; */
                 $requisition->products()->detach([$request->_product]);
                 return response()->json(["success" => true]);
             }else{

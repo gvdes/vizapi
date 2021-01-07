@@ -85,7 +85,32 @@ class CycleCountController extends Controller{
     }
 
     public function addProducts(Request $request){
+        $_products = $request->_products;
+        $inventory = CycleCount::find($request->_inventory);
+        if($inventory){
+            if($inventory->_type == 1){
+                $products = Product::with(['stocks', function($query) use ($inventory){
+                    $query->where('_workpoint', $inventory->_workpoint);
+                }])->whereIn('id', $_products)->get();
+                foreach($products as $product){
+                    $inventory->products()->attach($product->id, ['stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0]);
+                }
+            }else{
+                $inventory->products()->attach($_products);
+            }
+            return response()->json(["success" => true]);
+        }
+        return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
+    }
 
+    public function removeProducts(Request $request){
+        $_products = $request->_products;
+        $inventory = CycleCount::find($request->_inventory);
+        if($inventory){
+            $requisition->products()->detach($_products);
+            return response()->json(["success" => true]);
+        }
+        return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
     }
 
     public function saveValue(Request $request){
@@ -121,7 +146,7 @@ class CycleCountController extends Controller{
 
     public function log($case, CycleCount $inventory){
         $account = Account::with('user')->find($this->account->id);
-        $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+        $responsable = $account->user->names.' '.$account->user->surname_pat;
         switch($case){
             case 1:
                 $inventory->log()->attach(1, [ 
