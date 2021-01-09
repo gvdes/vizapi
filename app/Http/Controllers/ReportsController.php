@@ -242,40 +242,8 @@ class ReportsController extends Controller{
     }
 
     public function chechStocks(Request $request){
-        /* $stores = $request->stores; 
-        $codes = $request->codes; */
-        $categories = range(130,160)/* array_merge(range(130,184), ) */;
-        /* $products = Product::whereIn('_category', $categories)->get()->toArray(); */
-        /* $products = Product::with(['stocks' => function($query){
-            $query->where([
-                ['_workpoint', 4],
-                ['min', '>', 0],
-                ['max', '>', 0]
-            ]);
-        }])->whereHas('stocks', function($query){
-            $query->where([
-                ['_workpoint', 4],
-                ['min', '>', 0],
-                ['max', '>', 0]
-            ]);
-        }, '>', 0)->whereIn('_category', $categories)->get(); */
-        /* $codes = array_column($products, 'code'); */
-        $stores = "navidad";
-        switch($stores){
-            case "navidad": 
-                /* $workpoints = WorkPoint::whereIn('id', [4])->get(); */
-                /* $workpoints = WorkPoint::whereIn('id', [1,3,4,5,7,9])->get(); */
-                $workpoints = WorkPoint::whereIn('id', [11])->get();
-            break;
-            case "juguete": 
-                $workpoints = WorkPoint::whereIn('id', [1,2,6,8])->get();
-            break;
-            case "all":
-                $workpoints = WorkPoint::all();
-        }
-        /* $products = Product::whereIn('code', $codes)->get(); */
-        /* $products = $request->products;
-        $products2 = collect($request->products); */
+        $stores = "all";
+        $workpoints = WorkPoint::whereIn('id', $request->_workpoints)->get();
         $codes = array_column($request->products, 'code');
         $products = Product::whereIn('code', $codes)->get();
         $stocks = [];
@@ -285,7 +253,7 @@ class ReportsController extends Controller{
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            curl_setopt($client,CURLOPT_TIMEOUT,30);
             $data = http_build_query(["products" => $codes]);
             curl_setopt($client, CURLOPT_POSTFIELDS, $data);
             $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
@@ -299,8 +267,8 @@ class ReportsController extends Controller{
                 'descripción' => $product->description
             ];
             foreach($workpoints as $workpoint){
-                $arr_provicional = array_column($stocks[$workpoint->alias],'code');
                 if($stocks[$workpoint->alias]){
+                    $arr_provicional = array_column($stocks[$workpoint->alias],'code');
                     $key_pro = array_search($data['code'], $arr_provicional);
                     $data[$workpoint->alias] = $stocks[$workpoint->alias][$key_pro]['stock'];
                     $min = "min".$workpoint->alias;

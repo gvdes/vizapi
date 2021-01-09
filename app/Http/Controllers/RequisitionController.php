@@ -397,7 +397,7 @@ class RequisitionController extends Controller{
             if($result){
                 $requisition->_status= $status;
                 $requisition->save();
-                $requisition->refresh();
+                /* $requisition->refresh(); */
                 $requisition->load(['type', 'status', 'products', 'to', 'from', 'created_by', 'log']);
             }
             return response()->json(["success" => $result, 'order' => new RequisitionResource($requisition)]);
