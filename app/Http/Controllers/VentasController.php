@@ -312,7 +312,7 @@ class VentasController extends Controller{
     $workpoint = WorkPoint::find($request->_workpoint);
 
     if(isset($request->products)){
-      $products = Product::whereIn('code', array_column($request->products, "code"))
+      $products = Product::whereIn('code', $request->products/* array_column($request->products, "code") */)
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();

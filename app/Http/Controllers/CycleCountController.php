@@ -121,7 +121,7 @@ class CycleCountController extends Controller{
                         "pieces" => $product->pieces,
                         "ordered" => [
                             "stocks" => $product->stocks[0]->pivot->stock,
-                            "stocks_acc" => 0,
+                            "stocks_acc" => null,
                             "details" => [
                                 "editor" => ""
                             ]
@@ -148,7 +148,7 @@ class CycleCountController extends Controller{
                         "pieces" => $product->pieces,
                         "ordered" => [
                             "stocks" => 0,
-                            "stocks_acc" => 0,
+                            "stocks_acc" => null,
                             "details" => [
                                 "editor" => ""
                             ]
