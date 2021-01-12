@@ -28,7 +28,7 @@ class CycleCountController extends Controller{
             $payload = Auth::payload();
             $counter = DB::transaction(function() use($payload, $request){
                 $counter = CycleCount::create([
-                    'notes' => $request->notes/* isset($request->notes) ? $request->notes : "" */,
+                    'notes' => isset($request->notes) ? $request->notes : "",
                     '_workpoint' => $payload['workpoint']->_workpoint,
                     '_created_by' => $payload['workpoint']->_account,
                     '_type' => $request->_type,

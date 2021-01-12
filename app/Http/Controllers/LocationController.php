@@ -125,6 +125,25 @@ class LocationController extends Controller{
         ]);
     }
 
+    public function removeLocations(Request $request){
+        $section = CellerSection::find($request->_section);
+        $section->sections = \App\CellerSection::where('root', $section->id)->get();
+        $sections = $this->getSectionsChildren($section->id);
+        $sections2 = CellerSection::whereIn('id', $sections)->get();
+        
+        foreach($sections2 as $section){
+            $section->products()->detach();
+        }
+
+        $products = \App\Product::whereHas('locations', function($query) use ($sections){
+            return $query->whereIn('_location', $sections);
+        })->with(['locations' => function($query) use ($sections){
+            return $query->whereIn('_location', $sections);
+        }])->get();
+
+        return response()->json(["products" => $products, "sections" => $sections2]);
+    }
+
     /**
      * Get section in celler or children's sections
      * @param object request

@@ -67,6 +67,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/stocksFromStores', 'LocationController@getStocksFromStores');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
+        $router->post('/remove', 'LocationController@removeLocations');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
