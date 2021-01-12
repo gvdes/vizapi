@@ -20,7 +20,7 @@ class CycleCount extends Model{
     }
 
     public function workpoint(){
-        return $this->belongsTo('App\Workpoint', '_workpoint');
+        return $this->belongsTo('App\WorkPoint', '_workpoint');
     }
 
     public function status(){
