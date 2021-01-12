@@ -58,7 +58,7 @@ class CycleCountController extends Controller{
         if(isset($request->date)){
             $now = $request->date;
         }
-        $invetories = CycleCount::where('_created_by', $this->account->_account)
+        $invetories = CycleCount::with('workpoint', 'created_by', 'type', 'status', 'responsables', 'log')->where('_created_by', $this->account->_account)
                                 ->orWhere(function($query){
                                     $query->whereHas('responsables', function($query){
                                         $query->where('_account', $this->account->_account);
