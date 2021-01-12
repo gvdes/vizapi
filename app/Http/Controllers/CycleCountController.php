@@ -69,7 +69,7 @@ class CycleCountController extends Controller{
         return response()->json([
             "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
-            "inventory" => $invetories
+            "inventory" => InventoryResource::collection($invetories)
         ]);
     }
 
