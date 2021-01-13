@@ -147,7 +147,7 @@ class CycleCountController extends Controller{
                         "dimensions" => $product->dimensions,
                         "pieces" => $product->pieces,
                         "ordered" => [
-                            "stocks" => 0,
+                            "stocks" => null,
                             "stocks_acc" => null,
                             "details" => [
                                 "editor" => ""
@@ -156,6 +156,8 @@ class CycleCountController extends Controller{
                         "units" => $product->units]);
                 }
             }
+            $inventory->settings = json_encode($request->settings);
+            $inventory->save();
             return response()->json(["success" => true, "products" => $products_add]);
         }
         return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);

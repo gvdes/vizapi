@@ -300,17 +300,29 @@ class ProductController extends Controller{
     }
 
     public function categoryTree(Request $request){
-        $_category = $request->_category;
-        $category = ProductCategory::with('attributes')->find($_category);
-        $category->children = $this->getDescendentsCategory($category);
-        $ascendents = $this->getAscendentsCategory($category);
-        $filter = $this->getFilter($ascendents);
-        return response()->json([
+        if(isset($request->_category)){
+            $_category = $request->_category;
+            $category = ProductCategory::with('attributes')->find($_category);
+            $category->children = $this->getDescendentsCategory($category);
+            /* $ascendents = $this->getAscendentsCategory($category);
+            $filter = $this->getFilter($ascendents); */
+        }else{
+            $categories = ProductCategory::with('attributes')->where('deep', 0)->get();
+            $map = $categories->map(function($category){
+                $category->children = $this->getDescendentsCategory($category);
+                /* $ascendents = $this->getAscendentsCategory($category);
+                $filter = $this->getFilter($ascendents); */
+                return $category;
+            });
+            return response()->json($map);
+        }
+        return response()->json($category);
+        /* return response()->json([
             "filter" => $filter,
             "category" => $ascendents
-        ]);
+        ]); */
 
-        if(isset($request->attributes)){
+        if(isset($request->attributes)){    
             $attributes = $request->attributes;
             $products = Product::with('attributes')->whereHas('attributes', function(Builder $query) use($attributes){
                 foreach($atributes as $attribute){
