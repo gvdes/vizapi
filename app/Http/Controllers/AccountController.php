@@ -18,7 +18,7 @@ class AccountController extends Controller{
      * @return void
      */
     public function __construct(){
-        //
+        $this->account = Auth::payload()['workpoint'];
     }
     
     public function checkData($request){
@@ -362,7 +362,9 @@ class AccountController extends Controller{
 
     public function getUsers(Request $request){
         if(isset($request->_rol)){
-            $users = User::whereIn("_rol", $request->_rol)->orderBy('names', 'asc')->get();
+            $users = User::whereIn("_rol", $request->_rol)->whereHas('workpoints', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            })->orderBy('names', 'asc')->get();
         }else{
             $users = User::orderBy('names', 'asc')->get();
         }
