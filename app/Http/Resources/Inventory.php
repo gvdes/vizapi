@@ -68,7 +68,15 @@ class Inventory extends JsonResource{
               "stocks_acc" => $product->pivot->stock_acc,
               "details" => json_decode($product->pivot->details)
             ],
-            "units" => $product->units
+            "units" => $product->units,
+            'locations' => $product->locations->map(function($location){
+              return [
+                "id" => $location->id,
+                "name" => $location->name,
+                "alias" => $location->alias,
+                "path" => $location->path
+              ];
+            })
           ];
         });
       })

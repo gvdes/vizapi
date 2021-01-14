@@ -58,7 +58,14 @@ class CycleCountController extends Controller{
         if(isset($request->date)){
             $now = $request->date;
         }
-        $invetories = CycleCount::with('workpoint', 'created_by', 'type', 'status', 'responsables', 'log')->where('_created_by', $this->account->_account)
+
+        $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                });
+            }]);
+        }])->where('_created_by', $this->account->_account)
                                 ->orWhere(function($query){
                                     $query->whereHas('responsables', function($query){
                                         $query->where('_account', $this->account->_account);
@@ -74,7 +81,13 @@ class CycleCountController extends Controller{
     }
 
     public function find($id){
-        $inventory = CycleCount::with('workpoint', 'created_by', 'type', 'status', 'responsables', 'products', 'log')->find($id);
+        $inventory = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                });
+            }]);
+        }])->find($id);
         if($inventory){
             return response()->json(["success" => true, "inventory" => new InventoryResource($inventory)]);
         }
@@ -104,6 +117,10 @@ class CycleCountController extends Controller{
             if($inventory->_type == 1){
                 $products = Product::with(['stocks' => function($query) use ($inventory){
                     $query->where('_workpoint', $inventory->_workpoint);
+                },'locations' => function($query){
+                    $query->whereHas('celler', function($query){
+                        $query->where('_workpoint', $this->account->_workpoint);
+                    });
                 }])->whereIn('id', $_products)->get();
                 foreach($products as $product){
                     $inventory->products()->attach($product->id, [
@@ -126,11 +143,24 @@ class CycleCountController extends Controller{
                                 "editor" => ""
                             ]
                         ],
-                        "units" => $product->units]);
+                        "units" => $product->units,
+                        'locations' => $product->locations->map(function($location){
+                            return [
+                                "id" => $location->id,
+                                "name" => $location->name,
+                                "alias" => $location->alias,
+                                "path" => $location->path
+                            ];
+                        })
+                    ]);
                 }
             }else{
                 $products = Product::with(['stocks' => function($query) use ($inventory){
                     $query->where('_workpoint', $inventory->_workpoint);
+                },'locations' => function($query){
+                    $query->whereHas('celler', function($query){
+                        $query->where('_workpoint', $this->account->_workpoint);
+                    });
                 }])->whereIn('id', $_products)->get();
                 foreach($products as $product){
                     $inventory->products()->attach($product->id, [
@@ -153,7 +183,16 @@ class CycleCountController extends Controller{
                                 "editor" => ""
                             ]
                         ],
-                        "units" => $product->units]);
+                        "units" => $product->units,
+                        'locations' => $product->locations->map(function($location){
+                            return [
+                                "id" => $location->id,
+                                "name" => $location->name,
+                                "alias" => $location->alias,
+                                "path" => $location->path
+                            ];
+                        })
+                    ]);
                 }
             }
             $inventory->settings = json_encode($request->settings);
