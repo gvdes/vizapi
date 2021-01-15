@@ -453,6 +453,14 @@ class ProductController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }
+
+        if(isset($request->check_locations) && $request->check_locations){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                });
+            }]);
+        }
         
         if(isset($request->with_stock)){
             if($request->with_stock){
@@ -472,7 +480,7 @@ class ProductController extends Controller{
             $products = $query->get();
         }
 
-        return response()->json($products);
+        return response()->json(ProductResource::collection($products));
     }
 
     public function getSectionsChildren($id){

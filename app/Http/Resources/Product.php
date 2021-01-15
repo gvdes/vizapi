@@ -45,6 +45,16 @@ class Product extends JsonResource{
             }),
             'units' => $this->when($this->units, function(){
                 return $this->units;
+            }),
+            'locations' => $this->whenLoaded('locations', function(){
+                return $this->locations->map(function($location){
+                    return [
+                        "id" => $location->id,
+                        "name" => $location->name,
+                        "alias" => $location->alias,
+                        "path" => $location->path
+                    ];
+                });
             })/* ,
             "created_at" => $this->created_at->format('Y-m-d H:i'),
             "updated_at" => $this->updated_at->format('Y-m-d H:i'), */

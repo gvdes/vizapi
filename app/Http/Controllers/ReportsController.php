@@ -321,6 +321,9 @@ class ReportsController extends Controller{
     }
 
     public function ventas(Request $request){
+        /* $models = array_column($request->products, "modelo");
+        $products = Product::with('prices')->whereIn('code', $models)->get();
+        return response()->json($products); */
         $products = collect($request->products);
         $products2 = $request->products;
         /* $codes = array_column($products->toArray(), 'code'); */
