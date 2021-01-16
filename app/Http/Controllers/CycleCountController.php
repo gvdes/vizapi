@@ -96,17 +96,21 @@ class CycleCountController extends Controller{
 
     public function nextStep(Request $request){
         $inventory = CycleCount::find($request->_inventory);
-        $status = isset($request->_status) ? $request->_status : ($inventory->_status+1);
-        if($status>0 && $status<5){
-            $result = $this->log($status, $inventory);
-            if($result){
-                $inventory->_status= $status;
-                $inventory->save();
-                $inventory->load('workpoint', 'created_by', 'type', 'status', 'responsables', 'log');
+        if($inventory){
+            $status = isset($request->_status) ? $request->_status : ($inventory->_status+1);
+            if($status>0 && $status<5){
+                $result = $this->log($status, $inventory);
+                if($result){
+                    $inventory->_status= $status;
+                    $inventory->save();
+                    $inventory->load('workpoint', 'created_by', 'type', 'status', 'responsables', 'log');
+                }
+                return response()->json(["success" => $result, 'order' => new InventoryResource($inventory)]);
             }
-            return response()->json(["success" => $result, 'order' => new InventoryResource($inventory)]);
+            return response()->json(["success" => false, "message" => "Status no válido"]);
+        }else{
+            return response()->json(["success" => false, "message" => "Clave de inventario no válido"]);
         }
-        return response()->json(["success" => false, "message" => "Status no válido"]);
     }
 
     public function addProducts(Request $request){
