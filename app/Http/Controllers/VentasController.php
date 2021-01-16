@@ -345,4 +345,24 @@ class VentasController extends Controller{
 
     return response()->json($result);
   }
+
+  public function insertVentas(){
+    $sales = Sales::with('paid_by')->whereHas("cash", function($query){
+      $query->where('_workpoint', 10);
+    })->with(['products'])->get();
+
+    $access = "C:\Users\Carlo\Desktop\access\RAC22020";
+    $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+    $con = $db;
+    $exec_insert = $con->prepare('INSERT INTO F_ALB (TIPALB, CODALB, CNOALB, FECALB, ALMALB, AGEALB, CLIALB, NET1ALB, BAS1ALB, TOTALB, FOPALB, HORALB) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $result = $sales->map(function($sale) use($exec_insert){
+      $date = explode(" ", $sale->created_at)[0];
+      $hour = explode(" ", $sale->created_at)[1];
+      /* return [$sale->_cash, $sale->num_ticket, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]; */
+      $exec_insert->execute([$sale->_cash, $sale->num_ticket, $sale->name, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]);
+      return $sale;
+    });
+
+    return response()->json($result);
+  }
 }

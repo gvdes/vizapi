@@ -34,16 +34,8 @@ class Inventory extends JsonResource{
       '_workpoint' => $this->when(!$this->workpoint, function(){
         return $this->_workpoint;
       }),
-      'responsables' => $this->whenLoaded('responsables'/* , function(){
-        return $this->log->map(function($event){
-          return [
-            "id" => $event->id,
-            "name" => $event->name,
-            "details" => json_decode($event->pivot->details),
-            "created_at" => $event->pivot->created_at->format('Y-m-d H:i')
-          ];
-        });
-      } */),
+      'responsables' => $this->whenLoaded('responsables'),
+      'settings' => json_decode($this->settings),
       'log' => $this->whenLoaded('log', function(){
         return $this->log->map(function($event){
           return [
