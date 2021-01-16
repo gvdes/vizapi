@@ -354,15 +354,69 @@ class VentasController extends Controller{
     $access = "C:\Users\Carlo\Desktop\access\RAC22020";
     $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
     $con = $db;
-    $exec_insert = $con->prepare('INSERT INTO F_ALB (TIPALB, CODALB, CNOALB, FECALB, ALMALB, AGEALB, CLIALB, NET1ALB, BAS1ALB, TOTALB, FOPALB, HORALB) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $result = $sales->map(function($sale) use($exec_insert){
+    $query = "INSERT INTO F_ALB (TIPALB, CODALB, CNOALB, FECALB, ALMALB, AGEALB, CLIALB, NET1ALB, BAS1ALB, TOTALB, FOPALB, HORALB) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    $exec_insert = $con->prepare($query);
+    $result = $sales->map(function($sale) use ($exec_insert){
       $date = explode(" ", $sale->created_at)[0];
       $hour = explode(" ", $sale->created_at)[1];
-      /* return [$sale->_cash, $sale->num_ticket, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]; */
-      $exec_insert->execute([$sale->_cash, $sale->num_ticket, $sale->name, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]);
-      return $sale;
-    });
-
+      /* return [$sale->_cash, $sale->num_ticket, $sale->name, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]; */
+      $res = $exec_insert->execute([$sale->_cash, $sale->num_ticket, $sale->name, $date, "GEN", 1, $sale->_client, $sale->total, $sale->total, $sale->total, $sale->paid_by->alias, $hour]);
+      return $res;
+    })->toArray();
     return response()->json($result);
+    $a = [];
+    /**
+     * INICIO
+     */
+    $dataToInsert = array();
+    $colNames = ["TIPALB", "CODALB", "CNOALB", "FECALB", "ALMALB", "AGEALB", "CLIALB", "NET1ALB", "BAS1ALB", "TOTALB", "FOPALB", "HORALB"];
+    foreach ($result as $row => $data) {
+      foreach($data as $val) {
+        $dataToInsert[] = $val;
+      }
+    }
+    foreach ($colNames as $curCol) {
+      $updateCols[] = $curCol . " = VALUES($curCol)";
+    }
+  
+    $onDup = implode(', ', $updateCols);
+  
+    // setup the placeholders - a fancy way to make the long "(?, ?, ?)..." string
+    $rowPlaces = '(' . implode(', ', array_fill(0, count($colNames), '?')) . ')';
+    $allPlaces = implode(', ', array_fill(0, count($result), $rowPlaces));
+    
+    $query = "INSERT INTO F_ALB (" . implode(', ', $colNames) . ") VALUES " . $allPlaces;
+  
+    $exec_insert = $con->prepare($query);
+    $res = $exec_insert->execute($dataToInsert);
+    array_push($a, $res);
+    /**
+     * FIN
+     */
+    /* foreach (array_chunk($result, 500) as $insert) {
+    } */
+    return response()->json($a);
+    return response()->json(count($result));
+  }
+
+  public function insertProductVentas(){
+    $sales = Sales::with('paid_by', 'products')->whereHas("cash", function($query){
+      $query->where('_workpoint', 10);
+    })->with(['products'])->get();
+
+    $access = "C:\Users\Carlo\Desktop\access\RAC22020";
+    $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+    $con = $db;
+    $query = "INSERT INTO F_LAL (TIPLAL, CODLAL, ARTLAL, DESLAL, CANLAL, PRELAL, TOTLAL, COSLAL) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $exec_insert = $con->prepare($query);
+    foreach($sales as $sale){
+      foreach($sale->products as $product){
+        $res = $exec_insert->execute([$sale->_cash, $sale->num_ticket, $product->code, $product->description, $product->pivot->amount, $product->pivot->price, $product->pivot->total, $product->pivot->costo]);
+      }
+    }
+    /* $result = $sales->map(function($sale) use ($exec_insert){
+      return $res;
+    })->toArray(); */
+    return response()->json(true);
   }
 }

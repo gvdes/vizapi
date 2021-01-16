@@ -96,7 +96,7 @@ class CycleCountController extends Controller{
 
     public function nextStep(Request $request){
         $inventory = CycleCount::find($request->_inventory);
-        $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
+        $status = isset($request->_status) ? $request->_status : ($inventory->_status+1);
         if($status>0 && $status<5){
             $result = $this->log($status, $inventory);
             if($result){
