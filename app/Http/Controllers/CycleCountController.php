@@ -53,6 +53,15 @@ class CycleCountController extends Controller{
     }
 
     public function index(Request $request){
+        /* $products = Product::with('prices')->whereIn('code', array_column($request->products, "modelo"))->get();
+        $res = $products->map(function($product){
+            $prices = $product->prices->map(function($price){
+                return [$price->alias => $price->pivot->price];
+            })->toArray();
+            $res = ["code" => $product->code, "descripcion" => $product->description];
+            return array_merge($res, $prices);
+        });
+        return response()->json($res); */
         $account = User::find($this->account->_account);
         $now = new \DateTime();
         if(isset($request->date)){
@@ -97,7 +106,7 @@ class CycleCountController extends Controller{
     public function nextStep(Request $request){
         $inventory = CycleCount::find($request->_inventory);
         if($inventory){
-            $status = isset($request->_status) ? $request->_status : ($inventory->_status+1);
+            $status = isset($request->_status) ? $request->_status : $inventory->_status+1;
             if($status>0 && $status<5){
                 $result = $this->log($status, $inventory);
                 if($result){
@@ -220,8 +229,9 @@ class CycleCountController extends Controller{
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $inventory = CycleCount::find($request->_inventory);
+        $settings = $request->settigs;
         if($inventory){
-            $inventory->products()->updateExistingPivot($request->_product, ['stock_acc' => $request->stock, "details" => json_encode(["editor" => $responsable])]);
+            $inventory->products()->updateExistingPivot($request->_product, ['stock_acc' => $request->stock, "details" => json_encode(["editor" => $responsable, "settings" => $settings])]);
             return response()->json(["success" => true]);
         }
         return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
