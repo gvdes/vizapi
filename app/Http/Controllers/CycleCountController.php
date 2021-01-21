@@ -80,7 +80,13 @@ class CycleCountController extends Controller{
                 $query->where('_account', $this->account->_account);
             });
         })
-        ->whereDate('created_at', $now)
+        ->orWhere(function($query) use($now){
+            $query->whereIn("_status", [1,2,3,4])
+                ->whereDate("created_at", $now);
+        })
+        ->orWhere(function($query) use($now){
+            $query->whereDate("created_at", $now);
+        })
         ->get();
         return response()->json([
             "type" => CycleCountType::all(),
