@@ -229,7 +229,7 @@ class CycleCountController extends Controller{
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $inventory = CycleCount::find($request->_inventory);
-        $settings = $request->settigs;
+        $settings = $request->settings;
         if($inventory){
             $inventory->products()->updateExistingPivot($request->_product, ['stock_acc' => $request->stock, "details" => json_encode(["editor" => $responsable, "settings" => $settings])]);
             return response()->json(["success" => true]);
