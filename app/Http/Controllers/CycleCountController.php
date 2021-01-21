@@ -74,14 +74,14 @@ class CycleCountController extends Controller{
                     $query->where('_workpoint', $this->account->_workpoint);
                 });
             }]);
-        }])->where('_created_by', $this->account->_account)
-                                ->orWhere(function($query){
-                                    $query->whereHas('responsables', function($query){
-                                        $query->where('_account', $this->account->_account);
-                                    });
-                                })
-                                ->whereDate('created_at', $now)
-                                ->get();
+        }])->orWhere('_created_by', $this->account->_account)
+        ->orWhere(function($query){
+            $query->whereHas('responsables', function($query){
+                $query->where('_account', $this->account->_account);
+            });
+        })
+        ->whereDate('created_at', $now)
+        ->get();
         return response()->json([
             "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
