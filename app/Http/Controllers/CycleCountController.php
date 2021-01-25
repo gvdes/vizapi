@@ -12,6 +12,7 @@ use App\Account;
 use App\Product;
 use App\Http\Resources\Inventory as InventoryResource;
 use Illuminate\Support\Facades\Auth;
+use PDF;
 
 class CycleCountController extends Controller{
     /**
@@ -118,7 +119,13 @@ class CycleCountController extends Controller{
                 if($result){
                     $inventory->_status= $status;
                     $inventory->save();
-                    $inventory->load('workpoint', 'created_by', 'type', 'status', 'responsables', 'log');
+                    $inventory->load(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log', 'products' => function($query){
+                        $query->with(['locations' => function($query){
+                            $query->whereHas('celler', function($query){
+                                $query->where('_workpoint', $this->account->_workpoint);
+                            });
+                        }]);
+                    }]);
                 }
                 return response()->json(["success" => $result, 'order' => new InventoryResource($inventory)]);
             }
@@ -293,5 +300,63 @@ class CycleCountController extends Controller{
                 return true;
             break;
         }
+    }
+
+    public function generateReport($id){
+        $inventory = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', 1);
+                });
+            }]);
+        }])->find($id);
+        $html = '
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width">
+                <title>JS Bin</title>
+                <style>
+                    tr:nth-child(even) {background: #ECECEC; color:red;}
+                </style>
+            </head>
+            <body>
+                <table border="1">
+                    <thead>
+                        <tr>
+                        <!--<th scope="col" style="width:300px;">Modelo</th>
+                        <th scope="col" style="width:100px;">Stock</th>
+                        <th scope="col" style="width:100px;">Validado</th>-->
+                        <th colspan="2">Modelo</th>
+                        <th>Stock</th>
+                        <th>Validado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="2"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                            <td align="center">20000</td>
+                            <td>B-P1-T2: 10<br>B-P1-T3: 10<br>B-P1-T4: 5</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                            <td align="center">20000</td>
+                            <td>B-P1-T3: 10<br>B-P1-T4: 5</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </body>
+        </html>';
+        PDF::SetTitle('Inventario '.$inventory->id);
+        PDF::AddPage();
+        PDF::SetMargins(0, 0, 0);
+        /* PDF::SetAutoPageBreak(FALSE, 0); */
+        PDF::setCellPaddings(0,0,0,0);
+        PDF::writeHTML($html, true, false, true, false, '');
+
+        $nameFile = 'inventario_'.$inventory->id.'.pdf';
+        PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/inventarios'.$nameFile, 'F');
+        return response()->json(['file' => $nameFile]);
     }
 }

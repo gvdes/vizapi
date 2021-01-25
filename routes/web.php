@@ -151,7 +151,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         });
 
         $router->group(['prefix' => 'clients'], function () use ($router){
-            $router->get('/seeder', 'ClientController@Seeder');
+            /* $router->get('/seeder', 'ClientController@Seeder'); */
+            $router->get('/{id}', 'CycleCountController@generateReport');
         });
 
         $router->group(['prefix' => 'ventas'], function () use ($router){

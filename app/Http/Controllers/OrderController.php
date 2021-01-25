@@ -237,8 +237,12 @@ class OrderController extends Controller{
         return response()->json(["msg" => "No se permite desactivar el status", "success" => false]);
     }
 
-    public function migrateToRequesition(){
-
+    public function migrateToRequesition(Request $request){
+        $requisition = App\Requisition::find($request->_requisition);
+        if($requisition){
+            
+        }
+        return response()->json(["msg" => "No se encontro el pedido", "success" => false]);
     }
 
     public function reimpresion(Request $request){
