@@ -92,7 +92,7 @@ class Kernel extends ConsoleKernel
             }
         })->everyFiveMinutes(); */
 
-        $schedule->call(function(){
+        /* $schedule->call(function(){
             $workpoints = WorkPoint::where('_type', 2)->get();
             $clientes = Client::all()->toArray();
             $ids_clients = array_column($clientes, 'id');
@@ -138,7 +138,7 @@ class Kernel extends ConsoleKernel
                     }
                 });
             }
-        })->everyFiveMinutes();
+        })->everyFiveMinutes(); */
 
         $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,13])->get();
