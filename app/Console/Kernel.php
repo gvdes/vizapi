@@ -113,18 +113,17 @@ class Kernel extends ConsoleKernel
                 $codes = array_column($products, 'code');
                 DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
                     foreach($ventas as $venta){
-                        $cajas = array_column($cash_registers[$venta->_workpoint], 'num_cash');
+                        $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
                         $index_caja = array_search($venta['_cash'], $cajas);
                         $instance = Sales::create([
                             "num_ticket" => $venta['num_ticket'],
-                            "_cash" => $cash_registers[$index_caja]['id'],
+                            "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
                             "total" => $venta['total'],
                             "created_at" => $venta['created_at'],
                             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                             "_paid_by" => $venta['_paid_by'],
                             "name" => $venta['name']
                         ]);
-                        /* $insert = []; */
                         foreach($venta['body'] as $row){
                             $index = array_search($row['_product'], $codes);
                             if($index === 0 || $index > 0){  
