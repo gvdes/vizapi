@@ -169,7 +169,7 @@ class VentasController extends Controller{
       if($ventas){
           $products = Product::all()->toArray();
           $codes = array_column($products, 'code');
-          DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
+          DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
               foreach($ventas as $venta){
                   $cajas = array_column($cash_registers[$venta->_workpoint], 'num_cash');
                   $index_caja = array_search($venta['_cash'], $cajas);
@@ -182,7 +182,6 @@ class VentasController extends Controller{
                       "_paid_by" => $venta['_paid_by'],
                       "name" => $venta['name']
                   ]);
-                  /* $insert = []; */
                   foreach($venta['body'] as $row){
                       $index = array_search($row['_product'], $codes);
                       if($index === 0 || $index > 0){  
