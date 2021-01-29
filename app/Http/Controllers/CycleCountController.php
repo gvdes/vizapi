@@ -21,7 +21,7 @@ class CycleCountController extends Controller{
      * @return void
      */
     public function __construct(){
-        /* $this->account = Auth::payload()['workpoint']; */
+        $this->account = Auth::payload()['workpoint'];
     }
 
     public function create(Request $request){

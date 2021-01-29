@@ -151,7 +151,53 @@ class VentasController extends Controller{
 
   public function getVentas(Request $request){
     try{
-      $start = microtime(true);
+      $workpoints = WorkPoint::where('_type', 2)->get();
+      $clientes = Client::all()->toArray();
+      $ids_clients = array_column($clientes, 'id');
+      $cash_registers = CashRegister::all()->groupBy('_workpoint')->toArray();
+      $sale = Sales::whereDate('created_at', '>','2021-01-10')->max('num_ticket');
+      $client = curl_init();
+      curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/ventas/new");
+      curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+      curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($client, CURLOPT_POST, 1);
+      curl_setopt($client,CURLOPT_TIMEOUT,10);
+      $data = http_build_query(["num_sale" => 0]);
+      curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+      $ventas = json_decode(curl_exec($client), true);
+      curl_close($client);
+      if($ventas){
+          $products = Product::all()->toArray();
+          $codes = array_column($products, 'code');
+          DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
+              foreach($ventas as $venta){
+                  $cajas = array_column($cash_registers[$venta->_workpoint], 'num_cash');
+                  $index_caja = array_search($venta['_cash'], $cajas);
+                  $instance = Sales::create([
+                      "num_ticket" => $venta['num_ticket'],
+                      "_cash" => $cash_registers[$index_caja]['id'],
+                      "total" => $venta['total'],
+                      "created_at" => $venta['created_at'],
+                      "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
+                      "_paid_by" => $venta['_paid_by'],
+                      "name" => $venta['name']
+                  ]);
+                  /* $insert = []; */
+                  foreach($venta['body'] as $row){
+                      $index = array_search($row['_product'], $codes);
+                      if($index === 0 || $index > 0){  
+                          $instance->products()->attach($products[$index]['id'], [
+                          "amount" => $row['amount'],
+                          "price" => $row['price'],
+                          "total" => $row['total'],
+                          "costo" => $row['costo']
+                          ]);
+                      }
+                  }
+              }
+          });
+      }
+      /* $start = microtime(true);
       $client = curl_init();
       $workpoint = WorkPoint::find($request->_workpoint);
       $clientes = Client::all()->toArray();
@@ -182,12 +228,6 @@ class VentasController extends Controller{
             foreach($venta['body'] as $row){
               $index = array_search($row['_product'], $codes);
               if($index === 0 || $index > 0){
-                /* $insert[$products[$index]['id']] = [
-                  "amount" => $row['amount'],
-                  "price" => $row['price'],
-                  "total" => $row['total'],
-                  "costo" => $row['costo']
-                ]; */
                 $instance->products()->attach($products[$index]['id'], [
                   "amount" => $row['amount'],
                   "price" => $row['price'],
@@ -196,7 +236,6 @@ class VentasController extends Controller{
                 ]);
               }
             }
-            /* $instance->products()->attach($insert); */
           }
         });
         return response()->json([
@@ -205,7 +244,7 @@ class VentasController extends Controller{
           "time" => microtime(true) - $start
         ]);
       }
-      return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
+      return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]); */
     }catch(Exception $e){
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
