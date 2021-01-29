@@ -123,6 +123,25 @@ class PdfController extends Controller{
     PDF::MultiCell($width, $height, $content, $border=1, $align="center", $fill=0, $ln=0, $x, $y+2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
   }
 
+  public function setImageBackground_area($image, $content, $width, $height, $cols, $rows, $top_space, $sides_space, $position, $top_margin, $sides_margin){
+    $x_store = 0;
+    $y_store = 6;
+    $bucle = floor(($position)/($rows*$cols));
+    $position = $position-($bucle*$cols*$rows);
+    $x = (($position%$cols)*($width))+$sides_space+($sides_margin*(0+($position%$cols)))+$x_store;
+
+    if(floor($position/$cols)==0){
+        $y = 4+(intval(($position/$cols))*$height)+$top_space+2+($top_margin*(1+(floor($position/$cols))))+$y_store+5;
+    }else{
+        $y = 5+(intval(($position/$cols))*$height)+$top_space+3+($top_margin*(2+(floor($position/$cols))));
+    }
+    if($image){
+        //$star = PDF::Image($image, 0, 0, 0, '', '', '', '', false, 700, '', true);
+        PDF::Image($image, $x, $y-$top_margin-6, $width, $height+$top_margin, '', '', '', false, 300, '', false);
+    }
+    PDF::MultiCell($width, $height, $content, $border=0, $align="center", $fill=0, $ln=0, $x, $y+1, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+}
+
   public function setImageBackground_area_2($image, $content, $width, $height, $cols, $rows, $top_space, $sides_space, $position, $top_margin, $sides_margin){
     $x_store = 0;
     $y_store = 6;
