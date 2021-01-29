@@ -483,6 +483,18 @@ class ProductController extends Controller{
         return response()->json(ProductResource::collection($products));
     }
 
+    public function getPrices(Request $request){
+        $products = Product::with('prices')->whereIn('code', array_column($request->products, "modelo"))->get();
+        $res = $products->map(function($product){
+            $prices = $product->prices->map(function($price){
+                return [$price->alias => $price->pivot->price];
+            })->toArray();
+            $res = ["code" => $product->code, "descripcion" => $product->description];
+            return array_merge($res, $prices);
+        });
+        return response()->json($res);
+    }
+
     public function getSectionsChildren($id){
         $sections = \App\CellerSection::where('root', $id)->get();
         if(count($sections)>0){

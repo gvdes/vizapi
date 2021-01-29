@@ -21,7 +21,7 @@ class CycleCountController extends Controller{
      * @return void
      */
     public function __construct(){
-        $this->account = Auth::payload()['workpoint'];
+        /* $this->account = Auth::payload()['workpoint']; */
     }
 
     public function create(Request $request){
@@ -54,15 +54,6 @@ class CycleCountController extends Controller{
     }
 
     public function index(Request $request){
-        /* $products = Product::with('prices')->whereIn('code', array_column($request->products, "modelo"))->get();
-        $res = $products->map(function($product){
-            $prices = $product->prices->map(function($price){
-                return [$price->alias => $price->pivot->price];
-            })->toArray();
-            $res = ["code" => $product->code, "descripcion" => $product->description];
-            return array_merge($res, $prices);
-        });
-        return response()->json($res); */
         $account = User::find($this->account->_account);
         $now = new \DateTime();
         if(isset($request->date)){
@@ -311,43 +302,159 @@ class CycleCountController extends Controller{
             }]);
         }])->find($id);
         $html = '
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width">
-                <title>JS Bin</title>
-                <style>
-                    tr:nth-child(even) {background: #ECECEC; color:red;}
-                </style>
-            </head>
-            <body>
-                <table border="1">
-                    <thead>
-                        <tr>
-                        <!--<th scope="col" style="width:300px;">Modelo</th>
-                        <th scope="col" style="width:100px;">Stock</th>
-                        <th scope="col" style="width:100px;">Validado</th>-->
-                        <th colspan="2">Modelo</th>
-                        <th>Stock</th>
-                        <th>Validado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="2"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
-                            <td align="center">20000</td>
-                            <td>B-P1-T2: 10<br>B-P1-T3: 10<br>B-P1-T4: 5</td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
-                            <td align="center">20000</td>
-                            <td>B-P1-T3: 10<br>B-P1-T4: 5</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </body>
-        </html>';
+        <div style="font-size:2em; text-align:center;">Inventario #63</div>
+        <div>
+            <span><span style="font-weight: bold;">Fecha:</span> 25-01-2021</span><br>
+            <span><span style="font-weight: bold;">Configuración:</span> Familia navidad, almacén PB</span>
+        </div><br>
+
+        <table style="width:550px;">
+            <thead>
+                <tr>
+                    <th colspan="3" style="font-size:1em; font-weight: bold; border-right:.9px dotted gray;"> Modelo </th>
+                    <th style="font-size:1em; font-weight: bold; border-right:.9px dotted gray;"> Stock </th>
+                    <th style="font-size:1em; font-weight: bold;"> Validado </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr style="background-color:#ECECEC;">
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-right:.9px dotted gray;"><span style="font-size:1.2em">113490</span><br><span style="font-size:.7em" >MOCHILA KINDER NIÑA CON RUEDAS BARBIE RUZ D</span></td>
+                    <td align="center" style="border-right:.9px dotted gray;">20000</td>
+                    <td> B-P1-T2: 10<br> B-P1-T3: 10<br> B-P1-T4: 5</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <span><span style="font-weight: bold;">Supervisor:</span> Pinky ___________________</span><br>
+            <div><span style="font-weight: bold; text-align:right;">Bodeguero 1:</span> ___________________</div>
+            <div><span style="font-weight: bold; text-align:right;">Bodeguero 2:</span> ___________________</div>
+            <div><span style="font-weight: bold; text-align:right;">Bodeguero 3:</span> ___________________</div>
+        </div>';
         PDF::SetTitle('Inventario '.$inventory->id);
         PDF::AddPage();
         PDF::SetMargins(0, 0, 0);
