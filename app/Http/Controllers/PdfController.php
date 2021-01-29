@@ -640,7 +640,7 @@ class PdfController extends Controller{
     ]);
   }
 
-  public function pdf_bag_6($products, $isInnerPack){
+  public function pdf_mochila($products, $isInnerPack){
     PDF::SetTitle('Pdf Mochila x6');
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
@@ -760,13 +760,100 @@ class PdfController extends Controller{
         'total' => ceil($totalStd/$pzHoja) + ceil($totalOff/$pzHoja),
         'file' => $nameFile,
     ]);
-}
+  }
 
-public function pdf_lonchera($products, $isInnerPack){
-    PDF::SetTitle('Pdf lonchera');
+  public function pdf_lonchera($products, $isInnerPack){
+      PDF::SetTitle('Pdf lonchera');
+      $counter = 0;
+      //etiquetas por hoja
+      $pzHoja = 9;
+      $account = Account::with('user')->find($this->account->id);
+      $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+      foreach($products as $key => $product){
+          for($i=0; $i<$product['copies']; $i++){
+              if($i>0){
+                  $counter +=1; 
+              }
+              if(($key+$counter)%$pzHoja==0){
+                  PDF::AddPage();
+                  PDF::SetMargins(0, 0, 0);
+                  PDF::SetAutoPageBreak(FALSE, 0);
+                  PDF::setCellPaddings(0,0,0,0);
+                  PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+              }
+              $pz = '';
+              if($isInnerPack){
+                  $pz = $product['pieces'];
+              }
+              $number_of_prices = count($product['prices']);
+              $font_size_prices = 2;
+              $br = 1;
+              switch($number_of_prices){
+                  case 1:
+                      $font_size_prices = 2.7;
+                  break;
+                  case 2:
+                      $font_size_prices = 1.7;
+                  break;
+                  case 3:
+                      $font_size_prices = 1.6;
+                  break;
+                  case 4:
+                      $font_size_prices = 1.4;
+                      $br = 0;
+                  break;
+              }
+              $pz = '';
+              $space = '<span style="font-size:1em"><br/></span>';
+              if($isInnerPack){
+                  $pz = $product['pieces'].' pz';
+                  $space = '<span style="font-size:.4em"><br/></span>';
+                  $br= .4;
+              }
+              $tool = '';
+              /* if($product['tool']){
+                  $tool = '+'.$product['tool'];
+              } */
+              $content = '';
+              if($product['type']=='off'){
+                      $content =  '<div style="text-align: center;">'.$space.'
+                              <span style="font-size:.9em"><br/></span>
+                              <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                          </div>';
+              }else{
+                  $content =  '<div style="text-align: center;">'.$space.'
+                              <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                              <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                          </div>';
+              }
+              
+              $this->setImageBackground_area_2(null, $content, $width=52, $height=58, $cols=3, $rows=3, $top_space=-43, $sides_space=14.7, $position=$key+$counter, $top_margin=30, $sides_margin=14);
+          }
+      }
+      
+      $nameFile = time().'.pdf';
+      PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+      //return response(PDF::Output($nameFile, 'D'));
+      $products = collect($products);
+      $totalProducts = $products->reduce( function($total, $product){
+          return $total = $total +$product['copies'];
+      });
+      return response()->json([
+          'total' => ceil($totalProducts/$pzHoja),
+          'file' => $nameFile,
+      ]);
+  }
+
+  public function pdf_lapicera($products, $isInnerPack){
+    PDF::SetTitle('Pdf lapicera');
     $counter = 0;
     //etiquetas por hoja
-    $pzHoja = 9;
+    $pzHoja = 12;
     $account = Account::with('user')->find($this->account->id);
     $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     foreach($products as $key => $product){
@@ -790,16 +877,16 @@ public function pdf_lonchera($products, $isInnerPack){
             $br = 1;
             switch($number_of_prices){
                 case 1:
-                    $font_size_prices = 2.7;
+                    $font_size_prices = 2.3;
                 break;
                 case 2:
-                    $font_size_prices = 1.7;
+                    $font_size_prices = 1.4;
                 break;
                 case 3:
-                    $font_size_prices = 1.6;
+                    $font_size_prices = 1.3;
                 break;
                 case 4:
-                    $font_size_prices = 1.4;
+                    $font_size_prices = 1.1;
                     $br = 0;
                 break;
             }
@@ -816,23 +903,23 @@ public function pdf_lonchera($products, $isInnerPack){
             } */
             $content = '';
             if($product['type']=='off'){
-                    $content =  '<div style="text-align: center;">'.$space.'
-                            <span style="font-size:.9em"><br/></span>
-                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
-                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:.1em"><br/></span>
+                            <span style="font-size:2.1em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
-                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                            <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                         </div>';
             }else{
                 $content =  '<div style="text-align: center;">'.$space.'
-                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
-                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:2.1em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
-                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                            <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                         </div>';
             }
             
-            $this->setImageBackground_area_2(null, $content, $width=52, $height=58, $cols=3, $rows=3, $top_space=-43, $sides_space=14.7, $position=$key+$counter, $top_margin=30, $sides_margin=14);
+            $this->setImageBackground_area_2(null, $content, $width=40, $height=48, $cols=4, $rows=3, $top_space=-62, $sides_space=15, $position=$key+$counter, $top_margin=42, $sides_margin=7.5);
         }
     }
     
@@ -846,6 +933,6 @@ public function pdf_lonchera($products, $isInnerPack){
     return response()->json([
         'total' => ceil($totalProducts/$pzHoja),
         'file' => $nameFile,
-    ]);
-}
+    ]);    
+  }
 }
