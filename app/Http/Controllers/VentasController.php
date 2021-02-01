@@ -151,7 +151,7 @@ class VentasController extends Controller{
 
   public function getVentas(Request $request){
     try{
-      $workpoints = WorkPoint::where('_type', 2)->get();
+      $workpoints = WorkPoint::all();
       $clientes = Client::all()->toArray();
       $ids_clients = array_column($clientes, 'id');
       $cash_registers = CashRegister::all()->groupBy('_workpoint')->toArray();
@@ -167,9 +167,10 @@ class VentasController extends Controller{
       $ventas = json_decode(curl_exec($client), true);
       curl_close($client);
       if($ventas){
+        return response()->json(["ventas" => $ventas]);
           $products = Product::all()->toArray();
           $codes = array_column($products, 'code');
-          /* $cash__ = [];
+          $cash__ = [];
           foreach($ventas as $venta){
               $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
               $index_caja = array_search($venta['_cash'], $cajas);
@@ -177,13 +178,13 @@ class VentasController extends Controller{
                 "num_ticket" => $venta['num_ticket'],
                 "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
                 "total" => $venta['total'],
-                "created_at" => $venta['created_at'],
+                "created_at" => $venta['created_at'], 
                 "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                 "_paid_by" => $venta['_paid_by'],
                 "name" => $venta['name']
             ]);
-          } */
-          DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
+          }
+          /* DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
               foreach($ventas as $venta){
                   $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
                   $index_caja = array_search($venta['_cash'], $cajas);
@@ -191,7 +192,7 @@ class VentasController extends Controller{
                       "num_ticket" => $venta['num_ticket'],
                       "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
                       "total" => $venta['total'],
-                      "created_at" => $venta['created_at'],
+                      "created_at" => $venta['created_at'], 
                       "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                       "_paid_by" => $venta['_paid_by'],
                       "name" => $venta['name']
@@ -208,9 +209,10 @@ class VentasController extends Controller{
                       }
                   }
               }
-          });
-          /* return $cash__; */
+          }); */
+          return $cash__;
       }
+      return response()->json(["ventas" => false]);
       /* $start = microtime(true);
       $client = curl_init();
       $workpoint = WorkPoint::find($request->_workpoint);

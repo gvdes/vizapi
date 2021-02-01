@@ -28,7 +28,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [
-        'password', '_rol', '_wp_principal', 'remember_token', 'created_at', 'updated_at'
+        'password', '_wp_principal', 'remember_token', 'created_at', 'updated_at'
     ];
 
     protected $attributes = [
