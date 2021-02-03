@@ -402,7 +402,7 @@ class LocationController extends Controller{
     }
 
     public function index(){
-        $counterProducts = \App\Product::count();
+        /* $counterProducts = \App\Product::count();
         $workpoint = \App\WorkPoint::find($this->account->_workpoint);
         $sections = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
         $productsWithoutLocation = \App\Product::with('locations')->whereHas('locations', function (Builder $query) use ($sections){
@@ -449,8 +449,8 @@ class LocationController extends Controller{
                     "connection" => true
                 ]);
             }
-        }
-        return response()->json([
+        } */
+        /* return response()->json([
             "withStock" => [
                 "stock" => '--',
                 "withLocation" => '--',
@@ -459,6 +459,48 @@ class LocationController extends Controller{
             "withoutStock" => [
                 "stock" => '--',
                 "withLocation" => '--'
+            ],
+            "products" => $counterProducts,
+            "connection" => false
+        ]); */
+
+        $counterProducts = Product::count();
+        $withStock = Product::whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
+        $withoutStock = Product::whereHas('stocks', function($query){
+            $query->where([["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
+        $withLocation = Product::whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        },'>',0)->count();
+        $withoutLocation = Product::whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        },'<=',0)->count();
+        $withLocationWithoutStock = Product::whereHas('stocks', function($query){
+            $query->where([["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        },'<=',0)->count();
+        return response()->json([
+            "withStock" => [
+                "stock" => $withStock,
+                "withLocation" => $withLocation,
+                "withoutLocation" => $withoutLocation
+            ],
+            "withoutStock" => [
+                "stock" => $withoutStock,
+                "withLocation" => $withLocationWithoutStock
             ],
             "products" => $counterProducts,
             "connection" => false
