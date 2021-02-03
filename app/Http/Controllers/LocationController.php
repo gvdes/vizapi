@@ -346,7 +346,7 @@ class LocationController extends Controller{
     }
     
     public function getReport(Request $request){
-        $report = $request->report ?  $request->report : 'WithLocation';
+        $report = $request->_type ?  $request->_type : 1;
         switch ($report){
             case 'WithLocation':
                 return response()->json($this->ProductsWithoutStock());
@@ -663,5 +663,11 @@ class LocationController extends Controller{
             }
         }
         return response()->json(["success" => true]);
+    }
+
+    public function generalVsExhibicion(){
+        $productos = Productos::whereHas('stocks', function($query){
+            $query->where("alm", ">", "0");
+        });
     }
 }
