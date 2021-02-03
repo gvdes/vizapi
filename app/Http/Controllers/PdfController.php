@@ -1015,8 +1015,8 @@ class PdfController extends Controller{
                 $space = '<span style="font-size:.4em"><br/></span>';
                 $br= .4;
             }
-            /* $tool = '';
-            if($product['tool']){
+            $tool = '';
+            /* if($product['tool']){
                 $tool = '+'.$product['tool'];
             } */
             $content = '';
@@ -1141,7 +1141,7 @@ class PdfController extends Controller{
     ]);
   }
 
-  public function pdf_lapicera_20($products, $isInnerPack, $person){
+  public function pdf_lapicera_20($products, $isInnerPack){
     PDF::SetTitle('Pdf lapicera x20');
     $counter = 0;
     //etiquetas por hoja
