@@ -492,7 +492,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->count();
-        $generalVsExhibicion = Product::with(['stocks' => function($query){
+        /* $generalVsExhibicion = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -503,7 +503,9 @@ class LocationController extends Controller{
         }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", 1]])
             ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        })->count();
+        })->count(); */
+        $generalVsCedis = 0;
+        $generalVsExhibicion = 0;
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
