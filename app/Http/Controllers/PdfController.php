@@ -25,7 +25,10 @@ class PdfController extends Controller{
       ["id" => 5, "name" => "Bodega"],
       ["id" => 6, "name" => "Mochila"],
       ["id" => 7, "name" => "Lonchera"],
-      ["id" => 8, "name" => "Lapicera"]
+      ["id" => 8, "name" => "Lapicera"],
+      ["id" => 9, "name" => "Lonchera_16"],
+      ["id" => 10, "name" => "Lapicera_20"],
+      ["id" => 11, "name" => "Mochela_16"]
     ];
     $priceList = \App\PriceList::all();
     return response()->json(["types" => $types, "price_list" => $priceList]);
@@ -56,6 +59,15 @@ class PdfController extends Controller{
         break;
       case 8:
         return $this->pdf_lapicera($request->products, $request->isInnerPack);
+        break;
+      case 9:
+        return $this->pdf_lonchera_16($request->products, $request->isInnerPack);
+        break;
+      case 10:
+        return $this->pdf_lapicera_20($request->products, $request->isInnerPack);
+        break;
+      case 11:
+        return $this->pdf_mochila_16($request->products, $request->isInnerPack);
         break;
     }
   }
@@ -954,4 +966,263 @@ class PdfController extends Controller{
         'file' => $nameFile,
     ]);    
   }
+
+  public function pdf_mochila_16($products, $isInnerPack){
+    PDF::SetTitle('Pdf mochila x16');
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $counter = 0;
+    //etiquetas por hoja
+    $pzHoja = 16;
+    foreach($products as $key => $product){
+        for($i=0; $i<$product['copies']; $i++){
+            if($i>0){
+              $counter +=1; 
+            }
+            if(($key+$counter)%$pzHoja==0){
+                PDF::AddPage();
+                PDF::SetMargins(0, 0, 0);
+                PDF::SetAutoPageBreak(FALSE, 0);
+                PDF::setCellPaddings(0,0,0,0);
+                PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+            }
+            $pz = '';
+            if($isInnerPack){
+                $pz = $product['pieces'];
+            }
+            $number_of_prices = count($product['prices']);
+            $font_size_prices = 2;
+            $br = 1;
+            switch($number_of_prices){
+                case 1:
+                    $font_size_prices = 2.7;
+                break;
+                case 2:
+                    $font_size_prices = 1.7;
+                break;
+                case 3:
+                    $font_size_prices = 1.6;
+                break;
+                case 4:
+                    $font_size_prices = 1.4;
+                    $br = 0;
+                break;
+            }
+            $pz = '';
+            $space = '<span style="font-size:1em"><br/></span>';
+            if($isInnerPack){
+                $pz = $product['pieces'].' pz';
+                $space = '<span style="font-size:.4em"><br/></span>';
+                $br= .4;
+            }
+            /* $tool = '';
+            if($product['tool']){
+                $tool = '+'.$product['tool'];
+            } */
+            $content = '';
+            if($product['type']=='off'){
+                    $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:1em"><br/></span>
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }else{
+                $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }
+            
+            $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-19.8, $sides_space=6.5, $position=$key+$counter, $top_margin=16, $sides_margin=7.5);
+        }
+    }
+    
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    //return response(PDF::Output($nameFile, 'D'));
+    $products = collect($products);
+    $totalProducts = $products->reduce( function($total, $product){
+        return $total = $total +$product['copies'];
+    });
+    return response()->json([
+        'total' => ceil($totalProducts/$pzHoja),
+        'file' => $nameFile,
+    ]);
+  }
+
+  public function pdf_lonchera_16($products, $isInnerPack){
+    PDF::SetTitle('Pdf lochera x16');
+    $counter = 0;
+    //etiquetas por hoja
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $pzHoja = 16;
+    foreach($products as $key => $product){
+        for($i=0; $i<$product['copies']; $i++){
+            if($i>0){
+                $counter +=1; 
+            }
+            if(($key+$counter)%$pzHoja==0){
+                PDF::AddPage();
+                PDF::SetMargins(0, 0, 0);
+                PDF::SetAutoPageBreak(FALSE, 0);
+                PDF::setCellPaddings(0,0,0,0);
+                PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+            }
+            $pz = '';
+            if($isInnerPack){
+                $pz = $product['pieces'];
+            }
+            $number_of_prices = count($product['prices']);
+            $font_size_prices = 2;
+            $br = 1;
+            switch($number_of_prices){
+                case 1:
+                    $font_size_prices = 2.7;
+                break;
+                case 2:
+                    $font_size_prices = 1.7;
+                break;
+                case 3:
+                    $font_size_prices = 1.6;
+                break;
+                case 4:
+                    $font_size_prices = 1.4;
+                    $br = 0;
+                break;
+            }
+            $pz = '';
+            $space = '<span style="font-size:1em"><br/></span>';
+            if($isInnerPack){
+                $pz = $product['pieces'].' pz';
+                $space = '<span style="font-size:.4em"><br/></span>';
+                $br= .4;
+            }
+            $tool = '';
+            /* if($product['tool']){
+                $tool = '+'.$product['tool'];
+            } */
+            $content = '';
+            if($product['type']=='off'){
+                    $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:1em"><br/></span>
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['copies'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }else{
+                $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['copies'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }
+            
+            $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-26, $sides_space=7.5, $position=$key+$counter, $top_margin=14.6, $sides_margin=7.5);
+        }
+    }
+    
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    //return response(PDF::Output($nameFile, 'D'));
+    $products = collect($products);
+    $totalProducts = $products->reduce( function($total, $product){
+        return $total = $total + $product['copies'];
+    });
+    return response()->json([
+        'total' => ceil($totalProducts/$pzHoja),
+        'file' => $nameFile,
+    ]);
+  }
+
+  public function pdf_lapicera_20($products, $isInnerPack, $person){
+    PDF::SetTitle('Pdf lapicera x20');
+    $counter = 0;
+    //etiquetas por hoja
+    $pzHoja = 20;
+    foreach($products as $key => $product){
+        for($i=0; $i<$product['copies']; $i++){
+            if($i>0){
+                $counter +=1; 
+            }
+            if(($key+$counter)%$pzHoja==0){
+                PDF::AddPage();
+                PDF::SetMargins(0, 0, 0);
+                PDF::SetAutoPageBreak(FALSE, 0);
+                PDF::setCellPaddings(0,0,0,0);
+                PDF::MultiCell($w=240, $h=10, '<span style="font-size:1em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=5, $y=5, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+            }
+            $pz = '';
+            if($isInnerPack){
+                $pz = $product['pieces'];
+            }
+            $number_of_prices = count($product['prices']);
+            $font_size_prices = 2;
+            $br = 1;
+            switch($number_of_prices){
+                case 1:
+                    $font_size_prices = 2.3;
+                break;
+                case 2:
+                    $font_size_prices = 1.4;
+                break;
+                case 3:
+                    $font_size_prices = 1.3;
+                break;
+                case 4:
+                    $font_size_prices = 1.1;
+                    $br = 0;
+                break;
+            }
+            $pz = '';
+            $space = '<span style="font-size:1em"><br/></span>';
+            if($isInnerPack){
+                $pz = $product['pieces'].' pz';
+                $space = '<span style="font-size:.4em"><br/></span>';
+                $br= .4;
+            }
+            $tool = '';
+            /* if($product['tool']){
+                $tool = '+'.$product['tool'];
+            } */
+            $content = '';
+            if($product['type']=='off'){
+                $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:.1em"><br/></span>
+                            <span style="font-size:2.1em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }else{
+                $content =  '<div style="text-align: center;">'.$space.'
+                            <span style="font-size:2.1em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
+                        </div>';
+            }
+            
+            $this->setImageBackground_area_2(null, $content, $width=37, $height=40, $cols=4, $rows=5, $top_space=-19, $sides_space=10.8, $position=$key+$counter, $top_margin=12.5, $sides_margin=11.6);
+        }
+    }
+    
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $products = collect($products);
+    $totalProducts = $products->reduce( function($total, $product){
+        return $total = $total +$product['copies'];
+    });
+    return response()->json([
+        'total' => ceil($totalProducts/$pzHoja),
+        'file' => $nameFile,
+    ]);
+  }
+
 }

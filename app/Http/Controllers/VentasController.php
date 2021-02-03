@@ -365,9 +365,10 @@ class VentasController extends Controller{
     }
     
     $workpoint = WorkPoint::find($request->_workpoint);
+    $workpoints = Workpoint::all();
 
     if(isset($request->products)){
-      $products = Product::whereIn('code', $request->products/* array_column($request->products, "code") */)
+      $products = Product::whereIn('code', $request->products)
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();
@@ -381,21 +382,32 @@ class VentasController extends Controller{
       }])->get();
     }
 
-    $result = $products->map(function($product){
+    $result = $products->map(function($product) use($workpoints){
+      $desgloce = $workpoints->map(function($workpoint) use($product){
+        $vendidos = $product->sales->reduce(function($total, $sale) use($workpoint){
+          if($sale->cash->_workpoint == $workpoint->id){
+            return $total + $sale->pivot->amount;
+          }else{
+            return $total;
+          }
+        }, 0);
+        return [$workpoint->alias => $vendidos];
+      });
       $vendidos = $product->sales->reduce(function($total, $sale){
         return $total + $sale->pivot->amount;
       }, 0);
 
       $tickets = count($product->sales->toArray());
-      return [
+      $a = [
         "code" => $product->code,
         "name" => $product->name,
         "description" => $product->description,
         "pieces" => $product->pieces,
-        "vendidos" => $vendidos,
+        "total" => $vendidos,
         "tickets" => $tickets,
         "variants" => $product->variants
       ];
+      return array_merge($a, $desgloce->toArray());
     });
 
     return response()->json($result);
