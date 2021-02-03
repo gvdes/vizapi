@@ -1211,7 +1211,7 @@ class PdfController extends Controller{
                         </div>';
             }
             
-            $this->setImageBackground_area_2(null, $content, $width=37, $height=40, $cols=4, $rows=5, $top_space=-49, $sides_space=10.8, $position=$key+$counter, $top_margin=12.5, $sides_margin=11.6);
+            $this->setImageBackground_area_2(null, $content, $width=37, $height=40, $cols=4, $rows=5, $top_space=-9, $sides_space=10.8, $position=$key+$counter, $top_margin=12.5, $sides_margin=11.6);
         }
     }
     
