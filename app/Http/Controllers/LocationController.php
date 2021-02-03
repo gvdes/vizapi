@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\WorkPoint;
 use App\Product;
 use App\CellerSection;
+use App\Exports\ArrayExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LocationController extends Controller{
     /**
@@ -345,7 +347,7 @@ class LocationController extends Controller{
         return response()->json(["success" => false]);
     }
     
-    public function getReport(Request $request){
+    /* public function getReport(Request $request){
         $report = $request->_type ?  $request->_type : 1;
         switch ($report){
             case 'WithLocation':
@@ -355,7 +357,7 @@ class LocationController extends Controller{
                 return response()->json($this->ProductsWithoutLocation());
         }
         
-    }
+    } */
 
     public function ProductsWithoutLocation(){
         $products = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get()->toArray();
@@ -665,9 +667,222 @@ class LocationController extends Controller{
         return response()->json(["success" => true]);
     }
 
+    public function getReport(Request $request){
+        switch($request->_type){
+            case 1:
+                $res = $this->conStock();
+                $name = "conStock";
+                break;
+            case 2:
+                $res = $this->conStockUbicados();
+                $name = "conStockUbicados";
+                break;
+            case 3:
+                $res = $this->conStockSinUbicar();
+                $name = "conStockSinUbicar";
+                break;
+            case 4:
+                $res = $this->sinStock();
+                $name = "sinStock";
+                break;
+            case 5:
+                $res = $this->sinStockUbicados();
+                $name = "sinStockUbicados";
+                break;
+            case 6:
+                $res = $this->sinMaximos();
+                $name = "sinMaximos";
+                break;
+            case 7:
+                $res = $this->generalVsExhibicion();
+                $name = "generalVsExhibicion";
+                break;
+            case 8:
+                $res = $this->generalVsCedis();
+                $name = "generalVsCedis";
+                break;
+        }
+
+        $export = new ArrayExport($res);
+        $date = new \DateTime();
+        return Excel::download($export, $name.".xlsx");
+    }
+
+    public function conStock(){
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+        })->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function sinStock(){
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function conStockUbicados(){
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        },'>',0)->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function conStockSinUbicar(){
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        },'<=',0)->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function sinStockUbicados(){
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->whereHas('locations', function($query){
+            $query->where(["_workpoint", $this->account->_workpoint]);
+        },'>',0)->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
     public function generalVsExhibicion(){
-        $productos = Productos::whereHas('stocks', function($query){
-            $query->where("alm", ">", "0");
-        });
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "GENERAL" => $producto->stocks[0]->pivot->gen,
+                "EXHIBICION" => $producto->stocks[0]->pivot->exh,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function generalVsCedis(){
+        $productos = Product::with(["stocks" => function($query){
+            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
+            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
+            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "piezas" => $producto->pieces,
+                "CEDIS" => $producto->stocks[0]->pivot->gen,
+                "GENERAL" => $producto->stocks[0]->pivot->exh,
+                "locations" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function sinMaximos(){
+        $productos = Product::with(["stocks" => function($query){
+            $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+
+        $res = $productos->map(function($producto){
+            $locations = "";
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "min" => $producto->stocks[0]->pivot->min,
+                "max" => $producto->stocks[0]->pivot->max
+            ];
+        })->toArray();
+        return $res;
     }
 }

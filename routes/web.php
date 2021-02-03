@@ -57,7 +57,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/sections', 'LocationController@getSections');
         $router->get('/allSections', 'LocationController@getAllSections');
         $router->get('/product', 'LocationController@getProduct');
-        $router->get('/report', 'LocationController@getReport');
+        $router->post('/report', 'LocationController@getReport');
         $router->post('/toggle', 'LocationController@setLocation');
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
@@ -68,6 +68,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
         $router->post('/remove', 'LocationController@removeLocations');
+        $router->get('/sinMaximos', 'LocationController@sinMaximos');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
