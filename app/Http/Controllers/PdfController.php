@@ -1145,6 +1145,8 @@ class PdfController extends Controller{
     PDF::SetTitle('Pdf lapicera x20');
     $counter = 0;
     //etiquetas por hoja
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
     $pzHoja = 20;
     foreach($products as $key => $product){
         for($i=0; $i<$product['copies']; $i++){
