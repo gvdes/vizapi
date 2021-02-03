@@ -492,15 +492,29 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->count();
+        $generalVsExhibicion = Product::with(['stocks' => function($query){
+            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
+        $generalVsCedis = Product::with(["stocks" => function($query){
+            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
+            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
+            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
                 "withLocation" => $withLocation,
-                "withoutLocation" => $withoutLocation
+                "withoutLocation" => $withoutLocation,
+                "generalVsExhibicion" => $generalVsExhibicion
             ],
             "withoutStock" => [
                 "stock" => $withoutStock,
-                "withLocation" => $withLocationWithoutStock
+                "withLocation" => $withLocationWithoutStock,
+                "generalVsCedis" => $generalVsCedis
             ],
             "products" => $counterProducts,
             "connection" => false
@@ -752,9 +766,9 @@ class LocationController extends Controller{
 
     public function conStock(){
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }])->whereHas('stocks', function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $res = $productos->map(function($producto){
             $locations = "";
@@ -794,11 +808,15 @@ class LocationController extends Controller{
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         },'>',0)->get();
         $res = $productos->map(function($producto){
             $locations = "";
@@ -818,11 +836,15 @@ class LocationController extends Controller{
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         },'<=',0)->get();
         $res = $productos->map(function($producto){
             $locations = "";
@@ -842,11 +864,15 @@ class LocationController extends Controller{
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
-            $query->where(["_workpoint", $this->account->_workpoint]);
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         },'>',0)->get();
         $res = $productos->map(function($producto){
             $locations = "";
