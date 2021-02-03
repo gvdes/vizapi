@@ -1110,14 +1110,14 @@ class PdfController extends Controller{
             if($product['type']=='off'){
                     $content =  '<div style="text-align: center;">'.$space.'
                             <span style="font-size:1em"><br/></span>
-                            <span style="font-size:2.8em; font-weight: bold;">'.$product['copies'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
                         </div>';
             }else{
                 $content =  '<div style="text-align: center;">'.$space.'
-                            <span style="font-size:2.8em; font-weight: bold;">'.$product['copies'].'</span><span style="font-size:.1em"><br/></span>
+                            <span style="font-size:2.8em; font-weight: bold;">'.$product['name'].'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:1.2em; font-weight: bold;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
                             <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
