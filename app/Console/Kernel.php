@@ -140,7 +140,7 @@ class Kernel extends ConsoleKernel
             }
         })->everyFiveMinutes(); */
 
-        $schedule->call(function(){
+        /* $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,13])->get();
             foreach($workpoints as $workpoint){
                 $client = curl_init();
@@ -166,6 +166,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyMinute();
+        })->everyMinute(); */
     }
 }

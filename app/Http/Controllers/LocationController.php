@@ -492,20 +492,13 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->count();
-        /* $generalVsExhibicion = Product::with(['stocks' => function($query){
-            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        }])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        $generalVsExhibicion = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
-        $generalVsCedis = Product::with(["stocks" => function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
-            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        }])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
-            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        })->count(); */
-        $generalVsCedis = 0;
-        $generalVsExhibicion = 0;
+        $generalVsCedis = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["_workpoint", 1]])
+            ->where([["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
@@ -954,5 +947,41 @@ class LocationController extends Controller{
             ];
         })->toArray();
         return $res;
+    }
+
+    public function updateStocks2(){
+        $workpoints = WorkPoint::whereIn('id', range(1,15))->get();
+        $success = 0;
+        $_success = [];
+        foreach($workpoints as $workpoint){
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/celler/stock");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_POST, 1);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            $data = http_build_query(["_workpoint" => $workpoint->id]);
+            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+            $stocks = json_decode(curl_exec($client), true);
+            if($stocks){
+                $success++;
+                array_push($_success, $workpoint->alias);
+                $products = Product::with(["stocks" => function($query) use($workpoint){
+                    $query->where('_workpoint', $workpoint->id);
+                }])->where('_status', 1)->get();
+                $codes_stocks = array_column($stocks, 'code');
+                foreach($products as $product){
+                    $key = array_search($product->code, $codes_stocks, true);
+                    if($key === 0 || $key > 0){
+                        $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : false;
+                        if(gettype($stock) == "boolean"){
+                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+                        }elseif($stock != $stocks[$key]["stock"]){
+                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+                        }
+                    }
+                }
+            }
+        }
+        return response()->json(["completados" => $success, "tiendas" => $_success]);
     }
 }
