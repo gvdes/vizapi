@@ -60,13 +60,7 @@ class CycleCountController extends Controller{
             $now = $request->date;
         }
 
-        $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'/* , 'products' => function($query){
-            $query->with(['locations' => function($query){
-                $query->whereHas('celler', function($query){
-                    $query->where('_workpoint', $this->account->_workpoint);
-                });
-            }]);
-        } */])->where("_workpoint", $this->account->_workpoint)->orWhere('_created_by', $this->account->_account)
+        $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'])->where("_workpoint", $this->account->_workpoint)->orWhere('_created_by', $this->account->_account)
         ->orWhere(function($query){
             $query->whereHas('responsables', function($query){
                 $query->where('_account', $this->account->_account);
@@ -81,7 +75,7 @@ class CycleCountController extends Controller{
         })
         ->get();
         return response()->json([
-            "type" =>   ::all(),
+            "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
             "inventory" => InventoryResource::collection($invetories)
         ]);
