@@ -752,8 +752,11 @@ class LocationController extends Controller{
                 $res = $this->generalVsCedis();
                 $name = "generalVsCedis";
                 break;
+            default:
+                $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
+                $name = "noFound";
+                break;
         }
-
         $export = new ArrayExport($res);
         $date = new \DateTime();
         return Excel::download($export, $name.".xlsx");
@@ -802,7 +805,7 @@ class LocationController extends Controller{
     public function conStockUbicados(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
-        }, 'locations', function($query){
+        }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
@@ -830,7 +833,7 @@ class LocationController extends Controller{
     public function conStockSinUbicar(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
-        }, 'locations', function($query){
+        }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
@@ -858,7 +861,7 @@ class LocationController extends Controller{
     public function sinStockUbicados(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        }, 'locations', function($query){
+        }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
