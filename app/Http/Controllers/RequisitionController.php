@@ -529,12 +529,12 @@ class RequisitionController extends Controller{
 
     public function getToSupplyFromStore($workpoint_id){
         $workpoint = WorkPoint::find($workpoint_id);
-        $categories = /* range(37,57) */array_merge(range(37,57), range(130,184));
+        /* $categories = range(37,57)array_merge(range(37,57), range(130,184)); */
         $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
-                ['max', '>', 0]
+                ['max', '>', 0],
             ]);
         }])->whereHas('stocks', function($query) use($workpoint_id){
             $query->where([
@@ -542,10 +542,36 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)->whereIn('_category', $categories)->get();
+        }, '>', 0)/* ->whereIn('_category', $categories) */->get();
         
         /**OBTENEMOS STOCKS */
-        $client = curl_init();
+        $toSupply = [];
+        foreach($products as $key => $product){
+            /* $stock = intval($stocks[$key]['stock'])>=0 ? intval($stocks[$key]['stock']) : 0; */
+            $stock = $product->stocks[0]->gen;
+            //$max = intval($product->stocks[0]->pivot->max);
+            /* $max = intval($stocks[$key]['max']);
+            $min = intval($stocks[$key]['min']); */
+            $min = $product->stocks[0]->min;
+            $max = $product->stocks[0]->max;
+            if($max>$stock){
+                $required = $max - $stock;
+            }else{
+                $required = 0;
+            }
+
+            if($product->_unit == 3){
+                $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                $required = floor($required/$pieces);
+            }
+            if($required > 0){
+                if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
+                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                }
+            }
+        }
+        return ["products" => $toSupply];
+        /* $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
@@ -556,30 +582,9 @@ class RequisitionController extends Controller{
         $stocks = json_decode(curl_exec($client), true);
         if($stocks){
             $toSupply = [];
-            foreach($products as $key => $product){
-                $stock = intval($stocks[$key]['stock'])>=0 ? intval($stocks[$key]['stock']) : 0;
-                //$max = intval($product->stocks[0]->pivot->max);
-                $max = intval($stocks[$key]['max']);
-                $min = intval($stocks[$key]['min']);
-                if($max>$stock){
-                    $required = $max - $stock;
-                }else{
-                    $required = 0;
-                }
-
-                if($product->_unit == 3){
-                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                    $required = floor($required/$pieces);
-                }
-                if($required > 0){
-                    if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
-                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
-                    }
-                }
-            }
-            return ["products" => $toSupply];
+            
         }
-        return ["msg" => "No se tenido conexión con la tienda"];
+        return ["msg" => "No se tenido conexión con la tienda"]; */
     }
 
     public function getPedidoFromStore($folio, $workpoint_id){
