@@ -241,9 +241,9 @@ class LocationController extends Controller{
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->_workpoint == $this->account->_workpoint;
         });
-        $product->stock = $product->stocks[0]->pivot->stock;
-        $product->min = $product->stocks[0]->pivot->min;
-        $product->max = $product->stocks[0]->pivot->max;
+        $product->stock = $stocks[0]->pivot->stock;
+        $product->min = $stocks[0]->pivot->min;
+        $product->max = $stocks[0]->pivot->max;
         $product->stocks_stores = $product->stocks->filter(function($stocks){
             return $stocks->id != $this->account->_workpoint;
         })->values()->map(function($stock){
