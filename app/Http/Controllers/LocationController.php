@@ -227,16 +227,29 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->id;
-        $workpoint = WorkPoint::find($this->account->_workpoint);
-        $cellers = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
-        $product = \App\Product::with(['locations' => function($query)use($cellers){
-            $query->whereIn('_celler', $cellers);
-        },'stocks' => function($query) use($workpoint){
+        $product = \App\Product::with(['locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        },'stocks' => function($query){
             $query->where([
-                ['_workpoint', $workpoint->id]
-            ]);
-        },'category', 'status', 'units'])->/* ->with('category', 'status', 'units') *//* ->where('code', $code)->orWhere('name', $code)->first() */find($code);
-        if(!$product){
+                ['_workpoint', $this->account->_workpoint]
+            ])->orWhere(function($query){
+                $query->where('_type', 1);
+            });
+        },'category', 'status', 'units'])->find($code);
+        $stock = $product->stocks->filter(function($stocks){
+            return $stocks->_workpoint == $this->account->_workpoint;
+        });
+        $product->stock = $product->stocks[0]->pivot->stock;
+        $product->min = $product->stocks[0]->pivot->min;
+        $product->max = $product->stocks[0]->pivot->max;
+        $product->stocks_stores = $product->stocks->filter(function($stocks){
+            return $stocks->id != $this->account->_workpoint;
+        })->values()->map(function($stock){
+            return ["alias" => $stock->alias, "stocks" => $stock->pivot->stock];
+        })->values()->all();
+        /* if(!$product){
             $product = \App\ProductVariant::where('barcode', $code)->first();
             if($product){
                 $product = \App\Product::with(['locations' => function($query)use($cellers){
@@ -247,9 +260,9 @@ class LocationController extends Controller{
                     ]);
                 },'category', 'status', 'units'])->find($product->product->id);
             }
-        }
+        } */
         if($product){
-            $client = curl_init();
+            /* $client = curl_init();
             curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max/".$product->code);
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
@@ -269,17 +282,6 @@ class LocationController extends Controller{
             }
             if(isset($request->stocks)){
                 if($request->stocks){
-                    /* $client = curl_init();
-                    curl_setopt($client, CURLOPT_URL, "http://192.168.1.224:1618/access/public/product/max/".$product->code);
-                    curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-                    curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-                    curl_setopt($client,CURLOPT_TIMEOUT,8);
-                    $access = json_decode(curl_exec($client), true);
-                    if($access){
-                        $product->stocks_stores = [["alias" => "CEDISSP", "stocks" => $access['ACTSTO']]];
-                    }else{
-                        $product->stocks_stores = ["CEDISSP" => "--"];
-                    } */
                     $workpoints = WorkPoint::where('id', 1)->orWhere('id', 13)->get();
                     $stocks_stores = [];
                     foreach($workpoints as $workpoint){
@@ -297,7 +299,7 @@ class LocationController extends Controller{
                     }
                     $product->stocks_stores = $stocks_stores;
                 }
-            }
+            } */
             return response()->json($product);
             
         }
@@ -336,13 +338,13 @@ class LocationController extends Controller{
         $workpoint = \App\WorkPoint::find($this->account->_workpoint);
         $product = Product::where('code', $request->code)->first();
         if($product){
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
             $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
+            /* curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($client,CURLOPT_TIMEOUT,8);
-            $res = json_decode(curl_exec($client), true);
-            return response()->json(["success" => $res]);
+            $res = json_decode(curl_exec($client), true); */
+            return response()->json(["success" => true]);
         }
         return response()->json(["success" => false]);
     }
