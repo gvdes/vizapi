@@ -239,8 +239,8 @@ class LocationController extends Controller{
             });
         },'category', 'status', 'units'])->find($code);
         $stock = $product->stocks->filter(function($stocks){
-            return $stocks->_workpoint == $this->account->_workpoint;
-        });
+            return $stocks->id == $this->account->_workpoint;
+        })->values()->all();
         $product->stock = $stock[0]->pivot->stock;
         $product->min = $stock[0]->pivot->min;
         $product->max = $stock[0]->pivot->max;
