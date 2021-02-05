@@ -227,7 +227,7 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->id;
-        $product = \App\Product::with(['locations' => function($query){
+        $product = Product::with(['locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
@@ -249,59 +249,8 @@ class LocationController extends Controller{
         })->values()->map(function($stock){
             return ["alias" => $stock->alias, "stocks" => $stock->pivot->stock];
         })->values()->all();
-        /* if(!$product){
-            $product = \App\ProductVariant::where('barcode', $code)->first();
-            if($product){
-                $product = \App\Product::with(['locations' => function($query)use($cellers){
-                    $query->whereIn('_celler', $cellers);
-                },'stocks' => function($query) use($workpoint){
-                    $query->where([
-                        ['_workpoint', $workpoint->id],
-                    ]);
-                },'category', 'status', 'units'])->find($product->product->id);
-            }
-        } */
         if($product){
-            /* $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max/".$product->code);
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,8);
-            $access = json_decode(curl_exec($client), true);
-            if($access){
-                $product->stock = intval($access['ACTSTO']);
-                if(count($product->stocks)>0){
-                    $product->min = $product->stocks[0]->pivot->min;
-                    $product->max = $product->stocks[0]->pivot->max;
-                }else{
-                    $product->min = intval($access['MINSTO']);
-                    $product->max = intval($access['MAXSTO']);
-                }
-            }else{
-                $product->stock = '--';
-            }
-            if(isset($request->stocks)){
-                if($request->stocks){
-                    $workpoints = WorkPoint::where('id', 1)->orWhere('id', 13)->get();
-                    $stocks_stores = [];
-                    foreach($workpoints as $workpoint){
-                        $client = curl_init();
-                        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max/".$product->code);
-                        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-                        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-                        curl_setopt($client,CURLOPT_TIMEOUT,8);
-                        $access = json_decode(curl_exec($client), true);
-                        if($access){
-                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => intval($access['ACTSTO'])]);
-                        }else{
-                            array_push($stocks_stores, ["alias" => $workpoint->alias, "stocks" => "---"]);
-                        }
-                    }
-                    $product->stocks_stores = $stocks_stores;
-                }
-            } */
             return response()->json($product);
-            
         }
         return response()->json([
             "msg" => "Producto no encontrado"
