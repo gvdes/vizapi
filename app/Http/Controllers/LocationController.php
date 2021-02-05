@@ -227,16 +227,23 @@ class LocationController extends Controller{
      */
     public function getProduct(Request $request){
         $code = $request->id;
+        $stocks_required = $request->stocks;
         $product = Product::with(['locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'stocks' => function($query){
-            $query->where([
-                ['_workpoint', $this->account->_workpoint]
-            ])->orWhere(function($query){
-                $query->where('_type', 1);
-            });
+        },'stocks' => function($query) use($stocks_required){
+            if($stocks_required){
+                $query->where([
+                    ['_workpoint', $this->account->_workpoint]
+                ])->orWhere(function($query){
+                    $query->where('_type', 1);
+                });
+            }else{
+                $query->where([
+                    ['_workpoint', $this->account->_workpoint]
+                ]);
+            }
         },'category', 'status', 'units'])->find($code);
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->id == $this->account->_workpoint;
