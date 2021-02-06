@@ -459,9 +459,9 @@ class LocationController extends Controller{
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $generalVsCedis = [];
-        $arr_cedis = array_column($cedis->toArray(), 'code');
-        foreach($general as $product){
-            $key = array_search($product->code, $arr_cedis);
+        $arr_general = array_column($general->toArray(), 'code');
+        foreach($cedis as $product){
+            $key = array_search($product->code, $arr_general);
             if($key === 0 && $key>0){
                 //exist
             }else{
@@ -734,6 +734,10 @@ class LocationController extends Controller{
     public function conStock(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
@@ -756,6 +760,10 @@ class LocationController extends Controller{
     public function sinStock(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
@@ -868,6 +876,10 @@ class LocationController extends Controller{
     public function generalVsExhibicion(){
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
@@ -897,9 +909,9 @@ class LocationController extends Controller{
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $generalVsCedis = [];
-        $arr_cedis = array_column($cedis->toArray(), 'code');
-        foreach($general as $product){
-            $key = array_search($product->code, $arr_cedis);
+        $arr_general = array_column($general->toArray(), 'code');
+        foreach($cedis as $product){
+            $key = array_search($product->code, $arr_general);
             if($key === 0 && $key>0){
                 //exist
             }else{
