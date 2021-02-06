@@ -738,7 +738,9 @@ class LocationController extends Controller{
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -758,7 +760,9 @@ class LocationController extends Controller{
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -773,20 +777,22 @@ class LocationController extends Controller{
 
     public function conStockUbicados(){
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }])->whereHas('stocks', function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -801,20 +807,22 @@ class LocationController extends Controller{
 
     public function conStockSinUbicar(){
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }])->whereHas('stocks', function($query){
-            $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -829,20 +837,22 @@ class LocationController extends Controller{
 
     public function sinStockUbicados(){
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }])->whereHas('stocks', function($query){
-            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -862,7 +872,9 @@ class LocationController extends Controller{
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -903,7 +915,9 @@ class LocationController extends Controller{
         })->get(); */
 
         $res = collect($generalVsCedis)->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
@@ -925,7 +939,9 @@ class LocationController extends Controller{
         })->get();
 
         $res = $productos->map(function($producto){
-            $locations = "";
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
