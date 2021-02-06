@@ -469,7 +469,7 @@ class LocationController extends Controller{
             }
         }
 
-        $productos = Product::with(["stocks" => function($query){
+        $sinMaximos = Product::with(["stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
