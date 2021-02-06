@@ -16,6 +16,7 @@ class Inventory extends JsonResource{
     return [
       'id' => $this->id,
       'notes' => $this->notes,
+      'products_count' => $this->products_count,
       'created_at' => $this->created_at->format('Y-m-d H:i'),
       'updated_at' => $this->updated_at->format('Y-m-d H:i'),
       'type' => $this->whenLoaded('type'),

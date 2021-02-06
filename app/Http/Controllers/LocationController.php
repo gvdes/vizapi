@@ -236,9 +236,7 @@ class LocationController extends Controller{
             if($stocks_required){
                 $query->where([
                     ['_workpoint', $this->account->_workpoint]
-                ])->orWhere(function($query){
-                    $query->where('_type', 1);
-                });
+                ])->orWhere('_type', 1);
             }else{
                 $query->where([
                     ['_workpoint', $this->account->_workpoint]
@@ -453,10 +451,23 @@ class LocationController extends Controller{
         $generalVsExhibicion = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
-        $generalVsCedis = Product::whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", 1]])
-            ->where([["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->count();
+        $cedis = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["_workpoint", 1]]);
+        })->get();
+
+        $general = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+        $generalVsCedis = [];
+        $arr_cedis = array_column($cedis->toArray(), 'code');
+        foreach($general as $product){
+            $key = array_search($product->code, $arr_cedis);
+            if($key === 0 && $key>0){
+                //exist
+            }else{
+                array_push($generalVsCedis, $product);
+            }
+        }
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
@@ -467,7 +478,7 @@ class LocationController extends Controller{
             "withoutStock" => [
                 "stock" => $withoutStock,
                 "withLocation" => $withLocationWithoutStock,
-                "generalVsCedis" => $generalVsCedis
+                "generalVsCedis" => count($generalVsCedis)
             ],
             "products" => $counterProducts,
             "connection" => false
@@ -866,15 +877,32 @@ class LocationController extends Controller{
     }
 
     public function generalVsCedis(){
-        $productos = Product::with(["stocks" => function($query){
+        $cedis = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["_workpoint", 1]]);
+        })->get();
+
+        $general = Product::whereHas('stocks', function($query){
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+        $generalVsCedis = [];
+        $arr_cedis = array_column($cedis->toArray(), 'code');
+        foreach($general as $product){
+            $key = array_search($product->code, $arr_cedis);
+            if($key === 0 && $key>0){
+                //exist
+            }else{
+                array_push($generalVsCedis, $product);
+            }
+        }
+        /* $productos = Product::with(["stocks" => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", 1]])
             ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", 1]])
             ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        })->get();
+        })->get(); */
 
-        $res = $productos->map(function($producto){
+        $res = collect($generalVsCedis)->map(function($producto){
             $locations = "";
             return [
                 "codigo" => $producto->name,

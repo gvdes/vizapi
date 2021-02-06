@@ -60,7 +60,7 @@ class CycleCountController extends Controller{
             $now = $request->date;
         }
 
-        $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'])->where("_workpoint", $this->account->_workpoint)->orWhere('_created_by', $this->account->_account)
+        $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'])->withCount('products')->where("_workpoint", $this->account->_workpoint)->orWhere('_created_by', $this->account->_account)
         ->orWhere(function($query){
             $query->whereHas('responsables', function($query){
                 $query->where('_account', $this->account->_account);
