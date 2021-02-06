@@ -468,12 +468,19 @@ class LocationController extends Controller{
                 array_push($generalVsCedis, $product);
             }
         }
+
+        $productos = Product::with(["stocks" => function($query){
+            $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        }])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
                 "withLocation" => $withLocation,
                 "withoutLocation" => $withoutLocation,
-                "generalVsExhibicion" => $generalVsExhibicion
+                "generalVsExhibicion" => $generalVsExhibicion,
+                "sinMaximos" => $sinMaximos
             ],
             "withoutStock" => [
                 "stock" => $withoutStock,
