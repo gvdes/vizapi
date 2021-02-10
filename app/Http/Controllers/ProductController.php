@@ -474,6 +474,12 @@ class ProductController extends Controller{
             }
         }
 
+        if(isset($request->with_prices) && $request->with_prices){
+            $query->with(['stocks' => function($query){
+                $query->whereIn('_type', [1, 2, 3, 4]);
+            }]);
+        }
+
         if(isset($request->paginate)){
             $products = $query->paginate($request->paginate);
         }else{

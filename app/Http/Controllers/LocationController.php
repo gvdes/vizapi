@@ -108,18 +108,13 @@ class LocationController extends Controller{
 
     public function deleteSection(Request $request){
         $section = CellerSection::find($request->_section);
+        /* $section = CellerSection::where(["_celler" => 1, "root" => 0])->get();
+        return response()->json($section); */
         if($section){
-            if($section->products->count()==0){
-                $res = $section->delete();
-                return response()->json([
-                    'success' => $res
-                ]);
-            }else{
-                return response()->json([
-                    'success' => false,
-                    'msg' => 'No se ha eliminado la sección debido a que tienen productos ubicados'
-                ]);
-            }
+            $section->children = $this->getDescendentsSection($section);
+            $ids = $this->getIdsTree($section);
+            $res = CellerSection::destroy($ids);
+            return response()->json(["success" => true, "elementos" => $res]);
         }
         return response()->json([
             'success' => false,
@@ -128,22 +123,48 @@ class LocationController extends Controller{
     }
 
     public function removeLocations(Request $request){
-        $section = CellerSection::find($request->_section);
-        $section->sections = \App\CellerSection::where('root', $section->id)->get();
-        $sections = $this->getSectionsChildren($section->id);
-        $sections2 = CellerSection::whereIn('id', $sections)->get();
-        
-        foreach($sections2 as $section){
-            $section->products()->detach();
+        $res = [];
+        if(isset($request->_section) && isset($request->_category)){
+            /* ELIMINAR POR SECCION Y CATEGORIAS */
+            $section = CellerSection::find($request->_section);
+            $category = \App\ProductCategory::find($request->_category);
+            if($section && $category){
+                $section->children = $this->getDescendentsSection($section);
+                $ids = $this->getIdsTree($section);
+                $category->children = $this->getDescendentsCategory($category);
+                /* return $category; */
+                $ids_categories = $this->getIdsTree($category);
+                $sections = CellerSection::has('products')->whereIn('id', $ids)->get();
+                foreach($sections as $location){
+                    array_push($res, $location->products()->whereIn('_category', $ids_categories)->detach());
+                }
+            }
+        }
+        if(isset($request->_section)){
+            /* ELIMINAR POR SECCION TODO */
+            $section = CellerSection::find($request->_section);
+            if($section){
+                $section->children = $this->getDescendentsSection($section);
+                $ids = $this->getIdsTree($section);
+                $sections = CellerSection::whereIn('id', $ids)->get();
+                foreach($sections as $location){
+                    $location->products()->detach();
+                }
+            }
+        }
+        if(isset($request->_category)){
+            /* ELIMINAR POR CATEGORIAS TODOS LADOS */
+            $category = \App\ProductCategory::find($request->_category);
+            if($category){
+                $category->children = $this->getDescendentsCategory($category);
+                $ids = $this->getIdsTree($category);
+            }
+            $productos = Product::whereIn('_category', $ids)->whereHas('locations', function($query) use($ids){
+                $query->whereIn('_location', $ids);
+            },'>', 0)->get();
         }
 
-        $products = \App\Product::whereHas('locations', function($query) use ($sections){
-            return $query->whereIn('_location', $sections);
-        })->with(['locations' => function($query) use ($sections){
-            return $query->whereIn('_location', $sections);
-        }])->get();
-
-        return response()->json(["products" => $products, "sections" => $sections2]);
+        return response()->json(["res" => true]);
     }
 
     /**
@@ -154,19 +175,19 @@ class LocationController extends Controller{
      */
     public function getSections(Request $request){
         $celler = $request->_celler ? $request->_celler : null;
-        $section = $request->_section ? \App\CellerSection::find($request->_section) : null;
+        $section = $request->_section ? CellerSection::find($request->_section) : null;
         $products = [];
         $paginate = $request->paginate ? $request->paginate : 20;
         if($celler && !$section){
-            $section = \App\CellerSection::where([
-                ['_celler', '=' ,$celler],
-                ['deep', '=' ,0],
+            $section = CellerSection::where([
+                ['_celler', '=' , $celler],
+                ['deep', '=' , 0],
             ])->get()->map(function($section){
-                $section->sections = \App\CellerSection::where('root', $section->id)->get();
+                $section->sections = CellerSection::where('root', $section->id)->get();
                 return $section;
             });
             if($request->products){
-                $sections = \App\CellerSection::where([
+                $sections = CellerSection::where([
                     ['_celler', '=' ,$celler],
                 ])->get()->reduce(function($res, $section){
                     array_push($res, $section->id);
@@ -179,7 +200,7 @@ class LocationController extends Controller{
                 }])->paginate($paginate);
             }
         }else{
-            $section->sections = \App\CellerSection::where('root', $section->id)->get();
+            $section->sections = CellerSection::where('root', $section->id)->get();
             if($request->products){
                 $sections = $this->getSectionsChildren($section->id);
                 $products = \App\Product::whereHas('locations', function($query) use ($sections){
@@ -270,7 +291,7 @@ class LocationController extends Controller{
      */
     public function setLocation(Request $request){
         $product = \App\Product::find($request->_product);
-        if($product){
+        if($product && !is_null($request->_section)){
             return response()->json([
                 'success' => $product->locations()->toggle($request->_section)
             ]);            
@@ -293,27 +314,10 @@ class LocationController extends Controller{
         $product = Product::where('code', $request->code)->first();
         if($product){
             $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
-            /* curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/setmax?code=$request->code&min=$request->min&max=$request->max");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,8);
-            $res = json_decode(curl_exec($client), true); */
             return response()->json(["success" => true]);
         }
         return response()->json(["success" => false]);
     }
-    
-    /* public function getReport(Request $request){
-        $report = $request->_type ?  $request->_type : 1;
-        switch ($report){
-            case 'WithLocation':
-                return response()->json($this->ProductsWithoutStock());
-            break;
-            case 'WithoutLocation':
-                return response()->json($this->ProductsWithoutLocation());
-        }
-        
-    } */
 
     public function ProductsWithoutLocation(){
         $products = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get()->toArray();
@@ -358,68 +362,6 @@ class LocationController extends Controller{
     }
 
     public function index(){
-        /* $counterProducts = \App\Product::count();
-        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
-        $sections = \App\Celler::select('id')->where('_workpoint', $workpoint->id)->get()->reduce(function($res, $section){ array_push($res, $section->id); return $res;},[1000]);
-        $productsWithoutLocation = \App\Product::with('locations')->whereHas('locations', function (Builder $query) use ($sections){
-            $query->whereIn('_celler', $sections);
-        }, '<', 1)->select('id','code', 'description')->get();
-        $productsWithLocation = \App\Product::whereHas('locations', function (Builder $query) use ($sections){
-            $query->whereIn('_celler', $sections);
-        }, '>', 0)->select('id','code', 'description')->get();
-
-        $start = microtime(true);
-        $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/withStock");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        $withStocks = json_decode(curl_exec($client), true);
-        if($withStocks){
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/withoutStock");
-            $withoutStocks = json_decode(curl_exec($client), true);
-            curl_close($client);
-            if($withoutStocks){
-                $codes_withStock = array_column($withStocks, 'code');
-                $withLocationWithStockCounter = $productsWithLocation->filter(function($product) use ($codes_withStock){
-                    return array_search($product['code'], $codes_withStock);
-                })->count();
-                
-                $withoutLocationWithStockCounter = $productsWithoutLocation->filter(function($product) use ($codes_withStock){
-                    return array_search($product['code'], $codes_withStock);
-                })->count();
-                $codes_withoutStock = array_column($withoutStocks, 'code');
-                $withLocationWithoutStockCounter = $productsWithLocation->filter(function($product) use ($codes_withoutStock){
-                    return array_search($product['code'], $codes_withoutStock);
-                })->count();
-                return response()->json([
-                    "withStock" => [
-                        "stock" => count($withStocks),
-                        "withLocation" => $withLocationWithStockCounter,
-                        "withoutLocation" => $withoutLocationWithStockCounter
-                    ],
-                    "withoutStock" => [
-                        "stock" => count($withoutStocks),
-                        "withLocation" => $withLocationWithoutStockCounter
-                    ],
-                    "products" => $counterProducts,
-                    "connection" => true
-                ]);
-            }
-        } */
-        /* return response()->json([
-            "withStock" => [
-                "stock" => '--',
-                "withLocation" => '--',
-                "withoutLocation" => '--'
-            ],
-            "withoutStock" => [
-                "stock" => '--',
-                "withLocation" => '--'
-            ],
-            "products" => $counterProducts,
-            "connection" => false
-        ]); */
-
         $counterProducts = Product::count();
         $withStock = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -493,15 +435,19 @@ class LocationController extends Controller{
     }
 
     public function getSectionsChildren($id){
-        $sections = \App\CellerSection::where('root', $id)->get();
+        $sections = CellerSection::where('root', $id)->get();
         if(count($sections)>0){
             $res = $sections->map(function($section){
                 $children = $this->getSectionsChildren($section->id);
+                if(count($children)>0){
+                }else{
+
+                }
                 return $children;
             })->reduce(function($res, $section){
                 return array_merge($res, $section);
             }, []);
-            array_push($res,$id);
+            array_push($res, $id);
             return $res;
         }else {
             return [$id];
@@ -1007,5 +953,37 @@ class LocationController extends Controller{
             }
         }
         return response()->json(["completados" => $success, "tiendas" => $_success]);
+    }
+
+    public function getDescendentsSection($section){
+        $children = CellerSection::where('root', $section->id)->get();
+        if(count($children)>0){
+            return $children->map(function($section){
+                $section->children = $this->getDescendentsSection($section);
+                return $section;
+            });
+        }
+        return $children;
+    }
+
+    public function getDescendentsCategory($category){
+        $children = \App\ProductCategory::where('root', $category->id)->get();
+        if(count($children)>0){
+            return $children->map(function($category){
+                $category->children = $this->getDescendentsCategory($category);
+                return $category;
+            });
+        }
+        return $children;
+    }
+
+    public function getIdsTree($celler){
+        $children = collect($celler->children);
+        $children_ids = $children->reduce(function($ids, $celler){
+            $ids_children = $this->getIdsTree($celler);
+            return array_merge($ids, $ids_children);
+        }, []);
+        $id = [$celler->id];
+        return array_merge($children_ids, $id);
     }
 }
