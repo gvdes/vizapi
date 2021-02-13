@@ -267,9 +267,9 @@ class LocationController extends Controller{
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->id == $this->account->_workpoint;
         })->values()->all();
-        $product->stock = $stock[0]->pivot->stock;
-        $product->min = $stock[0]->pivot->min;
-        $product->max = $stock[0]->pivot->max;
+        $product->stock = count($stock>0) ? $stock[0]->pivot->stock : 0;
+        $product->min = count($stock>0) ? $stock[0]->pivot->min : 0;
+        $product->max = count($stock>0) ? $stock[0]->pivot->max : 0;
         $product->stocks_stores = $product->stocks->filter(function($stocks){
             return $stocks->id != $this->account->_workpoint;
         })->values()->map(function($stock){
