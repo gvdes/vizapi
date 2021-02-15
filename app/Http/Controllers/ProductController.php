@@ -428,6 +428,14 @@ class ProductController extends Controller{
     public function getProducts(Request $request){
         $query = Product::query();
 
+        if(isset($request->autocomplete) && $request->autocomplete){
+            $query = $query->whereHas('variants', function(Builder $query) use ($request){
+                $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
+            })
+            ->orWhere('name', 'like','%'.$request->autocomplete.'%')
+            ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+        }
+
         if(isset($request->_category)){
             $_categories = $this->getCategoriesChildren($request->_category);
             $query = $query->whereIn('_category', $_categories);
