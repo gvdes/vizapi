@@ -133,12 +133,8 @@ class ProductController extends Controller{
 
     public function updateTable(Request $request){
         $start = microtime(true);
-        $client = curl_init();
-        $date = isset($request->date) ? "?date=".$request->date : "";
-        curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/product/updates".$date);
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        $products = json_decode(curl_exec($client), true);
+        $fac = new FactusolController();
+        $products = $fac->productosActualizados();
         try{
             DB::transaction(function() use ($products){
                 foreach($products as $product){

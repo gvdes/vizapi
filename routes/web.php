@@ -61,7 +61,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/toggle', 'LocationController@setLocation');
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
-        $router->post('/setMassive', 'LocationController@setMasiveLocation');
+        /* $router->post('/setMassive', 'LocationController@setMasiveLocation'); */
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
         $router->post('/stocks', 'LocationController@getStocks');
         $router->post('/stocksFromStores', 'LocationController@getStocksFromStores');
@@ -70,6 +70,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/remove', 'LocationController@removeLocations');
         $router->post('/deleteSection', 'LocationController@deleteSection');
         $router->get('/sinMaximos', 'LocationController@sinMaximos');
+        $router->post('/setMassive', 'LocationController@setMassiveLocation');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
@@ -166,4 +167,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/lastVentas', 'VentasController@getLastVentas');
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
+        });
+
+        $router->group(['prefix' => 'test'], function () use ($router){
+            $router->get('/', 'FactusolController@getStocks');
         });

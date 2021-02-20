@@ -920,24 +920,18 @@ class LocationController extends Controller{
     }
 
     public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', range(1,15))->get();
+        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
         $success = 0;
         $_success = [];
+        $fac = new FactusolController();
         foreach($workpoints as $workpoint){
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/celler/stock");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            $data = http_build_query(["_workpoint" => $workpoint->id]);
-            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-            $stocks = json_decode(curl_exec($client), true);
+            $stocks = $fac->getStocks($workpoint->id);
             if($stocks){
                 $success++;
                 array_push($_success, $workpoint->alias);
                 $products = Product::with(["stocks" => function($query) use($workpoint){
                     $query->where('_workpoint', $workpoint->id);
-                }])->where('_status', 1)->get();
+                }])->where('_status', 1)->whereNotIn('_category', range(130,172))->get();
                 $codes_stocks = array_column($stocks, 'code');
                 foreach($products as $product){
                     $key = array_search($product->code, $codes_stocks, true);
@@ -985,5 +979,67 @@ class LocationController extends Controller{
         }, []);
         $id = [$celler->id];
         return array_merge($children_ids, $id);
+    }
+
+    public function setMassiveLocation(Request $request){
+        $sections = CellerSection::whereHas('celler', function($query){
+            $query->where('_workpoint', 1);
+        })->where('deep', 2)->get();
+        $arr_sections = array_column($sections->toArray(), 'path');
+        $rows = collect($request->products);
+        $res = $rows->map(function($row) use($sections, $arr_sections){
+            $paths = array_filter(explode(',', $row["path"]), function($location){
+                return strlen($location)>0;
+            });
+            $found = [];
+            $notFound = [];
+            foreach($paths as $location){
+                $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
+                $numeros = explode("-",preg_split('/^\D/', $location)[1]);
+                if(count($numeros)>1){
+                    $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
+                }else{
+                    $full_path = trim($location);
+                }
+                $key = array_search($full_path, $arr_sections);
+                if($key === 0 || $key>0){
+                    array_push($found, $sections[$key]->id);
+                }else{
+                    array_push($notFound, $full_path);
+                }
+            }
+            return [
+                "model" => $row["model"],
+                "path" => $found,
+                "notFound" => $notFound
+            ];
+        });
+        $notFound = $res->filter(function($product){
+            return count($product['notFound'])>0;
+        })->values()->all();
+        $success = 0;
+        $fail = 0;
+        foreach($res as $row){
+            $product = Product::where('code', $row["model"])->first();
+            if($product){
+                $product->locations()->syncWithoutDetaching($row['path']);
+                $success++;
+            }else{
+                $fail++;
+            }
+
+        }
+        return response()->json(["success" => $success, "fail" => $fail]);
+    }
+    
+    public function getSimilars(){
+        $products = Product::where('_category', range(1,16))->get()->sortBy('code');
+        $product_ex = $products->map(function($product){
+             $product->base = explode('-', $product->code)[0];
+             return $product;
+        })->groupBy('base')->filter(function($group){
+            return count($group)>1;
+        });
+        return response()->json($product_ex);
     }
 }
