@@ -141,7 +141,7 @@ class Kernel extends ConsoleKernel
             }
         })->everyFiveMinutes(); */
 
-        /* $schedule->call(function(){
+        $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
             $success = 0;
             $_success = [];
@@ -169,6 +169,6 @@ class Kernel extends ConsoleKernel
                 }
             }
             return response()->json(["completados" => $success, "tiendas" => $_success]);
-        })->everyTwoMinutes(); */
+        })->everyFourMinutes();
     }
 }

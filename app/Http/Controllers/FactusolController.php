@@ -55,8 +55,8 @@ class FactusolController extends Controller{
     return $res;
   }
 
-  public function productosActualizados(){
-    $date = isset($request->date) ? $request->date : date('Y-m-d', time());
+  public function productosActualizados($date){
+    $date = is_null($date) ? date('Y-m-d', time()) : $date;
     $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DLAART, F_ART.CP3ART, F_ART.FAMART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
     $rows = $this->lanzarConsulta($query);
     $products = $rows->groupBy('CODART')->map(function($group){

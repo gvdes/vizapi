@@ -134,7 +134,8 @@ class ProductController extends Controller{
     public function updateTable(Request $request){
         $start = microtime(true);
         $fac = new FactusolController();
-        $products = $fac->productosActualizados();
+        $date = isset($request->date) ? $request->date : null;
+        $products = $fac->productosActualizados($date);
         try{
             DB::transaction(function() use ($products){
                 foreach($products as $product){
