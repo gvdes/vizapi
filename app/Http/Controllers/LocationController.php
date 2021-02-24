@@ -704,13 +704,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
                 "familia" => $categories[$key]->name,
-                "categoria" => $product->category->name,
+                "categoria" => $producto->category->name,
                 "piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
                 "locations" => $locations,
@@ -735,13 +735,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripcion" => $producto->description,
                 "Familia" => $categories[$key]->name,
-                "CategorÍa" => $product->category->name,
+                "CategorÍa" => $producto->category->name,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Ubicaciones" => $locations
@@ -770,12 +770,12 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Familia" => $categories[$key]->name,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
@@ -805,13 +805,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
                 "Familia" => $categories[$key]->name,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Ubicaciones" => $locations
@@ -840,12 +840,12 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Familia" => $categories[$key]->name,
                 "Piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
@@ -871,13 +871,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
                 "Familia" => $categories[$key]->name,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Piezas por caja" => $producto->pieces,
                 "GENERAL" => $producto->stocks[0]->pivot->gen,
                 "EXHIBICION" => $producto->stocks[0]->pivot->exh,
@@ -919,13 +919,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
                 "Familia" => $categories[$key]->name,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Piezas x caja" => $producto->pieces,
                 "CEDIS" => $producto->stocks[0]->pivot->gen,
                 "GENERAL" => $producto->stocks[0]->pivot->exh,
@@ -948,13 +948,13 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($product->category->root, $arr_categories);
+            $key = array_search($producto->category->root, $arr_categories);
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
                 "Familia" => $categories[$key]->name,
-                "Categoría" => $product->category->name,
+                "Categoría" => $producto->category->name,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Minimo" => $producto->stocks[0]->pivot->min,
                 "Máximo" => $producto->stocks[0]->pivot->max
