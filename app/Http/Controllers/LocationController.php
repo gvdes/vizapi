@@ -689,7 +689,7 @@ class LocationController extends Controller{
     }
 
     public function conStock(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
@@ -720,7 +720,7 @@ class LocationController extends Controller{
     }
 
     public function sinStock(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
@@ -751,7 +751,7 @@ class LocationController extends Controller{
     }
 
     public function conStockUbicados(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
@@ -786,7 +786,7 @@ class LocationController extends Controller{
     }
 
     public function conStockSinUbicar(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
@@ -821,7 +821,7 @@ class LocationController extends Controller{
     }
 
     public function sinStockUbicados(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
@@ -856,7 +856,7 @@ class LocationController extends Controller{
     }
 
     public function generalVsExhibicion(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -888,7 +888,7 @@ class LocationController extends Controller{
     }
 
     public function generalVsCedis(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $cedis = Product::with('category')->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", 1]]);
@@ -936,7 +936,7 @@ class LocationController extends Controller{
     }
 
     public function sinMaximos(){
-        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', 0)->get();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(["stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
