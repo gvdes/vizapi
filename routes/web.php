@@ -170,5 +170,5 @@ $router->group(['middleware' => 'auth'], function() use($router){
         });
 
         $router->group(['prefix' => 'test'], function () use ($router){
-            $router->get('/', 'FactusolController@getStocks');
+            $router->get('/', 'FactusolController@getSales');
         });

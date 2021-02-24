@@ -55,9 +55,13 @@ class LocationController extends Controller{
      */
     public function createSection(Request $request){
         $sections = [];
-        $increment = isset($request->autoincrement) ? $request->autoincrement : false;
+        if(isset($request->autoincrement) || $request->autoincrement || $request->items > 1){
+            $increment = true;
+        }else{
+            $increment = false;
+        }
         if($request->root>0){
-            $siblings = \App\CellerSection::where('root', $request->root)->count();
+            $siblings = \App\CellerSection::where([['root', $request->root], ["alias", "%LIKE%", "%".$request->alias."%"]])->count();
             $root = \App\CellerSection::find($request->root);
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
@@ -685,140 +689,165 @@ class LocationController extends Controller{
     }
 
     public function conStock(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
+                "familia" => $categories[$key]->name,
+                "categoria" => $product->category->name,
+                "piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
-                "locations" => $locations
+                "locations" => $locations,
             ];
         })->toArray();
         return $res;
     }
 
     public function sinStock(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
-                "locations" => $locations
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripcion" => $producto->description,
+                "Familia" => $categories[$key]->name,
+                "CategorÍa" => $product->category->name,
+                "Piezas x caja" => $producto->pieces,
+                "Stock" => $producto->stocks[0]->pivot->stock,
+                "Ubicaciones" => $locations
             ];
         })->toArray();
         return $res;
     }
 
     public function conStockUbicados(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
-                "locations" => $locations
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Categoría" => $product->category->name,
+                "Familia" => $categories[$key]->name,
+                "Piezas x caja" => $producto->pieces,
+                "Stock" => $producto->stocks[0]->pivot->stock,
+                "Ubicaciones" => $locations
             ];
         })->toArray();
         return $res;
     }
 
     public function conStockSinUbicar(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
-                "locations" => $locations
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $categories[$key]->name,
+                "Categoría" => $product->category->name,
+                "Piezas x caja" => $producto->pieces,
+                "Stock" => $producto->stocks[0]->pivot->stock,
+                "Ubicaciones" => $locations
             ];
         })->toArray();
         return $res;
     }
 
     public function sinStockUbicados(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Categoría" => $product->category->name,
+                "Familia" => $categories[$key]->name,
+                "Piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
                 "locations" => $locations
             ];
@@ -827,38 +856,45 @@ class LocationController extends Controller{
     }
 
     public function generalVsExhibicion(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $categories[$key]->name,
+                "Categoría" => $product->category->name,
+                "Piezas por caja" => $producto->pieces,
                 "GENERAL" => $producto->stocks[0]->pivot->gen,
                 "EXHIBICION" => $producto->stocks[0]->pivot->exh,
-                "locations" => $locations
+                "Ubicaciones" => $locations
             ];
         })->toArray();
         return $res;
     }
 
     public function generalVsCedis(){
-        $cedis = Product::whereHas('stocks', function($query){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $cedis = Product::with('category')->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", 1]]);
         })->get();
 
-        $general = Product::whereHas('stocks', function($query){
+        $general = Product::with('category')->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $generalVsCedis = [];
@@ -879,41 +915,49 @@ class LocationController extends Controller{
             ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         })->get(); */
 
-        $res = collect($generalVsCedis)->map(function($producto){
+        $res = collect($generalVsCedis)->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "piezas" => $producto->pieces,
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $categories[$key]->name,
+                "Categoría" => $product->category->name,
+                "Piezas x caja" => $producto->pieces,
                 "CEDIS" => $producto->stocks[0]->pivot->gen,
                 "GENERAL" => $producto->stocks[0]->pivot->exh,
-                "locations" => $locations
+                "Ubicaciones" => $locations
             ];
         })->toArray();
         return $res;
     }
 
     public function sinMaximos(){
+        $categories = \App\Model\ProductCategory::where('deep', 0)->get();
+        $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(["stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        }])->whereHas('stocks', function($query){
+        }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
 
-        $res = $productos->map(function($producto){
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
+            $key = array_search($product->category->root, $arr_categories);
             return [
-                "codigo" => $producto->name,
-                "modelo" => $producto->code,
-                "descripcion" => $producto->description,
-                "stock" => $producto->stocks[0]->pivot->stock,
-                "min" => $producto->stocks[0]->pivot->min,
-                "max" => $producto->stocks[0]->pivot->max
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $categories[$key]->name,
+                "Categoría" => $product->category->name,
+                "Stock" => $producto->stocks[0]->pivot->stock,
+                "Minimo" => $producto->stocks[0]->pivot->min,
+                "Máximo" => $producto->stocks[0]->pivot->max
             ];
         })->toArray();
         return $res;
