@@ -960,6 +960,7 @@ class LocationController extends Controller{
                 "Máximo" => $producto->stocks[0]->pivot->max
             ];
         })->toArray();
+        
         return $res;
     }
 
