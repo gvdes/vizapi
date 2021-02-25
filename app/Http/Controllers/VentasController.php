@@ -166,7 +166,7 @@ class VentasController extends Controller{
           $sale = 0;
         }
         $cash__[$serie] = $sale;
-        /* $fac_sales = $fac->getSales($sale, $serie);
+        $fac_sales = $fac->getSales($sale, $serie);
         if($fac_sales){
           foreach($fac_sales as $venta){
             $instance = Sales::create([
@@ -193,7 +193,7 @@ class VentasController extends Controller{
             }
             $instance->products()->attach($toAttach);
           }
-        } */
+        }
       }
       /* return $cash__; */
       return response()->json(["ventas" => $cash__]);
