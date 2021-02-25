@@ -40,7 +40,7 @@ class VentasController extends Controller{
         $query->where('created_at',">=", $date_from)
         ->where('created_at',"<=", $date_to);
       }]);
-    }])->where('_type', 2)->get();
+    }])/* ->where('_type', 2) */->get();
     $paid_methods = PaidMethod::all();
     $formas_pago = $paid_methods->map(function($method){
       $method->total = 0;
@@ -160,26 +160,15 @@ class VentasController extends Controller{
       $codes = array_column($products, 'code');
       $fac = new FactusolController();
       $cash__ =[];
-      /* return $cash_registers; */
       foreach($series as $serie){
         $sale = Sales::whereDate('created_at', '>','2021-01-10')->where("serie", $serie)->max('num_ticket');
         if(!$sale){
           $sale = 0;
         }
-        $fac_sales = $fac->getSales($sale, $serie);
+        $cash__[$serie] = $sale;
+        /* $fac_sales = $fac->getSales($sale, $serie);
         if($fac_sales){
           foreach($fac_sales as $venta){
-            /* $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
-            $index_caja = array_search($venta['_cash'], $cajas); */
-            /* array_push($cash__, [
-              "num_ticket" => $venta['num_ticket'],
-              "_cash" => $cash_registers[$venta['_workpoint']][0]['id'],
-              "total" => $venta['total'],
-              "created_at" => $venta['created_at'], 
-              "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
-              "_paid_by" => $venta['_paid_by'],
-              "name" => $venta['name']
-            ]); */
             $instance = Sales::create([
               "num_ticket" => $venta['num_ticket'],
               "_cash" => $cash_registers[$venta['_workpoint']][0]['id'],
@@ -190,47 +179,55 @@ class VentasController extends Controller{
               "name" => $venta['name'],
               "serie" => $venta['_cash']
             ]);
+            $toAttach = [];
             foreach($venta['body'] as $row){
               $index = array_search($row['_product'], $codes);
-              if($index === 0 || $index > 0){  
-                $instance->products()->attach($products[$index]['id'], [
-                "amount" => $row['amount'],
-                "price" => $row['price'],
-                "total" => $row['total'],
-                "costo" => $row['costo']
-                ]);
+              if($index === 0 || $index > 0){
+                $toAttach[$products[$index]['id']] = [
+                  "amount" => $row['amount'],
+                  "price" => $row['price'],
+                  "total" => $row['total'],
+                  "costo" => $row['costo']
+                ];
               }
             }
+            $instance->products()->attach($toAttach);
           }
-          /* return $cash__; */
-        }
+        } */
       }
       /* return $cash__; */
-      return response()->json(["ventas" => true]);
+      return response()->json(["ventas" => $cash__]);
         /* DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
             foreach($ventas as $venta){
-                $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
-                $index_caja = array_search($venta['_cash'], $cajas);
-                $instance = Sales::create([
-                    "num_ticket" => $venta['num_ticket'],
-                    "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
-                    "total" => $venta['total'],
-                    "created_at" => $venta['created_at'], 
-                    "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
-                    "_paid_by" => $venta['_paid_by'],
-                    "name" => $venta['name']
-                ]);
-                foreach($venta['body'] as $row){
-                    $index = array_search($row['_product'], $codes);
-                    if($index === 0 || $index > 0){  
-                        $instance->products()->attach($products[$index]['id'], [
-                        "amount" => $row['amount'],
-                        "price" => $row['price'],
-                        "total" => $row['total'],
-                        "costo" => $row['costo']
-                        ]);
-                    }
+              $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
+              $index_caja = array_search($venta['_cash'], $cajas);
+              $instance = Sales::create([
+                "num_ticket" => $venta['num_ticket'],
+                "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
+                "total" => $venta['total'],
+                "created_at" => $venta['created_at'], 
+                "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
+                "_paid_by" => $venta['_paid_by'],
+                "name" => $venta['name']
+              ]);
+              foreach($venta['body'] as $row){
+                $toAttach = [];
+                $index = array_search($row['_product'], $codes);
+                if($index === 0 || $index > 0){
+                  $toAttach[$products[$index]['id']] = [
+                    "amount" => $row['amount'],
+                    "price" => $row['price'],
+                    "total" => $row['total'],
+                    "costo" => $row['costo']
+                  ];
+                  $instance->products()->attach($products[$index]['id'], [
+                  "amount" => $row['amount'],
+                  "price" => $row['price'],
+                  "total" => $row['total'],
+                  "costo" => $row['costo']
+                  ]);
                 }
+              }
             }
         }); */
       return response()->json(["ventas" => false]);
