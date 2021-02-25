@@ -158,7 +158,6 @@ class VentasController extends Controller{
       $ventas = [];
       $products = Product::all()->toArray();
       $codes = array_column($products, 'code');
-      $fac = new FactusolController();
       $cash__ =[];
       foreach($series as $serie){
         $sale = Sales::whereDate('created_at', '>','2021-01-10')->where("serie", $serie)->max('num_ticket');
@@ -166,6 +165,7 @@ class VentasController extends Controller{
           $sale = 0;
         }
         $cash__[$serie] = $sale;
+        $fac = new FactusolController();
         $fac_sales = $fac->getSales($sale, $serie);
         if($fac_sales){
           foreach($fac_sales as $venta){
