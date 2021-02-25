@@ -93,53 +93,52 @@ class Kernel extends ConsoleKernel
             }
         })->everyFiveMinutes(); */
 
-        /* $schedule->call(function(){
-            $workpoints = WorkPoint::where('_type', 2)->get();
+        $schedule->call(function(){
             $clientes = Client::all()->toArray();
             $ids_clients = array_column($clientes, 'id');
             $cash_registers = CashRegister::all()->groupBy('_workpoint')->toArray();
-            $sale = Sales::whereDate('created_at', '>','2021-01-10')->max('num_ticket');
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/ventas/new");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,10);
-            $data = http_build_query(["num_sale" => $sale->num_ticket]);
-            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-            $ventas = json_decode(curl_exec($client), true);
-            curl_close($client);
-            if($ventas){
-                $products = Product::all()->toArray();
-                $codes = array_column($products, 'code');
-                DB::transaction(function() use ($ventas, $codes, $products, $cash_registers, $ids_clients){
-                    foreach($ventas as $venta){
-                        $cajas = array_column($cash_registers[$venta['_workpoint']], 'num_cash');
-                        $index_caja = array_search($venta['_cash'], $cajas);
+            $series = range(1,9);
+            $ventas = [];
+            $products = Product::all()->toArray();
+            $codes = array_column($products, 'code');
+            $cash__ =[];
+            foreach($series as $serie){
+                $sale = Sales::whereDate('created_at', '>','2021-01-10')->where("serie", $serie)->max('num_ticket');
+                if(!$sale){
+                    $sale = 0;
+                }
+                $cash__[$serie] = $sale;
+                $fac = new FactusolController();
+                $fac_sales = $fac->getSales($sale, $serie);
+                if($fac_sales){
+                    foreach($fac_sales as $venta){
                         $instance = Sales::create([
                             "num_ticket" => $venta['num_ticket'],
-                            "_cash" => $cash_registers[$venta['_workpoint']][$index_caja]['id'],
+                            "_cash" => $cash_registers[$venta['_workpoint']][0]['id'],
                             "total" => $venta['total'],
-                            "created_at" => $venta['created_at'],
+                            "created_at" => $venta['created_at'], 
                             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                             "_paid_by" => $venta['_paid_by'],
-                            "name" => $venta['name']
+                            "name" => $venta['name'],
+                            "serie" => $venta['_cash']
                         ]);
+                        $toAttach = [];
                         foreach($venta['body'] as $row){
                             $index = array_search($row['_product'], $codes);
-                            if($index === 0 || $index > 0){  
-                                $instance->products()->attach($products[$index]['id'], [
+                            if($index === 0 || $index > 0){
+                                $toAttach[$products[$index]['id']] = [
                                 "amount" => $row['amount'],
                                 "price" => $row['price'],
                                 "total" => $row['total'],
                                 "costo" => $row['costo']
-                                ]);
+                                ];
                             }
                         }
+                        $instance->products()->attach($toAttach);
                     }
-                });
+                }
             }
-        })->everyFiveMinutes(); */
+        })->everyTwoMinutes();
 
         $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
