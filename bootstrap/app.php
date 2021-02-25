@@ -103,6 +103,8 @@ $app->configure('mail');
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(Maatwebsite\Excel\ExcelServiceProvider::class);
 class_alias(Maatwebsite\Excel\ExcelServiceProvider::class, 'Excel');
+$app->register(Elibyy\TCPDF\ServiceProvider::class);
+class_alias('Elibyy\TCPDF\Facades\TCPDF', 'PDF');
 /* $app->alias('mailer', Illuminate\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class); */

@@ -28,7 +28,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [
-        'password', '_rol', '_wp_principal', 'remember_token', 'created_at', 'updated_at'
+        'password', '_wp_principal', 'remember_token', 'created_at', 'updated_at'
     ];
 
     protected $attributes = [
@@ -82,6 +82,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public function cyclecounts(){
         return $this->hasMany('App\CycleCount', '_created_by', 'id');
+    }
+
+    public function cyclecounts_responsable(){
+        return $this->belongsToMany('App\CycleCount', 'cyclecount_responsables', '_account', '_cyclecount');
     }
 
     /**

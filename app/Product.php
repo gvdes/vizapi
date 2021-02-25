@@ -7,7 +7,7 @@ class Product extends Model{
     
     protected $table = 'products';
     protected $fillable = ['code', 'name', 'description', 'stock', '_category', '_status', '_unit', '_provider', 'pieces', 'dimensions', 'weight'];
-    public $timestamps = false;
+    /* public $timestamps = false; */
     
     /*****************
      * Relationships *
@@ -57,6 +57,11 @@ class Product extends Model{
                     ->withPivot(['stock', 'stock_acc', 'details']);
     }
 
+    public function sales(){
+        return $this->belongsToMany('App\Sales', 'product_sold', '_product', '_sale')
+                    ->withPivot('amount', 'costo', 'price', 'total');
+    }
+
     public function attributes(){
         return $this->belongsToMany('App\CategoryAttribute', 'product_attributes', '_product', '_attribute')
                     ->withPivot('value');
@@ -75,7 +80,7 @@ class Product extends Model{
      */
     public function stocks(){
         return $this->belongsToMany('App\WorkPoint', 'product_stock', '_product', '_workpoint')
-                    ->withPivot('min', 'max', 'stock');
+                    ->withPivot('min', 'max', 'stock', 'gen', 'exh');
     }
 
     /**
@@ -83,10 +88,10 @@ class Product extends Model{
      */
 
     public function getDimensionsAttribute($value){
-        $values = json_decode($value);
-        $values->length = floatval($values->length) ?  floatval($values->length) : floatval(0);
-        $values->height = floatval($values->height) ?  floatval($values->height) : floatval(0);
-        $values->width = floatval($values->width) ?  floatval($values->width) : floatval(0);
+        $values = is_null($value) ? $value : json_decode($value);
+        $values->length =  is_null($values) ? floatval(0) : floatval($values->length);
+        $values->height = is_null($values) ? floatval(0) : floatval($values->height);
+        $values->width = is_null($values) ? floatval(0) : floatval($values->width);
         return $values;
     }
 }

@@ -37,10 +37,10 @@ class Account extends JsonResource{
                 return $this->pivot->_status;
             }), */
             'rol' => $this->whenLoaded('rol'),
-            /* '_rol' => $this->when(!$this->workpoint, function(){
+            /* '_rol' => $this->when($this->rol, function(){
                 return $this->pivot->_rol;
-            }),
-            '_workpoint' => $this->when(!$this->workpoint, function(){
+            }), */
+            /* '_workpoint' => $this->when(!$this->workpoint, function(){
                 return $this->pivot->_workpoint;
             }), */
             'workpoint' => $this->whenLoaded('workpoint'),

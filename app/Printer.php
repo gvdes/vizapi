@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Printer extends Model{
     
-    protected $table = 'printer';
+    protected $table = 'printers';
     protected $fillable = ['name', 'ip', 'preferences', '_workpoint', '_type'];
     public $timestamps = false;
     

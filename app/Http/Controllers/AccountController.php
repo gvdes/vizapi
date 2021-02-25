@@ -18,7 +18,7 @@ class AccountController extends Controller{
      * @return void
      */
     public function __construct(){
-        //
+        $this->account = Auth::payload()['workpoint'];
     }
     
     public function checkData($request){
@@ -306,5 +306,68 @@ class AccountController extends Controller{
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
+    }
+
+    public function deletePermissions(Request $request){
+        $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
+        $total = 0;
+        foreach($accounts as $account){
+            $account->permissions()->detach($request->permissions);
+            $total++;
+        }
+        return response()->json(["changed" => $total]);
+    }
+
+    public function addPermissions(Request $request){
+        if(isset($request->_workpoint)){
+            $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
+        }else{
+            $accounts = Account::where('_rol', $request->_rol)->get();
+        }
+        $total = 0;
+        foreach($accounts as $account){
+            $account->permissions()->syncWithoutDetaching($request->permissions);
+            $total++;
+        }
+        return response()->json(["changed" => $total]);
+    }
+
+    public function addAcceso(Request $request){
+        $users = User::where('_rol', 1)->get();
+        $total = 0;
+        foreach($users as $user){
+            $account = \App\Account::where([
+                ["_account", $user->id],
+                ["_workpoint", $request->_workpoint]
+            ])->first();
+            if(!$account){
+                $account = \App\Account::create([
+                    '_account' => $user->id,
+                    '_workpoint' => $request->_workpoint,
+                    '_rol' => $request->rol,
+                    '_status' => 1,
+                ]);
+                $permissions = \App\Roles::with('permissions_default')->find($account->_rol);
+                //Asociar permisos con cuentas
+                $permissions_default = collect($permissions->permissions_default);
+                $insert = $permissions_default->map(function($permission){
+                    return $permission->id;
+                })->toArray();
+                $account->permissions()->attach($insert);
+                $total++;
+            }
+        }
+        return response()->json(["add" => $total]);
+    }
+
+    public function getUsers(Request $request){
+        if(isset($request->_rol)){
+            $users = User::whereIn("_rol", $request->_rol)->whereHas('workpoints', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            })->orderBy('names', 'asc')->get();
+        }else{
+            $users = User::orderBy('names', 'asc')->get();
+        }
+        return response()->json($users);
     }
 }
