@@ -83,7 +83,7 @@ class LocationController extends Controller{
      */
     public function createSection(Request $request){
         $sections = [];
-        if(isset($request->autoincrement) || $request->autoincrement || $request->items > 1){
+        if($request->autoincrement || $request->items > 1){
             $increment = true;
         }else{
             $increment = false;
@@ -94,7 +94,7 @@ class LocationController extends Controller{
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
-                if($increment){
+                if(!$increment){
                     $index = '';
                 }
                 $section = \App\CellerSection::create([
@@ -116,7 +116,7 @@ class LocationController extends Controller{
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
                 $index = $siblings+$i+1;
-                if($increment){
+                if(!$increment){
                     $index = '';
                 }
                 $section = \App\CellerSection::create([
