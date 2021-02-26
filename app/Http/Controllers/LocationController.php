@@ -732,13 +732,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
-                "familia" => $categories[$key]->name,
-                "categoria" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
                 "locations" => $locations,
@@ -763,13 +770,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripcion" => $producto->description,
-                "Familia" => $categories[$key]->name,
-                "CategorÍa" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Ubicaciones" => $locations
@@ -798,13 +812,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Categoría" => $producto->category->name,
-                "Familia" => $categories[$key]->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Ubicaciones" => $locations
@@ -833,13 +854,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $categories[$key]->name,
-                "Categoría" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Ubicaciones" => $locations
@@ -868,13 +896,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Categoría" => $producto->category->name,
-                "Familia" => $categories[$key]->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
                 "locations" => $locations
@@ -899,13 +934,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $categories[$key]->name,
-                "Categoría" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas por caja" => $producto->pieces,
                 "GENERAL" => $producto->stocks[0]->pivot->gen,
                 "EXHIBICION" => $producto->stocks[0]->pivot->exh,
@@ -947,13 +989,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $categories[$key]->name,
-                "Categoría" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "CEDIS" => $producto->stocks[0]->pivot->gen,
                 "GENERAL" => $producto->stocks[0]->pivot->exh,
@@ -976,13 +1025,20 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            $key = array_search($producto->category->root, $arr_categories);
+            if($product->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $categories[$key]->name,
-                "Categoría" => $producto->category->name,
+                "Familia" => $familia,
+                "Categoría" => $category,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Minimo" => $producto->stocks[0]->pivot->min,
                 "Máximo" => $producto->stocks[0]->pivot->max
