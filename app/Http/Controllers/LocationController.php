@@ -964,7 +964,11 @@ class LocationController extends Controller{
             $query->where([["gen", ">", 0], ["_workpoint", 1]]);
         })->get();
 
-        $general = Product::with('category')->whereHas('stocks', function($query){
+        $general = Product::with(['category', 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
         $generalVsCedis = [];
@@ -977,13 +981,6 @@ class LocationController extends Controller{
                 array_push($generalVsCedis, $product);
             }
         }
-        /* $productos = Product::with(["stocks" => function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
-            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        }])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", 1]])
-            ->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
-        })->get(); */
 
         $res = collect($generalVsCedis)->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
