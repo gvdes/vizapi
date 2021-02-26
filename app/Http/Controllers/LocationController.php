@@ -733,7 +733,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -771,7 +771,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -813,7 +813,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -855,7 +855,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -897,7 +897,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -935,7 +935,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
@@ -990,7 +990,7 @@ class LocationController extends Controller{
                 return $res.$location->path.",";
             }, '');
             if($producto->category->deep == 0){
-                $familia = $producto->category->root;
+                $familia = $producto->category->name;
                 $category = "";
             }else{
                 $key = array_search($producto->category->root, $arr_categories);
