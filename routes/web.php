@@ -67,6 +67,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/stocksFromStores', 'LocationController@getStocksFromStores');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
+        $router->post('/updateCeller', 'LocationController@updateCeller');
+        $router->post('/updateSection', 'LocationController@updateSection');
         $router->post('/remove', 'LocationController@removeLocations');
         $router->post('/deleteSection', 'LocationController@deleteSection');
         $router->get('/sinMaximos', 'LocationController@sinMaximos');

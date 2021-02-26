@@ -42,6 +42,34 @@ class LocationController extends Controller{
         ]);
     }
 
+    public function updateCeller(Request $request){
+        $celler = \App\Celler::find($request->_celler);
+        if($celler){
+            $celler->name = isset($request->name) ? $request->name : $celler->name;
+            $celler->_workpoint = isset($request->_workpoint) ? $request->_workpoint : $celler->_workpoint;
+            $celler->_type = isset($request->_type) ? $request->_type : $celler->_type;
+            $res = $celler->save();
+            return response()->json([ 'success' => $res ]);
+        }
+        return response()->json([ 'success' => false ]);
+    }
+
+    public function updateSection(Request $request){
+        $section = CellerSection::find($request->_section);
+        if($section){
+            $section->name = isset($request->name) ? $request->name : $section->name;
+            $section->alias = isset($request->alias) ? $request->alias : $section->alias;
+            $section->path = isset($request->path) ? $request->path : $section->path;
+            $section->root = isset($request->root) ? $request->root : $section->root;
+            $section->deep = isset($request->deep) ? $request->deep : $section->deep;
+            $section->details = isset($request->details) ? $request->details : $section->details;
+            $section->root = isset($request->root) ? $request->root : $section->root;
+            $res = $section->save();
+            return response()->json([ 'success' => $res ]);
+        }
+        return response()->json([ 'success' => false ]);
+    }
+
     /**
      * Create section
      * @param object request
@@ -408,7 +436,7 @@ class LocationController extends Controller{
         $arr_general = array_column($general->toArray(), 'code');
         foreach($cedis as $product){
             $key = array_search($product->code, $arr_general);
-            if($key === 0 && $key>0){
+            if($key === 0 || $key>0){
                 //exist
             }else{
                 array_push($generalVsCedis, $product);
@@ -901,7 +929,7 @@ class LocationController extends Controller{
         $arr_general = array_column($general->toArray(), 'code');
         foreach($cedis as $product){
             $key = array_search($product->code, $arr_general);
-            if($key === 0 && $key>0){
+            if($key === 0 || $key>0){
                 //exist
             }else{
                 array_push($generalVsCedis, $product);
