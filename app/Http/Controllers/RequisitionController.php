@@ -546,9 +546,9 @@ class RequisitionController extends Controller{
         /**OBTENEMOS STOCKS */
         $toSupply = [];
         foreach($products as $key => $product){
-            $stock = $product->stocks[0]->gen;
-            $min = $product->stocks[0]->min;
-            $max = $product->stocks[0]->max;
+            $stock = $product->stocks[0]->pivot->gen;
+            $min = $product->stocks[0]->pivot->min;
+            $max = $product->stocks[0]->pivot->max;
             if($max>$stock){
                 $required = $max - $stock;
             }else{
