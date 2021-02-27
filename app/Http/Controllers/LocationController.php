@@ -140,8 +140,6 @@ class LocationController extends Controller{
 
     public function deleteSection(Request $request){
         $section = CellerSection::find($request->_section);
-        /* $section = CellerSection::where(["_celler" => 1, "root" => 0])->get();
-        return response()->json($section); */
         if($section){
             $section->children = $this->getDescendentsSection($section);
             $ids = $this->getIdsTree($section);
@@ -168,7 +166,7 @@ class LocationController extends Controller{
                 $sections = CellerSection::has('products')->whereIn('id', $ids)->get();
                 /* $products_counted = Product::whereHas('locations', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
-                })->whereIn('_category', $ids_categories)->get(); */
+                })->whereIn('_category', $ids_categories)->count(); */
                 foreach($sections as $location){
                     array_push($res, $location->products()->whereIn('_category', $ids_categories)->detach());
                 }
@@ -751,6 +749,8 @@ class LocationController extends Controller{
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
+                "máximo" => $producto->stocks[0]->pivot->máximo,
+                "minimo" => $producto->stocks[0]->pivot->minimo,
                 "locations" => $locations,
             ];
         })->toArray();
