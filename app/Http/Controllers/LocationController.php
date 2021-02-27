@@ -1025,7 +1025,7 @@ class LocationController extends Controller{
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            if($product->category->deep == 0){
+            if($producto->category->deep == 0){
                 $familia = $producto->category->root;
                 $category = "";
             }else{
