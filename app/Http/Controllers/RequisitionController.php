@@ -541,7 +541,7 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)->get();
+        }, '>', 0)->where('_status', 1)->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
