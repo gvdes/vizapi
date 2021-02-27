@@ -89,7 +89,7 @@ class LocationController extends Controller{
             $increment = false;
         }
         if($request->root>0){
-            $siblings = \App\CellerSection::where([['root', $request->root], ["alias", "%LIKE%", "%".$request->alias."%"]])->count();
+            $siblings = \App\CellerSection::where([['root', $request->root], ["alias", "LIKE", "%".$request->alias."%"]])->count();
             $root = \App\CellerSection::find($request->root);
             $items = isset($request->items) ? $request->items : 1;
             for($i = 0; $i<$items; $i++){
@@ -164,9 +164,11 @@ class LocationController extends Controller{
                 $section->children = $this->getDescendentsSection($section);
                 $ids = $this->getIdsTree($section);
                 $category->children = $this->getDescendentsCategory($category);
-                /* return $category; */
                 $ids_categories = $this->getIdsTree($category);
                 $sections = CellerSection::has('products')->whereIn('id', $ids)->get();
+                /* $products_counted = Product::whereHas('locations', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                })->whereIn('_category', $ids_categories)->get(); */
                 foreach($sections as $location){
                     array_push($res, $location->products()->whereIn('_category', $ids_categories)->detach());
                 }
@@ -196,7 +198,8 @@ class LocationController extends Controller{
             },'>', 0)->get();
         }
 
-        return response()->json(["res" => true]);
+        $products_counted = 0;
+        return response()->json(["res" => true, "products" => $products_counted]);
     }
 
     /**
