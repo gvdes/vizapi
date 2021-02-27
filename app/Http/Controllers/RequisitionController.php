@@ -529,7 +529,6 @@ class RequisitionController extends Controller{
 
     public function getToSupplyFromStore($workpoint_id){
         $workpoint = WorkPoint::find($workpoint_id);
-        /* $categories = range(37,57)array_merge(range(37,57), range(130,184)); */
         $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
@@ -542,16 +541,12 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)/* ->whereIn('_category', $categories) */->get();
+        }, '>', 0)->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
         foreach($products as $key => $product){
-            /* $stock = intval($stocks[$key]['stock'])>=0 ? intval($stocks[$key]['stock']) : 0; */
             $stock = $product->stocks[0]->gen;
-            //$max = intval($product->stocks[0]->pivot->max);
-            /* $max = intval($stocks[$key]['max']);
-            $min = intval($stocks[$key]['min']); */
             $min = $product->stocks[0]->min;
             $max = $product->stocks[0]->max;
             if($max>$stock){
@@ -571,20 +566,6 @@ class RequisitionController extends Controller{
             }
         }
         return ["products" => $toSupply];
-        /* $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,80);
-        $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        $stocks = json_decode(curl_exec($client), true);
-        if($stocks){
-            $toSupply = [];
-            
-        }
-        return ["msg" => "No se tenido conexión con la tienda"]; */
     }
 
     public function getPedidoFromStore($folio, $workpoint_id){
