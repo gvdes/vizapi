@@ -737,7 +737,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -777,7 +777,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -819,7 +819,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -861,7 +861,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -903,7 +903,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -941,7 +941,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -993,7 +993,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -1029,7 +1029,7 @@ class LocationController extends Controller{
                 $familia = $producto->category->root;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories);
+                $key = array_search($producto->category->root, $arr_categories, true);
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
@@ -1124,7 +1124,8 @@ class LocationController extends Controller{
             $notFound = [];
             foreach($paths as $location){
                 $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
-                $numeros = explode("-",preg_split('/^\D/', $location)[1]);
+                $numeros = count(preg_split('/^\D/', $location))>1 ? explode("-",preg_split('/^\D/', $location)[1]) : "";
+                continue;
                 if(count($numeros)>1){
                     $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
                 }else{
@@ -1158,7 +1159,7 @@ class LocationController extends Controller{
             }
 
         }
-        return response()->json(["success" => $success, "fail" => $fail]);
+        return response()->json(["success" => $success, "fail" => $fail, "notFound" => $notFound]);
     }
     
     public function getSimilars(){
