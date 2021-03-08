@@ -1018,7 +1018,7 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                "CEDIS" => $producto->stocks[0]->pivot->stock,
+                "CEDIS" => intval($producto->stocks[0]->pivot->stock),
                 "GENERAL" => $producto->stocks[0]->pivot->exh,
                 "Ubicaciones" => $locations
             ];
