@@ -971,11 +971,15 @@ class LocationController extends Controller{
         $arr_categories = array_column($categories->toArray(), "id");
 
         if($this->account->_workpoint == 1){
-            $cedis = Product::with('category')->whereHas('stocks', function($query){
+            $cedis = Product::with(['category', 'stocks' => function($query){
+                $query->where("_workpoint", 2);
+            }])->whereHas('stocks', function($query){
                 $query->where([["stock", ">", 0], ["_workpoint", 2]]);
             })->get();
         }else{
-            $cedis = Product::with('category')->whereHas('stocks', function($query){
+            $cedis = Product::with(['category', 'stocks' => function($query){
+                $query->where("_workpoint", 1);
+            }])->whereHas('stocks', function($query){
                 $query->where([["gen", ">", 0], ["_workpoint", 1]]);
             })->get();
         }
