@@ -971,7 +971,7 @@ class LocationController extends Controller{
         $arr_categories = array_column($categories->toArray(), "id");
         if($this->account->_workpoint == 1){
             $cedis = Product::whereHas('stocks', function($query){
-                $query->where([["gen", ">", 0], ["_workpoint", 2]]);
+                $query->where([["stock", ">", 0], ["_workpoint", 2]]);
             })->get();
         }else{
             $cedis = Product::whereHas('stocks', function($query){
@@ -1027,7 +1027,7 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                "CEDIS" => $producto->stocks[0]->pivot->stock/* >0 ? $producto->stocks[0]->pivot->gen : $producto->stocks[0]->pivot->stock */,
+                "CEDIS" => $producto->stocks[0]->pivot->stock,
                 "GENERAL" => $producto->stocks[0]->pivot->exh,
                 "Ubicaciones" => $locations
             ];
