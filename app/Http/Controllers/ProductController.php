@@ -463,13 +463,13 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        if(isset($request->check_stock) && $request->check_stock){
+        if(isset($request->with_stock) && $request->with_stock){
             $query->with(['stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }
 
-        if(isset($request->check_locations) && $request->check_locations){
+        if(isset($request->with_locations) && $request->with_locations){
             $query->with(['locations' => function($query){
                 $query->whereHas('celler', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
@@ -477,7 +477,7 @@ class ProductController extends Controller{
             }]);
         }
         
-        if(isset($request->with_stock)){
+        if(isset($request->check_stock)){
             if($request->with_stock){
                 $query = $query->whereHas('stocks', function(Builder $query){
                     $query->where('_workpoint', $this->account->_workpoint)->where('stock', '>', 0);
@@ -500,7 +500,7 @@ class ProductController extends Controller{
         }else{
             $products = $query->get();
         }
-
+        /* return response()->json($products); */
         return response()->json(ProductResource::collection($products));
     }
 

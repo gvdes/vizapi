@@ -125,7 +125,13 @@ class VentasController extends Controller{
 
     $sales = Sales::whereHas("cash", function($query) use($workpoint){
       $query->where('_workpoint', $workpoint->id);
-    })->with(['products'])->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
+    })->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
+
+    $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
+      $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
+        $query->where('_workpoint', $workpoint->id);
+      });
+    })->get();
 
     $metodos_pago = collect($sales->reduce(function($res, $sale){
       $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->total;
@@ -144,7 +150,8 @@ class VentasController extends Controller{
         "tickets" => $tickets,
         "ticket_promedio" => $venta/($tickets == 0 ? 1 : $tickets),
         "metodos_pago" => $metodos_pago,
-        "cajas" => CashResource::collection($cash)
+        "cajas" => CashResource::collection($cash),
+        "products" => $products
       ]
     ]);
   }
