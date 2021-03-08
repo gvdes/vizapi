@@ -969,15 +969,6 @@ class LocationController extends Controller{
     public function generalVsCedis(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
-        if($this->account->_workpoint == 1){
-            $cedis = Product::whereHas('stocks', function($query){
-                $query->where([["stock", ">", 0], ["_workpoint", 2]]);
-            })->get();
-        }else{
-            $cedis = Product::whereHas('stocks', function($query){
-                $query->where([["gen", ">", 0], ["_workpoint", 1]]);
-            })->get();
-        }
 
         if($this->account->_workpoint == 1){
             $cedis = Product::with('category')->whereHas('stocks', function($query){
