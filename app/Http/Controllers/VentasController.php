@@ -223,14 +223,14 @@ class VentasController extends Controller{
           $client = curl_init();
           curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/new");
           curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client, CURLOPT_POST, 1);  
-            curl_setopt($client,CURLOPT_TIMEOUT,10);
-            $data = http_build_query(["cash" => $caja_x_ticket]);
-            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-            $ventas = json_decode(curl_exec($client), true);
-            curl_close($client);
-            $resumen[$workpoint->alias] = $caja_x_ticket;
+          curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($client, CURLOPT_POST, 1);  
+          curl_setopt($client,CURLOPT_TIMEOUT,10);
+          $data = http_build_query(["cash" => $caja_x_ticket]);
+          curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+          $ventas = json_decode(curl_exec($client), true);
+          curl_close($client);
+          $resumen[$workpoint->alias] = $caja_x_ticket;
           if($ventas){
             $a++;
             $products = Product::all()->toArray();
@@ -271,17 +271,62 @@ class VentasController extends Controller{
       "time" => microtime(true) - $start,
       "a" => $a,
       "resumen" => $resumen
-      ]);
-    /* $res = $workpoints->map(function($workpoint){
-      $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
-      $workpoint->cajas =$cash_registers->map(function($cash){
-        $cash->ultima_venta = Sales::where('_cash', $cash->id)->max('num_ticket');
-        return $cash;
-      });
-      return $workpoint;
-    });
+    ]);
+  }
 
-    return response()->json($res); */
+  public function getVentas2019(Request $request){
+    $workpoint = WorkPoint::find(9);
+    $start = microtime(true);
+    $a = 0;
+    $clientes = Client::all()->toArray();
+    $ids_clients = array_column($clientes, 'id');
+    $cash_registers = CashRegister::where('_workpoint', $workpoint->id)->get();
+    $client = curl_init();
+    curl_setopt($client, CURLOPT_URL, "localhost/access/public/ventas");
+    curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($client,CURLOPT_TIMEOUT,10);
+    $ventas = json_decode(curl_exec($client), true);
+    curl_close($client);
+    if($ventas){
+      $a++;
+      $products = Product::all()->toArray();
+      $codes = array_column($products, 'code');
+      $cajas = array_column($cash_registers->toArray(), 'num_cash');
+      DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
+        foreach($ventas as $venta){
+          $index_caja = array_search($venta['_cash'], $cajas);
+          $instance = Sales::create([
+            "num_ticket" => $venta['num_ticket'],
+            "_cash" => $cash_registers[$index_caja]['id'],
+            "total" => $venta['total'],
+            "created_at" => $venta['created_at'],
+            "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
+            "_paid_by" => $venta['_paid_by'],
+            "name" => $venta['name'],
+          ]);
+          $insert = [];
+          foreach($venta['body'] as $row){
+            $index = array_search($row['_product'], $codes);
+            if($index === 0 || $index > 0){
+              $insert[$products[$index]['id']] = [
+                "amount" => $row['amount'],
+                "price" => $row['price'],
+                "total" => $row['total'],
+                "costo" => $row['costo']
+              ];
+            }
+          }
+          $instance->products()->attach($insert);
+        }
+      });
+    }
+
+    return response()->json([
+      "success" => true,
+      "time" => microtime(true) - $start,
+      "a" => $a
+    ]);
   }
 
   public function VentasxArticulos(Request $request){
@@ -304,12 +349,24 @@ class VentasController extends Controller{
 
     if(isset($request->products)){
       $p = array_column($request->products,"code")/* $request->products */;
-      $products = Product::whereIn('code', $p)
+      $products = [];
+      $notFound = [];
+      /* foreach($p as $pp){
+        $res = Product::where('code', $pp)->orWhere('name', $pp)
+        ->with(['sales' => function($query) use($date_from, $date_to){
+          $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+        }])->first();
+        if($res){
+          array_push($products, $res);
+        }else{
+          array_push($notFound, $pp);
+        }
+      } */
+      $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();
     }else{
-      /* $cash = CashRegister::where('_workpoint', $request->_workpoint)->get()->toArray(); */
       $cash = CashRegister::all()->toArray();
       $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));

@@ -448,6 +448,17 @@ class ProductController extends Controller{
             });
         }
 
+        /* if(isset($request->_celler)){
+            $locations = \App\CellerSection::where([['_celler', $request->_celler],['deep', 0]])->get();
+            $ids = $locations->map(function($location){
+                return $this->getSectionsChildren($location->id);
+            });
+            $_locations = array_merge(...$ids);
+            $query = $query->whereHas('locations', function( Builder $query) use($_locations){
+                $query->whereIn('_location', $_locations);
+            });
+        } */
+
         if(isset($request->check_sales)){
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }

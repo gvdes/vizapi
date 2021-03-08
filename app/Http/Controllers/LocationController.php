@@ -426,9 +426,15 @@ class LocationController extends Controller{
         $generalVsExhibicion = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
-        $cedis = Product::whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", 1]]);
-        })->get();
+        if($this->account->_workpoint == 1){
+            $cedis = Product::whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 2]]);
+            })->get();
+        }else{
+            $cedis = Product::whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 1]]);
+            })->get();
+        }
 
         $general = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -963,9 +969,25 @@ class LocationController extends Controller{
     public function generalVsCedis(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
-        $cedis = Product::with('category')->whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", 1]]);
-        })->get();
+        if($this->account->_workpoint == 1){
+            $cedis = Product::whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 2]]);
+            })->get();
+        }else{
+            $cedis = Product::whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 1]]);
+            })->get();
+        }
+
+        if($this->account->_workpoint == 1){
+            $cedis = Product::with('category')->whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 2]]);
+            })->get();
+        }else{
+            $cedis = Product::with('category')->whereHas('stocks', function($query){
+                $query->where([["gen", ">", 0], ["_workpoint", 1]]);
+            })->get();
+        }
 
         $general = Product::with(['category', 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -974,6 +996,7 @@ class LocationController extends Controller{
         }])->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
+
         $generalVsCedis = [];
         $arr_general = array_column($general->toArray(), 'code');
         foreach($cedis as $product){
@@ -1125,7 +1148,8 @@ class LocationController extends Controller{
             foreach($paths as $location){
                 $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
                 $numeros = count(preg_split('/^\D/', $location))>1 ? explode("-",preg_split('/^\D/', $location)[1]) : "";
-                continue;
+                /* array_push($found, gettype($numeros)); */
+
                 if(count($numeros)>1){
                     $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
                 }else{
@@ -1157,9 +1181,8 @@ class LocationController extends Controller{
             }else{
                 $fail++;
             }
-
         }
-        return response()->json(["success" => $success, "fail" => $fail, "notFound" => $notFound]);
+        return response()->json(["success" => $success, "fail" => $fail, "notFound" => $notFound, "res" => $res]);
     }
     
     public function getSimilars(){

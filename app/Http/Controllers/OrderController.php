@@ -257,7 +257,6 @@ class OrderController extends Controller{
             }]);
         }, 'history']);
         $cellerPrinter = new MiniPrinterController("192.168.1.10", 9100);
-        /* $res = $cellerPrinter->ticket($order); */
         $res = $cellerPrinter->orderTicket($order);
         if($res){
             $order->printed = $order->printed +1;
