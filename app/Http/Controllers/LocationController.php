@@ -1055,7 +1055,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])->orWhere([["gen", "<", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
 
         $generalVsCedis = [];
@@ -1089,7 +1089,7 @@ class LocationController extends Controller{
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "CEDIS" => intval($producto->stocks[0]->pivot->stock),
-                "GENERAL" => $producto->stocks[0]->pivot->gen,
+                "GENERAL" => 0,
                 "Ubicaciones" => $locations
             ];
         })->toArray();
