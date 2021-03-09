@@ -451,14 +451,16 @@ class LocationController extends Controller{
             }
         }
 
-        $sinMaximos = Product::with(["stocks" => function($query){
-            $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        }])->whereHas('stocks', function($query){
+        $sinMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
 
         $conMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
+
+        $negativos = Product::whereHas('stocks', function($query){
+            $query->where([["stock", "<", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
 
         return response()->json([
@@ -473,7 +475,8 @@ class LocationController extends Controller{
             "withoutStock" => [
                 "stock" => $withoutStock,
                 "withLocation" => $withLocationWithoutStock,
-                "generalVsCedis" => count($generalVsCedis)
+                "generalVsCedis" => count($generalVsCedis),
+                "negativos" => $negativos
             ],
             "products" => $counterProducts,
             "connection" => false
@@ -720,6 +723,14 @@ class LocationController extends Controller{
                 $res = $this->generalVsCedis();
                 $name = "generalVsCedis";
                 break;
+            case 9:
+                $res = $this->conMaximos();
+                $name = "conMaximo";
+                break;
+            case 10:
+                $res = $this->negativos();
+                $name = "negativos";
+                break;
             default:
                 $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
                 $name = "noFound";
@@ -762,6 +773,46 @@ class LocationController extends Controller{
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
                 "stock" => $producto->stocks[0]->pivot->stock,
+                "máximo" => $producto->stocks[0]->pivot->max,
+                "minimo" => $producto->stocks[0]->pivot->min,
+                "locations" => $locations,
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function negativos(){
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", "<", "0"], ["_workpoint", $this->account->_workpoint]]);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
+        }, 'category'])->whereHas('stocks', function($query){
+            $query->where([["stock", "<", "0"], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
+            if($producto->category->deep == 0){
+                $familia = $producto->category->name;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "piezas x caja" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->gen,
                 "máximo" => $producto->stocks[0]->pivot->max,
                 "minimo" => $producto->stocks[0]->pivot->min,
                 "locations" => $locations,
@@ -1038,7 +1089,7 @@ class LocationController extends Controller{
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
                 "CEDIS" => intval($producto->stocks[0]->pivot->stock),
-                "GENERAL" => $producto->stocks[0]->pivot->exh,
+                "GENERAL" => $producto->stocks[0]->pivot->gen,
                 "Ubicaciones" => $locations
             ];
         })->toArray();
@@ -1052,6 +1103,42 @@ class LocationController extends Controller{
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->get();
+
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
+            if($producto->category->deep == 0){
+                $familia = $producto->category->root;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
+            return [
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "Stock" => $producto->stocks[0]->pivot->stock,
+                "Minimo" => $producto->stocks[0]->pivot->min,
+                "Máximo" => $producto->stocks[0]->pivot->max
+            ];
+        })->toArray();
+        
+        return $res;
+    }
+
+    public function conMaximos(){
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $productos = Product::with(["stocks" => function($query){
+            $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        }, 'category'])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->get();
 
         $res = $productos->map(function($producto) use($categories, $arr_categories){
