@@ -191,7 +191,7 @@ class LocationController extends Controller{
                 $category->children = $this->getDescendentsCategory($category);
                 $ids = $this->getIdsTree($category);
             }
-            $productos = Product::whereIn('_category', $ids)->whereHas('locations', function($query) use($ids){
+            $productos = Product::whereIn('_category', $ids)->whereHas('locations', function($query){
                 $query->whereIn('_location', $ids);
             },'>', 0)->get();
         }
@@ -422,7 +422,8 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'<=',0)->count();
+        },'>',0)->count();
+
         $generalVsExhibicion = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
@@ -455,13 +456,19 @@ class LocationController extends Controller{
         }])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->count();
+
+        $conMaximos = Product::whereHas('stocks', function($query){
+            $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+        })->count();
+
         return response()->json([
             "withStock" => [
                 "stock" => $withStock,
                 "withLocation" => $withLocation,
                 "withoutLocation" => $withoutLocation,
                 "generalVsExhibicion" => $generalVsExhibicion,
-                "sinMaximos" => $sinMaximos
+                "sinMaximos" => $sinMaximos,
+                "conMaximos" => $conMaximos
             ],
             "withoutStock" => [
                 "stock" => $withoutStock,
@@ -920,7 +927,7 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
+                "stock" => $producto->stocks[0]->pivot->gen,
                 "locations" => $locations
             ];
         })->toArray();
@@ -973,12 +980,20 @@ class LocationController extends Controller{
         if($this->account->_workpoint == 1){
             $cedis = Product::with(['category', 'stocks' => function($query){
                 $query->where("_workpoint", 2);
+            }, 'locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', 2);
+                });
             }])->whereHas('stocks', function($query){
                 $query->where([["stock", ">", 0], ["_workpoint", 2]]);
             })->get();
         }else{
             $cedis = Product::with(['category', 'stocks' => function($query){
                 $query->where("_workpoint", 1);
+            }, 'locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', 1);
+                });
             }])->whereHas('stocks', function($query){
                 $query->where([["gen", ">", 0], ["_workpoint", 1]]);
             })->get();

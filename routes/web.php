@@ -170,6 +170,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/lastVentas', 'VentasController@getLastVentas');
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
+            $router->post('/tiendasXArticulos', 'VentasController@tiendasXArticulos');
         });
 
         $router->group(['prefix' => 'test'], function () use ($router){

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Resources\Cash as CashResource;
+use App\Exports\WithMultipleSheetsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\WorkPoint;
 use App\Product;
 use App\CashRegister;
@@ -127,12 +129,6 @@ class VentasController extends Controller{
       $query->where('_workpoint', $workpoint->id);
     })->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get();
 
-    $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
-      $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
-        $query->where('_workpoint', $workpoint->id);
-      });
-    })->get();
-
     $metodos_pago = collect($sales->reduce(function($res, $sale){
       $res[$sale->_paid_by-1]->total = $res[$sale->_paid_by-1]->total + $sale->total;
       return $res;
@@ -150,10 +146,69 @@ class VentasController extends Controller{
         "tickets" => $tickets,
         "ticket_promedio" => $venta/($tickets == 0 ? 1 : $tickets),
         "metodos_pago" => $metodos_pago,
-        "cajas" => CashResource::collection($cash),
-        "products" => $products
+        "cajas" => CashResource::collection($cash)
       ]
     ]);
+  }
+
+  public function tiendasXArticulos(Request $request){
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+    $workpoint = WorkPoint::find($request->_workpoint);
+    $categories = \App\ProductCategory::where('deep', 1)->get();
+    $result = [];
+    $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
+      $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
+        $query->where('_workpoint', $workpoint->id);
+      });
+    })->with(["sales" => function($query) use($workpoint, $date_from, $date_to){
+      $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
+        $query->where('_workpoint', $workpoint->id);
+      });
+    }, 'category'])->get()->map(function($product){
+      $product->venta = $product->sales->sum(function($product){
+        return $product->pivot->total;
+      });
+      $product->piezas = $product->sales->sum(function($product){
+        return $product->pivot->amount;
+      });
+
+      $product->costos = $product->sales->sum(function($product){
+        return $product->pivot->costo;
+      });
+      
+      $product->tickets = count($product->sales);
+
+      $product->costoPromedio = $product->costos/$product->tickets;
+
+      return $product;
+    })->groupBy(function($product){
+      if($product->category->deep == 0){
+        return $product->category->id;
+      }else{
+        return $product->category->root;
+      }
+    });
+    return Excel::download($products, /* $name. */"prueba.xlsx");
+    return response()->json([
+      "id" => $workpoint->id,
+      "name" => $workpoint->name,
+      "alias" => $workpoint->alias,
+      "products" => $products,
+    ]);
+    
+    return response()->json($result);
   }
 
   public function getVentas(Request $request){
@@ -373,16 +428,22 @@ class VentasController extends Controller{
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();
+      /* return response()->json([$notFound, $p]); */
     }else{
       $cash = CashRegister::all()->toArray();
-      $products = Product::whereIn('_category', range(37,57))->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
+      $products = Product::whereHas('sales', function($query) use($date_from, $date_to, $cash){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
+      })->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       }])->get();
     }
-
-    $result = $products->map(function($product) use($workpoints){
+    
+    $categories = \App\ProductCategory::all();
+    $arr_categories = array_column($categories->toArray(), "id");
+    
+    $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
       $desgloce = $workpoints->map(function($workpoint) use($product){
         $vendidos = $product->sales->reduce(function($total, $sale) use($workpoint){
           if($sale->cash->_workpoint == $workpoint->id){
@@ -392,22 +453,30 @@ class VentasController extends Controller{
           }
         }, 0);
         return [$workpoint->alias => $vendidos];
-      });
+      })->values()->all();
       $vendidos = $product->sales->reduce(function($total, $sale){
         return $total + $sale->pivot->amount;
       }, 0);
-
+      if($product->category->deep == 0){
+          $familia = $product->category->name;
+          $category = "";
+      }else{
+          $key = array_search($product->category->root, $arr_categories, true);
+          $familia = $categories[$key]->name;
+          $category = $product->category->name;
+      }
       $tickets = count($product->sales->toArray());
       $a = [
-        "code" => $product->code,
-        "name" => $product->name,
-        "description" => $product->description,
-        "pieces" => $product->pieces,
-        "total" => $vendidos,
-        "tickets" => $tickets,
-        "variants" => $product->variants
+        "Modelo" => $product->code,
+        "Código" => $product->name,
+        "Descripción" => $product->description,
+        "Piezas por caja" => $product->pieces,
+        "Familia" => $familia,
+        "Categoría" => $category,
+        "Total" => $vendidos,
+        "tickets" => $tickets
       ];
-      return array_merge($a, $desgloce->toArray());
+      return array_merge($desgloce, $a);
     });
 
     return response()->json($result);
