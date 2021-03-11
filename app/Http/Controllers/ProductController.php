@@ -153,6 +153,8 @@ class ProductController extends Controller{
                         'created_at' => new \DateTime(),
                         'updated_at' => new \DateTime()
                     ]);
+                    $instance->name = $product['name'];
+                    $instance->_category = $product['_category'];
                     $instance->description = $product['description'];
                     $instance->pieces = $product['pieces'];
                     $instance->_provider = $product['_provider'];
@@ -405,14 +407,23 @@ class ProductController extends Controller{
     }
 
     public function getProductsWithCodes(Request $request){
-        $products = Product::with('variants')->has('variants', '>', 0)->whereIn('_category', range(130,137))->get();
-        $map = $products->map(function($product){
+        $products = Product::with(['variants', 'category'])->has('variants', '>', 0)->get();
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $map = $products->map(function($product) use($categories, $arr_categories){
+            if($product->category->deep == 0){
+                $familia = $product->category->name;
+            }else{
+                $key = array_search($product->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+            }
             return [
-                "id" => $product->id,
-                "code" => $product->code,
-                "scode" => $product->name,
-                "description" => $product->description,
-                "variants" => $product->variants->reduce(function($res, $variant){
+                "Modelo" => $product->code,
+                "Código" => $product->name,
+                "Descripción" => $product->description,
+                "Familia" => $familia,
+                "Categoría" => $product->category->name,
+                "Variantes" => $product->variants->reduce(function($res, $variant){
                     array_push($res, $variant->barcode);
                     return $res; 
                 }, []),

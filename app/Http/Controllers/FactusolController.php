@@ -47,7 +47,7 @@ class FactusolController extends Controller{
     curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
     curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($client, CURLOPT_POST, 1);
-    curl_setopt($client,CURLOPT_TIMEOUT, 15);
+    curl_setopt($client,CURLOPT_TIMEOUT, 35);
     $post = json_encode(["ejercicio" => $year, "consulta" => $query]);
     curl_setopt($client, CURLOPT_POSTFIELDS, $post);
     curl_setopt($client, CURLOPT_FOLLOWLOCATION, 1);
@@ -57,7 +57,7 @@ class FactusolController extends Controller{
 
   public function productosActualizados($date){
     $date = is_null($date) ? date('Y-m-d', time()) : $date;
-    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DLAART, F_ART.CP3ART, F_ART.FAMART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
+    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
     $rows = $this->lanzarConsulta($query);
     $products = $rows->groupBy('CODART')->map(function($group){
       $category = $this->getCategory($group[0]['FAMART']);
@@ -69,9 +69,9 @@ class FactusolController extends Controller{
       });
       $dimensions = explode('*', $group[0]['DIMART']);
       return [
-        "code" => mb_convert_encoding($group[0]['CODART'], "UTF-8", "Windows-1252"),
+        "code" => $group[0]['CODART']/* mb_convert_encoding($group[0]['CODART'], "UTF-8", "Windows-1252") */,
         "name" => $group[0]['CCOART'],
-        "description" => mb_convert_encoding($group[0]['DLAART'], "UTF-8", "Windows-1252"),
+        "description" => $group[0]['DESART']/* mb_convert_encoding($group[0]['DESART'], "UTF-8", "Windows-1252") */,
         "dimensions" =>json_encode([
           "length" => count($dimensions)>0 ? $dimensions[0] : '',
           "height" => count($dimensions)>1 ? $dimensions[1] : '',
@@ -126,6 +126,12 @@ class FactusolController extends Controller{
     }else{
       return false;
     }
+  }
+
+  public function getRelatedCodes(){
+    $query = "SELECT ARTEAN, EANEAN FROM F_EAN INNER JOIN F_ART ON F_EAN.ARTEAN = F_ART.CODART WHERE F_ART.NPUART = 0";
+    $rows = $this->lanzarConsulta($query);
+    return $rows;
   }
 
   public function getAlmacenes($id){

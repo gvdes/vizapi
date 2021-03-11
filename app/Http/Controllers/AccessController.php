@@ -107,13 +107,15 @@ class AccessController extends Controller{
     }
 
     public function getRelatedCodes(){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
+        /* $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
         $query = "SELECT ARTEAN, EANEAN FROM F_EAN";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;"); */
         try{
-            $exec = $db->prepare($query);
+            /* $exec = $db->prepare($query);
             $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC); */
+            $fac = new FactusolController();
+            $rows = $fac->getRelatedCodes();
             DB::transaction( function() use($rows){
                 $items_from_access = collect($rows);
                 foreach($items_from_access as $relatedCode){

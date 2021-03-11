@@ -599,17 +599,19 @@ class LocationController extends Controller{
         $added = 0;
         $res = [];
         $location = [];
+        $path = [];
         foreach($products as $code){
             $product = Product::/* find($code['id']) */whereHas('variants', function(Builder $query) use ($code){
                 $query->where('barcode', 'like', '%'.$code['code'].'%');
             })
             ->orWhere('name', 'like','%'.$code['code'].'%')
             ->orWhere('code', 'like','%'.$code['code'].'%')->first();
-            $path = $code['path'];
-            /* $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
-            $path = $path[0].'-P'.substr($path,1,strlen($path)); */
+            /* $path = $code['path']; */
+            $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
+
+            /* $path = $path[0].'-P'.substr($path,1,strlen($path)); */
             if($product){
-                $section = CellerSection::whereHas('celler', function($query){
+                /* $section = CellerSection::whereHas('celler', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 })->where('path', $path)->first();
                 if($section){
@@ -617,12 +619,15 @@ class LocationController extends Controller{
                     $added++;
                 }else{
                     array_push($location, ["code" => $code['code'], "location" => $path]);
-                }
+                } */
+                $path[$product->code] = $path;
             }else{
-                array_push($res, ["code" => $code['code'], "location" => $path]);
+                array_push($res, $path);
+                /* array_push($res, ["code" => $code['code'], "location" => $path]); */
             }
         }
-        return response()->json(["success" => $added, "notFound" => $res, "locationNotFound" => $location]);
+        return response()->json(["path" => $path, "res" => $res]);
+        /* return response()->json(["success" => $added, "notFound" => $res, "locationNotFound" => $location]); */
     }
 
     public function getStocksFromStores(Request $request){
@@ -1245,13 +1250,17 @@ class LocationController extends Controller{
             foreach($paths as $location){
                 $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
                 $numeros = count(preg_split('/^\D/', $location))>1 ? explode("-",preg_split('/^\D/', $location)[1]) : "";
-                /* array_push($found, gettype($numeros)); */
 
                 if(count($numeros)>1){
                     $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
                 }else{
                     $full_path = trim($location);
                 }
+                /* if(count(explode('-', $location))==2){
+                    $full_path = explode('-', $location)[0].'-P1-T'.explode('-', $location)[1];
+                }else{
+                    $full_path = $location;
+                } */
                 $key = array_search($full_path, $arr_sections);
                 if($key === 0 || $key>0){
                     array_push($found, $sections[$key]->id);

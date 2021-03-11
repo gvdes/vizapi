@@ -25,7 +25,7 @@ class ArrayExport implements FromArray, ShouldAutoSize, WithHeadings, WithStyles
     public function styles(Worksheet $sheet){
         return [
                // Style the first row as bold text.
-            1   => ['font' => ['bold' => true]],
+            1 => ['font' => ['bold' => true]],
             // Styling an entire column.
             'A' => ['font' => ['size' => 12]],
             // Styling an entire column.

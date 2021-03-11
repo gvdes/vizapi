@@ -166,7 +166,8 @@ class VentasController extends Controller{
       $date_to->setTime(23,59,59);
     }
     $workpoint = WorkPoint::find($request->_workpoint);
-    $categories = \App\ProductCategory::where('deep', 1)->get();
+    $categories = \App\ProductCategory::where('deep', 0)->get();
+    $ids_categories = array_column($categories->toArray(), 'id');
     $result = [];
     $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
       $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
@@ -176,31 +177,71 @@ class VentasController extends Controller{
       $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
         $query->where('_workpoint', $workpoint->id);
       });
-    }, 'category'])->get()->map(function($product){
-      $product->venta = $product->sales->sum(function($product){
+    }, 'category'])->get()->map(function($product) use($categories, $ids_categories){
+      $venta = $product->sales->sum(function($product){
         return $product->pivot->total;
       });
-      $product->piezas = $product->sales->sum(function($product){
+      $piezas = $product->sales->sum(function($product){
         return $product->pivot->amount;
       });
 
-      $product->costos = $product->sales->sum(function($product){
+      $costos = $product->sales->sum(function($product){
         return $product->pivot->costo;
       });
       
-      $product->tickets = count($product->sales);
+      $tickets = count($product->sales);
 
-      $product->costoPromedio = $product->costos/$product->tickets;
-
-      return $product;
-    })->groupBy(function($product){
+      $costoPromedio = $costos/$tickets;
+      $precioPromedio = $venta/$tickets;
       if($product->category->deep == 0){
-        return $product->category->id;
+        $category = $product->category->name;
       }else{
-        return $product->category->root;
+        $key = array_search($product->category->root, $ids_categories);
+        if($key === 0 || $key>0){
+          $category = $categories[$key]->name;
+        }else{
+          $category = $product->category->root;
+        }
       }
-    });
-    return Excel::download($products, /* $name. */"prueba.xlsx");
+      return [
+        "Codigo" => $product->code,
+        "Modelo" => $product->name,
+        "Descripción" => $product->description,
+        "_category" => $category,
+        "venta" => $venta,
+        "tickets" => $tickets,
+        "Unidades vendidas" => $piezas,
+        "Costo Promedio" => $costoPromedio,
+        "Precio Promedio" => $precioPromedio
+      ];
+      return $product;
+    })->groupBy("_category")->toArray();
+    $resumen = [];
+    foreach($products as $key => $category){
+    array_push($resumen, [
+      "Categoría" => $key, 
+      "venta" => collect($category)->sum('venta'),
+      "Unidades vendidas" => collect($category)->sum('Unidades vendidas')
+      ]);
+    }
+    $resumen = collect($resumen)->sortByDesc('venta');
+    $total = $resumen->sum('venta');
+    $unidades = $resumen->sum('Unidades vendidas');
+    $resumen = $resumen->toArray();
+    array_push($resumen, [
+      "Categoría" => "", 
+      "venta" => $total,
+      "Unidades vendidas" => $unidades
+    ]);
+    $products["A"] = $resumen;
+    $weight = [
+      'Pete' => 75, 
+      'Benjamin' => 89,
+      'Jonathan' => 101
+    ];
+    ksort($products);
+    $export = new WithMultipleSheetsExport($products);
+    return Excel::download($export, "prueba.xlsx");
     return response()->json([
       "id" => $workpoint->id,
       "name" => $workpoint->name,

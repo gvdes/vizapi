@@ -32,10 +32,17 @@ class Product extends JsonResource{
             }),
             'prices' => $this->whenLoaded('prices', function(){
                 return $this->prices->map(function($price){
+                    if($this->_unit == 3 && $price->id == 3){
+                        $name = "DOCENA";
+                        $alias = "DOC";
+                    }else{
+                        $name = $price->name;
+                        $alias = $price->alias;
+                    }
                     return [
                         "id" => $price->id,
-                        "name" => $price->name,
-                        "alias" => $price->alias,
+                        "name" => $name,
+                        "alias" => $alias,
                         "price" => $price->pivot->price
                     ];
                 });
