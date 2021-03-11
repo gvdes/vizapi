@@ -208,18 +208,27 @@ class ProductController extends Controller{
 
     public function autocomplete(Request $request){
         $code = $request->code;
+        $esElProducto = Product::with(['prices' => function($query){
+            $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+        }, 'units', 'variants', 'status'])
+        ->orWhere('name', $request->code)
+        ->orWhere('code', $request->code)->first();
+
         $products = Product::with(['prices' => function($query){
                             $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
                         }, 'units', 'variants', 'status'])
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
                         })
-                        ->orWhere('name', $request->autocomplete)
-                        ->orWhere('code', $request->autocomplete)
+                        ->orWhere('name', $request->code)
+                        ->orWhere('code', $request->code)
                         ->orWhere('name', 'like','%'.$code.'%')
                         ->orWhere('code', 'like','%'.$code.'%')
                         ->orWhere('description', 'like','%'.$code.'%')
                         ->limit('20')->get();
+        if($esElProducto){
+            $products[] = $esElProducto;
+        }
         return response()->json(ProductResource::collection($products));
     }
 
