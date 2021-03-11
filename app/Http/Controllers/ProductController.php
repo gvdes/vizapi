@@ -214,6 +214,8 @@ class ProductController extends Controller{
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
                         })
+                        ->orWhere('name', $request->autocomplete)
+                        ->orWhere('code', $request->autocomplete)
                         ->orWhere('name', 'like','%'.$code.'%')
                         ->orWhere('code', 'like','%'.$code.'%')
                         ->orWhere('description', 'like','%'.$code.'%')
@@ -439,6 +441,8 @@ class ProductController extends Controller{
             $query = $query->whereHas('variants', function(Builder $query) use ($request){
                 $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
             })
+            ->orWhere('name', $request->autocomplete)
+            ->orWhere('code', $request->autocomplete)
             ->orWhere('name', 'like','%'.$request->autocomplete.'%')
             ->orWhere('code', 'like','%'.$request->autocomplete.'%');
         }
