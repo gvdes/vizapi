@@ -55,6 +55,23 @@ class FactusolController extends Controller{
     return $res;
   }
 
+  public function actualizarRegistro($tabla, $registro){
+    $year = date("Y");
+    $client = curl_init();
+    $authorization = "Authorization: Bearer ".$this->token["resultado"];
+    curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type: application/json' , $authorization ));
+    curl_setopt($client, CURLOPT_URL, env("DELSOL_API")."/admin/ActualizarRegistro");
+    curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
+    curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($client, CURLOPT_POST, 1);
+    curl_setopt($client,CURLOPT_TIMEOUT, 35);
+    $post = json_encode(["ejercicio" => $year, "tabla" => $tabla, "registro" => $registro]);
+    curl_setopt($client, CURLOPT_POSTFIELDS, $post);
+    curl_setopt($client, CURLOPT_FOLLOWLOCATION, 1);
+    $res = $this->formattedData(json_decode(curl_exec($client), true));
+    return $res;
+  }
+
   public function productosActualizados($date){
     $date = is_null($date) ? date('Y-m-d', time()) : $date;
     $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";

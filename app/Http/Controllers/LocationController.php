@@ -470,7 +470,8 @@ class LocationController extends Controller{
                 "withoutLocation" => $withoutLocation,
                 "generalVsExhibicion" => $generalVsExhibicion,
                 "sinMaximos" => $sinMaximos,
-                "conMaximos" => $conMaximos
+                "conMaximos" => $conMaximos,
+                "cedis" => count($cedis)
             ],
             "withoutStock" => [
                 "stock" => $withoutStock,
@@ -735,6 +736,10 @@ class LocationController extends Controller{
             case 10:
                 $res = $this->negativos();
                 $name = "negativos";
+                break;
+            case 11:
+                $res = $this->cedisStock();
+                $name = "cedisStock";
                 break;
             default:
                 $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
@@ -1096,6 +1101,46 @@ class LocationController extends Controller{
                 "CEDIS" => intval($producto->stocks[0]->pivot->stock),
                 "GENERAL" => 0,
                 "Ubicaciones" => $locations
+            ];
+        })->toArray();
+        return $res;
+    }
+
+    public function cedisStock(){
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $productos = Product::with(['stocks' => function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', 1);
+            });
+        }, 'category'])->whereHas('stocks', function($query){
+            $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
+        })->get();
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
+            if($producto->category->deep == 0){
+                $familia = $producto->category->name;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
+            return [
+                "codigo" => $producto->name,
+                "modelo" => $producto->code,
+                "descripcion" => $producto->description,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "piezas x caja" => $producto->pieces,
+                "stock" => $producto->stocks[0]->pivot->stock,
+                "máximo" => $producto->stocks[0]->pivot->max,
+                "minimo" => $producto->stocks[0]->pivot->min,
+                "locations" => $locations,
             ];
         })->toArray();
         return $res;
