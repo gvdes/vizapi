@@ -64,7 +64,7 @@ class FactusolController extends Controller{
     curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
     curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($client, CURLOPT_POST, 1);
-    curl_setopt($client,CURLOPT_TIMEOUT, 35);
+    curl_setopt($client, CURLOPT_TIMEOUT, 35);
     $post = json_encode(["ejercicio" => $year, "tabla" => $tabla, "registro" => $registro]);
     curl_setopt($client, CURLOPT_POSTFIELDS, $post);
     curl_setopt($client, CURLOPT_FOLLOWLOCATION, 1);
@@ -413,5 +413,13 @@ class FactusolController extends Controller{
       return $res;
     }
     return false;
+  }
+
+  public function getEntradas(){
+
+  }
+
+  public function  get(){
+    $test = "";
   }
 }

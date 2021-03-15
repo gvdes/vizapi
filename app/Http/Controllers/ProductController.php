@@ -22,7 +22,7 @@ class ProductController extends Controller{
 
     public $account = null;
     public function __construct(){
-        $this->account = Auth::payload()['workpoint'];
+        /* $this->account = Auth::payload()['workpoint']; */
     }
 
     public function seeder(){
@@ -569,6 +569,48 @@ class ProductController extends Controller{
             return $res;
         }else {
             return [$id];
+        }
+    }
+
+    public function seguimientoMercancia(){
+        //Validar si tendran llegadas con sus respectivas fechas
+        //Validar
+    }
+
+    
+
+    public function getMochilaPrices(){
+        $now = Product::whereIn('_category', range(1,16))->where('updated_at', ">", "2021-03-10 00:00:00")->where('updated_at', "<", "2021-03-10 23:59:59")/* ->paginate(500) */->get();
+        $prices = $this->getPrices_access(array_column($now->toArray(), 'code'));
+        $arr_products = array_column($prices, "code");
+        /* return response()->json(["now" => $arr_products]); */
+        $result = $now->filter(function($product) use($prices, $arr_products){
+            $key = array_search($product->code, $arr_products);
+            if($key === 0 || $key > 0){
+                $now = array_column($product->prices->toArray(), "price");
+                $yesterday = array_column($prices[$key]["prices"], "price");
+                return count(array_diff($now, $yesterday))>0;
+            }
+            return false;
+        });
+        return response()->json([/* "now" => count($now), "access" => $prices,  */"result" => $result]);
+    }
+
+    public function getPrices_access($codes){
+        $access = "C:\\Users\Carlo\\Desktop\\VPAO1O32021.accdb";
+        $query = "SELECT TARLTA as _type, PRELTA as price FROM F_LTA WHERE ARTLTA = ?";
+        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+        try{
+            $res = [];
+            foreach($codes as $code){
+                $exec = $db->prepare($query);
+                $exec->execute([$code]);
+                $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
+                $res [] = ["code" => $code, "prices" => $rows];
+            }
+            return $res;
+        }catch(\PDOException $e){
+            die($e->getMessage());
         }
     }
 }

@@ -136,7 +136,7 @@ class CycleCountController extends Controller{
                 }])->whereIn('id', $_products)->get();
                 foreach($products as $product){
                     $inventory->products()->attach($product->id, [
-                        'stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                        'stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
                         "details" => json_encode([
                             "editor" => ""
                         ])
@@ -149,7 +149,7 @@ class CycleCountController extends Controller{
                         "dimensions" => $product->dimensions,
                         "pieces" => $product->pieces,
                         "ordered" => [
-                            "stocks" => $product->stocks[0]->pivot->stock,
+                            "stocks" => $product->stocks[0]->pivot->gen,
                             "stocks_acc" => null,
                             "details" => [
                                 "editor" => ""
