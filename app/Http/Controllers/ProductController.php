@@ -22,7 +22,7 @@ class ProductController extends Controller{
 
     public $account = null;
     public function __construct(){
-        /* $this->account = Auth::payload()['workpoint']; */
+        $this->account = Auth::payload()['workpoint'];
     }
 
     public function seeder(){
