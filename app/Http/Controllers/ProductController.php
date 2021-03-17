@@ -457,6 +457,10 @@ class ProductController extends Controller{
         }
 
         if(isset($request->_category)){
+            /* $_categories = [];
+            foreach($request->_category as $_category){
+                $categories = array_merge($categories, $this->getCategoriesChildren($category));
+            } */
             $_categories = $this->getCategoriesChildren($request->_category);
             $query = $query->whereIn('_category', $_categories);
         }
