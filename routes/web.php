@@ -92,6 +92,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
 
     $router->group(['prefix' => 'product'], function () use ($router){
         $router->get('/getStatus', 'ProductController@getStatus');
+        $router->get('/prices', 'ProductController@getPrices');
         $router->get('/updateStocks', 'LocationController@updateStocks2');
         $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->post('/', 'ProductController@getProducts');

@@ -1248,7 +1248,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }, 'category'])->all();
+        }, 'category'/* , 'status', 'provider' */])->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -1261,18 +1261,26 @@ class LocationController extends Controller{
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
+            /* $stocks = [];
+            foreach($producto->stocks as $stock){
+                $stocks[$stock->alias] = $stock->pivot->stock;
+            } */
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
+                /* "status" => $producto->status->name, */
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
-                "máximo" => $producto->stocks[0]->pivot->max,
-                "minimo" => $producto->stocks[0]->pivot->min,
+                "stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
+                "máximo" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->max : 0,
+                "minimo" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->min : 0,
                 "locations" => $locations,
+                /* "provider" => $producto->provider->name, */
             ];
+            /* $res = array_merge($a,$stocks);
+            return $res; */
         })->toArray();
         return $res;
     }
