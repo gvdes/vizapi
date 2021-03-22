@@ -331,7 +331,7 @@ class FactusolController extends Controller{
     if($rows){
       $min = $rows->min('CODFAC');
       $max = $rows->max('CODFAC');
-      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
+      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA, TERFAC FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
       $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
       $res = $rows->map(function($row) use($data){
         if(isset($data[$row["CODFAC"]])){
@@ -436,8 +436,8 @@ class FactusolController extends Controller{
             $_workpoint = 0;
           break;
         }
-        $_cash = 0;
-        if(str_contains($row["TIPFAC"], "UNO")){
+        $_cash = $this->getTerminal[$row["TERFAC"]];
+        /* if(str_contains($row["TIPFAC"], "UNO")){
           $_cash = 1;
         }else if(str_contains($row["TIPFAC"], "DOS")){
           $_cash = 2;
@@ -455,7 +455,8 @@ class FactusolController extends Controller{
           $_cash = 8;
         }else if(str_contains($row["TIPFAC"], "NUEVE")){
           $_cash = 9;
-        }
+        } */
+
         return [
           "_cash" => $_cash,
           "_workpoint" => $_workpoint,
@@ -489,5 +490,63 @@ class FactusolController extends Controller{
 
   public function  get(){
     $test = "";
+  }
+
+  public function getTerminal($code){
+    $_cash =  0;
+    switch($code){
+      case 3:
+         $_cash = 1;
+         break;
+      case 10:
+        $_cash = 1;
+        break;
+      case 11:
+        $_cash = 1;
+        break;
+      case 12:
+        $_cash = 1;
+        break;
+      case 13:
+        $_cash = 1;
+        break;
+      case 14:
+        $_cash = 1;
+        break;
+      case 15:
+        $_cash = 1;
+        break;
+      case 16:
+        $_cash = 1;
+        break;
+      case 17:
+        $_cash = 1;
+        break;
+      case 18:
+        $_cash = 1;
+        break;
+      case 19:
+        $_cash = 2;
+        break;
+      case 20:
+        $_cash = 3;
+        break;
+      case 25:
+        $_cash = 1;
+        break;
+      case 30:
+        $_cash = 3;
+        break;
+      case 41:
+        $_cash = 1;
+        break;
+      case 53:
+        $_cash = 1;
+        break;
+      case 91:
+        $_cash = 1;
+        break;
+    }
+    return $_cash;
   }
 }

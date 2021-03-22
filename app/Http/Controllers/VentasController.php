@@ -429,7 +429,7 @@ class VentasController extends Controller{
         if($fac_sales){
           foreach($fac_sales as $venta){
             $arr_cajas = array_column($cash_registers[$venta['_workpoint']], "num_cash");
-            $key = array_search($arr_cajas, $venta["_cash"]);
+            $key = array_search($venta["_cash"], $arr_cajas);
             $_cash = ($key == 0 || $key>0) ? $key : $cash_registers[$venta['_workpoint']][0]['id'];
             $instance = Sales::create([
               "num_ticket" => $venta['num_ticket'],
