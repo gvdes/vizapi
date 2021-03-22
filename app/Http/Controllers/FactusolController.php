@@ -436,7 +436,7 @@ class FactusolController extends Controller{
             $_workpoint = 0;
           break;
         }
-        $_cash = $this->getTerminal[$row["TERFAC"]];
+        $_cash = $this->getTerminal([$row["TERFAC"]]);
         /* if(str_contains($row["TIPFAC"], "UNO")){
           $_cash = 1;
         }else if(str_contains($row["TIPFAC"], "DOS")){
