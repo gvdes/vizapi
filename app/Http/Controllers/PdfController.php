@@ -28,7 +28,7 @@ class PdfController extends Controller{
       ["id" => 8, "name" => "Lapicera"],
       ["id" => 9, "name" => "Lonchera_16"],
       ["id" => 10, "name" => "Lapicera_20"],
-      ["id" => 11, "name" => "Mochela_16"]
+      ["id" => 11, "name" => "Mochila_16"]
     ];
     $priceList = \App\PriceList::all();
     return response()->json(["types" => $types, "price_list" => $priceList]);
@@ -1098,9 +1098,9 @@ class PdfController extends Controller{
             $pz = '';
             $space = '<span style="font-size:1em"><br/></span>';
             if($isInnerPack){
-                $pz = $product['pieces'].' pz';
-                $space = '<span style="font-size:.4em"><br/></span>';
-                $br= .4;
+              $pz = $product['pieces'];
+              $space = '<span style="font-size:.4em"><br/></span>';
+              $br= .4;
             }
             $tool = '';
             /* if($product['tool']){
@@ -1124,7 +1124,7 @@ class PdfController extends Controller{
                         </div>';
             }
             
-            $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-26, $sides_space=7.5, $position=$key+$counter, $top_margin=14.6, $sides_margin=7.5);
+            $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-24, $sides_space=7.5, $position=$key+$counter, $top_margin=14.6, $sides_margin=7.5);
         }
     }
     

@@ -383,7 +383,7 @@ class RequisitionController extends Controller{
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                $query->whereIn('_type', [1,2,3,4/* ,5,6,7 */])->orderBy('_type');
             }, 'units', 'variants']);
         }, 'to', 'from', 'created_by', 'log'])->find($id);
         return response()->json(new RequisitionResource($requisition));

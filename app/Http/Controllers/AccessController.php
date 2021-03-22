@@ -11,66 +11,45 @@ class AccessController extends Controller{
      * @return void
      */
     public function __construct(){
+        try{
+            $access = env('ACCESS_FILE');
+            $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+            $this->con = $db;
+        }catch(PDOException $e){
+            return response()->json(["message" => "Algo salio mal con la conexión a la base de datos"]);
+        }
     }
 
     public function getProducts(){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query_products = "SELECT CODART, CCOART, DLAART, CP3ART, FAMART, NPUART, PHAART FROM F_ART";
-        $query_prices = "SELECT TARLTA, ARTLTA, PRELTA FROM F_LTA INNER JOIN F_ART ON F_LTA.ARTLTA = F_ART.CODART";
-        /* $query_kits = "SELECT CODCOM, ARTCOM, COSCOM FROM F_COM INNER JOIN F_ART ON F_COM.CODCOM = F_ART.CODART"; */
+        $query_products = "SELECT CODART, CCOART, DESART, CP3ART, FAMART, PCOART, NPUART, PHAART, DIMART FROM F_ART";
         try{
-            $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
             $start = microtime(true);
             //obtener productos
-            $exec = $db->prepare($query_products);
+            $exec = $this->db->prepare($query_products);
             $exec->execute();
             $rows_products = $exec->fetchAll(\PDO::FETCH_ASSOC);
             $products = collect($rows_products);
-            $inserts = $products->map(function($product){
+            $result = $products->map(function($product){
                 $category = $this->getCategory($product['FAMART']);
+                $dimensions = explode('*', $group[0]['DIMART']);
                 return [
                     "code" => mb_convert_encoding((string)$product['CODART'], "UTF-8", "Windows-1252"),
                     "name" => $product['CCOART'],
-                    "description" => mb_convert_encoding($product['DLAART'], "UTF-8", "Windows-1252"),
+                    "description" => mb_convert_encoding($product['DESART'], "UTF-8", "Windows-1252"),
+                    "cost" => $group[0]['x|'],/* me quede aqui */
+                    "dimensions" =>json_encode([
+                        "length" => count($dimensions)>0 ? $dimensions[0] : '',
+                        "height" => count($dimensions)>1 ? $dimensions[1] : '',
+                        "width" => count($dimensions)>2 ? $dimensions[2] : ''
+                    ]),
                     "pieces" => explode(" ", $product['CP3ART'])[0] ? intval(explode(" ", $product['CP3ART'])[0]) : 0,
                     "_category" =>  $category ? $category : 404,
                     "_status" => 1,
-                    "_provider" => ($product['PHAART']<139 || $product['PHAART'] == 1000) ? $product['PHAART'] : 404,
-                    "_provider" => 404,
+                    "_provider" => (($group[0]['PHAART'] > 0 && $group[0]['PHAART']<139) || $group[0]['PHAART'] == 160 || $group[0]['PHAART'] == 200 || $group[0]['PHAART'] == 1000) ? $group[0]['PHAART'] : 404,
                     "_unit" => 1
                 ];
             })->toArray();
-            $id = [];
-            foreach ($inserts as $key => $value) {
-                $id[$value['code']] = Product::insertGetId($value);
-            }
-
-            //obtener precios
-            $exec = $db->prepare($query_prices);
-            $exec->execute();
-            $rows_prices = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            $prices = collect($rows_prices);
-            //SET PRICES
-            $prices_insert = $prices->map(function($price) use($id){
-                $code = mb_convert_encoding((string)$price['ARTLTA'], "UTF-8", "Windows-1252");
-                $type = $price['TARLTA']>3 ? $price['TARLTA']+1 : $price['TARLTA'];
-                return [
-                    'price' => $price['PRELTA'],
-                    '_type' => $type,
-                    '_product' => $id[$code] ? $id[$code] : null
-                ];
-            })->filter(function($price){
-                return $price!=null;
-            })->toArray();
-
-            foreach (array_chunk($prices_insert, 1000) as $insert) {
-                $success = DB::table('product_prices')->insert($insert);
-            }
-            return response()->json([
-                "products" => count($id),
-                "pricesc" => count($rows_prices),
-                "time" => microtime(true) - $start,
-            ]);
+            return $result;
         }catch(\PDOException $e){
             die($e->getMessage());
         }
@@ -181,28 +160,28 @@ class AccessController extends Controller{
             "LAP"=>5,
             "MPR"=>null,//Materias primas
             "NAV"=>null,//Navidad
-            "20"=>17,
-            "2"=>19,
-            "19"=>35,
-            "18"=>34,
-            "17"=>33,
-            "3"=>20,
-            "15"=>31,
-            "8"=>25,
-            "14"=>30,
-            "13"=>29,
+            "20"=>131,
+            "2"=>131,
+            "19"=>141,
+            "18"=>138,
+            "17"=>138,
+            "3"=>132,
+            "15"=>160,
+            "8"=>131,
+            "14"=>130,
+            "13"=>130,
             "12"=>null,
-            "11"=>28,
-            "10"=>27,
-            "16"=>32,
-            "4"=>21,
-            "5"=>19,
+            "11"=>131,
+            "10"=>134,
+            "16"=>140,
+            "4"=>132,
+            "5"=>131,
             "PRO"=>null,
-            "7"=>24,
-            "9"=>26,
-            "POF"=>36,
-            "1"=>18,
-            "6"=>23,
+            "7"=>131,
+            "9"=>134,
+            "POF"=>130,
+            "1"=>131,
+            "6"=>131,
             "PAP"=>58,//Papeleria
             "PAR"=>66,//Paraguas
             "SAL"=>null,

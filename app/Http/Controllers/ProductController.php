@@ -25,36 +25,40 @@ class ProductController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function seeder(){
+    public function restoreProducts(){
         try{
             $start = microtime(true);
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/product");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            $products = json_decode(curl_exec($client), true);
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/prices");
-            $prices = collect(json_decode(curl_exec($client), true));
-            curl_close($client);
-            if($products && $prices){
-                DB::transaction(function() use ($products, $prices){
-                    //array prices
-                    foreach (array_chunk($products, 1000) as $insert) {
-                        $success = DB::table('products')->insert($insert);
-                    }
-                    $codes =  array_column($products, 'code');
-                    $prices_insert = $prices->map(function($price) use($products, $codes){
-                        $index_product = array_search($price['code'], $codes, true);
-                        if($index_product == 0 || $index_product > 0){
-                            return [
-                                '_product' => $products[$index_product]['id'],
-                                'price' => $price['price'],
-                                '_type' => $price['_type']
-                            ];
-                        }
-                    })->toArray();
-                    foreach (array_chunk($prices_insert, 1000) as $insert) {
-                        $success = DB::table('product_prices')->insert($insert);
+            $fac = new FactusolController();
+            $products = $fac->todosProductos();
+            if($products){
+                DB::transaction(function() use ($products){
+                    foreach($products as $product){
+                        $instance = Product::firstOrCreate([
+                            'code'=> $product['code']
+                        ], [
+                            'name' => $product['name'],
+                            'description' => $product['description'],
+                            'dimensions' => $product['dimensions'],
+                            'pieces' => $product['pieces'],
+                            '_category' => $product['_category'],
+                            '_status' => $product['_status'],
+                            '_provider' => $product['_provider'],
+                            '_unit' => $product['_unit'],
+                            'created_at' => $product['created_at'],
+                            'updated_at' => new \DateTime(),
+                            'cost' => $product['cost']
+                        ]);
+                        $instance->name = $product['name'];
+                        $instance->cost = $product['cost'];
+                        $instance->dimensions = $product['dimensions'];
+                        $instance->_category = $product['_category'];
+                        $instance->description = $product['description'];
+                        $instance->pieces = $product['pieces'];
+                        $instance->_provider = $product['_provider'];
+                        $instance->_status = $product['_status'];
+                        $instance->created_at = $product['created_at'];
+                        $instance->updated_at = new \DateTime();
+                        $instance->save();
                     }
                 });
                 return response()->json([
@@ -69,19 +73,15 @@ class ProductController extends Controller{
         }
     }
 
-    public function updatePrices(){
+    public function restorePrices(){
         try{
             $start = microtime(true);
-            $client = curl_init();
             $products = Product::all()->toArray();
-            /* return response()->json($products); */
-            curl_setopt($client, CURLOPT_URL, "192.168.1.224:1618/access/public/prices");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            $prices = collect(json_decode(curl_exec($client), true));
-            curl_close($client);
+            $fac = new FactusolController();
+            $prices = $fac->getPrices();
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
+                    DB::table('product_prices')->delete();
                     //array prices
                     $codes =  array_column($products, 'code');
                     $prices_insert = $prices->map(function($price) use($products, $codes){
@@ -112,25 +112,6 @@ class ProductController extends Controller{
         }
     }
 
-    public function getMaximum(){
-        $start = microtime(true);
-        //$workpoint = \App\WorkPoint::find($this->account->_workpoint);
-        $workpoint = \App\WorkPoint::find(11);
-        $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/max");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        $maximum = json_decode(curl_exec($client), true);
-        
-        foreach($maximum as $row){
-            $product = Product::where('code', $row['code'])->first();
-            if($product){
-                $product->stocks()->attach($workpoint->id, ['min' => $row['min'], 'max' => $row['max'], 'stock' => $row['stock']]);
-            }
-        }
-        return response()->json(["success" => true, "time" => microtime(true) - $start]);
-    }
-
     public function updateTable(Request $request){
         $start = microtime(true);
         $fac = new FactusolController();
@@ -147,13 +128,16 @@ class ProductController extends Controller{
                         'dimensions' => $product['dimensions'],
                         'pieces' => $product['pieces'],
                         '_category' => $product['_category'],
-                        '_status' => 1,
+                        '_status' => $product['_status'],
                         '_provider' => $product['_provider'],
                         '_unit' => $product['_unit'],
                         'created_at' => new \DateTime(),
-                        'updated_at' => new \DateTime()
+                        'updated_at' => new \DateTime(),
+                        'cost' => $product['cost']
                     ]);
                     $instance->name = $product['name'];
+                    $instance->cost = $product['cost'];
+                    $instance->_status = $product['_status'];
                     $instance->_category = $product['_category'];
                     $instance->description = $product['description'];
                     $instance->pieces = $product['pieces'];
@@ -615,6 +599,27 @@ class ProductController extends Controller{
             return $res;
         }catch(\PDOException $e){
             die($e->getMessage());
+        }
+    }
+
+    public function addProductsLastYears(){
+        $products = null;
+        if($products){
+            $instance = Product::firstOrCreate([
+                'code'=> $product['code']
+            ], [
+                'name' => $product['name'],
+                'description' => $product['description'],
+                'dimensions' => $product['dimensions'],
+                'pieces' => $product['pieces'],
+                '_category' => $product['_category'],
+                '_status' => 4,
+                '_provider' => $product['_provider'],
+                '_unit' => $product['_unit'],
+                'created_at' => new \DateTime(),
+                'updated_at' => new \DateTime(),
+                'cost' => $product['cost']
+            ]);
         }
     }
 }

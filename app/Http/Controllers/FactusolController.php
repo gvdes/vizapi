@@ -74,7 +74,7 @@ class FactusolController extends Controller{
 
   public function productosActualizados($date){
     $date = is_null($date) ? date('Y-m-d', time()) : $date;
-    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
+    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.PCOART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
     $rows = $this->lanzarConsulta($query);
     $products = $rows->groupBy('CODART')->map(function($group){
       $category = $this->getCategory($group[0]['FAMART']);
@@ -85,10 +85,12 @@ class FactusolController extends Controller{
         ];
       });
       $dimensions = explode('*', $group[0]['DIMART']);
+      $_status = $group[0]['NPUART'] == 0 ? 1 : 4;
       return [
         "code" => $group[0]['CODART']/* mb_convert_encoding($group[0]['CODART'], "UTF-8", "Windows-1252") */,
         "name" => $group[0]['CCOART'],
         "description" => $group[0]['DESART']/* mb_convert_encoding($group[0]['DESART'], "UTF-8", "Windows-1252") */,
+        "cost" => $group[0]['PCOART'],
         "dimensions" =>json_encode([
           "length" => count($dimensions)>0 ? $dimensions[0] : '',
           "height" => count($dimensions)>1 ? $dimensions[1] : '',
@@ -96,13 +98,59 @@ class FactusolController extends Controller{
         ]),
         "pieces" => explode(" ", $group[0]['CP3ART'])[0] ? intval(explode(" ", $group[0]['CP3ART'])[0]) : 0,
         "_category" =>  $category ? $category : 404,
-        "_status" => $group[0]['NPUART'],
+        "_status" => $_status,
         "_provider" => (($group[0]['PHAART'] > 0 && $group[0]['PHAART']<139) || $group[0]['PHAART'] == 160 || $group[0]['PHAART'] == 200 || $group[0]['PHAART'] == 1000) ? $group[0]['PHAART'] : 404,
         "_unit" => 1,
         "prices" => $prices
       ];
     })->values()->all();
     return $products;
+  }
+
+  public function todosProductos(){
+    $query = "SELECT CODART, CCOART, DESART, CP3ART, FAMART, PCOART, NPUART, PHAART, DIMART, FALART FROM F_ART";
+    $rows = $this->lanzarConsulta($query);
+    $products = $rows->map(function($product){
+      $category = $this->getCategory($product['FAMART']);
+      $dimensions = explode('*', $product['DIMART']);
+      if(strtotime($product['FALART']) < strtotime("2000-01-01T00:00:00")){
+        $created_at = new \DateTime();
+      }else{
+        $created_at = $product['FALART'];
+      }
+      $_status = $product['NPUART'] == 0 ? 1 : 4;
+      return [
+        "code" => $product['CODART'],
+        "name" => $product['CCOART'],
+        "description" => $product['DESART'],
+        "cost" => $product['PCOART'],
+        "dimensions" => json_encode([
+          "length" => count($dimensions)>0 ? $dimensions[0] : '',
+          "height" => count($dimensions)>1 ? $dimensions[1] : '',
+          "width" => count($dimensions)>2 ? $dimensions[2] : ''
+        ]),
+        "pieces" => explode(" ", $product['CP3ART'])[0] ? intval(explode(" ", $product['CP3ART'])[0]) : 0,
+        "_category" =>  $category ? $category : 404,
+        "_status" => $_status,
+        "_provider" => (($product['PHAART'] > 0 && $product['PHAART']<139) || $product['PHAART'] == 160 || $product['PHAART'] == 200 || $product['PHAART'] == 1000) ? $product['PHAART'] : 404,
+        "_unit" => 1,
+        "created_at" => $created_at
+      ];
+    });
+    return $products;
+  }
+
+  public function getPrices(){
+    $query = "SELECT TARLTA, ARTLTA, PRELTA FROM F_LTA INNER JOIN F_ART ON F_LTA.ARTLTA = F_ART.CODART";
+    $rows = $this->lanzarConsulta($query);
+    $prices = $rows->map(function($price){
+      return [
+        'price' => $price['PRELTA'],
+        '_type' => $price['TARLTA'],
+        'code' => $price['ARTLTA']
+      ];
+    });
+    return $prices;
   }
 
   public function getStocks($_workpoint){
@@ -341,55 +389,75 @@ class FactusolController extends Controller{
           break;
         }
         $_workpoint = 0;
-        switch($row["AGEFAC"]){
-          case "1": //CEDISSP
+        switch($row["ALMFAC"]){
+          case "GEN": //CEDISSP
             $_workpoint = 1;
           break;
-          case "2": //SP3
+          case "SP3": //SP3
             $_workpoint = 13;
           break;
-          case "4": //CR2
+          case "CR2": //CR2
             $_workpoint = 6;
           break;
-          case "5": //RC2
+          case "RA2": //RC2
             $_workpoint = 10;
           break;
-          case "6": //SP2
+          case "SP2": //SP2
             $_workpoint = 4;
           break;
-          case "7": //RC1
+          case "RA1": //RC1
             $_workpoint = 9;
           break;
-          case "9": //BR2
+          case "BR2": //BR2
             $_workpoint = 12;
           break;
-          case "10": //BR1
+          case "BR1": //BR1
             $_workpoint = 11;
           break;
-          case "11": //SP1
+          case "SP1": //SP1
             $_workpoint = 3;
           break;
-          case "12": //CR1
+          case "CR1": //CR1
             $_workpoint = 5;
           break;
-          case "13": //AP2
+          case "AP2": //AP2
             $_workpoint = 8;
           break;
-          case "14": //SP4
+          case "SP4": //SP4
             $_workpoint = 15;
           break;
-          case "15": //AP1
+          case "AP1": //AP1
             $_workpoint = 7;
           break;
-          case "16": //BOL
+          case "BOL": //BOL
             $_workpoint = 13;
           break;
           case "17": //EST
             $_workpoint = 0;
           break;
         }
+        $_cash = 0;
+        if(str_contains($row["TIPFAC"], "UNO")){
+          $_cash = 1;
+        }else if(str_contains($row["TIPFAC"], "DOS")){
+          $_cash = 2;
+        }else if(str_contains($row["TIPFAC"], "TRES")){
+          $_cash = 3;
+        }else if(str_contains($row["TIPFAC"], "CUATRO")){
+          $_cash = 4;
+        }else if(str_contains($row["TIPFAC"], "CINCO")){
+          $_cash = 5;
+        }else if(str_contains($row["TIPFAC"], "SEIS")){
+          $_cash = 6;
+        }else if(str_contains($row["TIPFAC"], "SIETE")){
+          $_cash = 7;
+        }else if(str_contains($row["TIPFAC"], "OCHO")){
+          $_cash = 8;
+        }else if(str_contains($row["TIPFAC"], "NUEVE")){
+          $_cash = 9;
+        }
         return [
-          "_cash" => intval($row["TIPFAC"]),
+          "_cash" => $_cash,
           "_workpoint" => $_workpoint,
           "num_ticket" => intval($row["CODFAC"]),
           "created_at" => $date,

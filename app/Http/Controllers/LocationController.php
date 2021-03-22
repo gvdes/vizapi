@@ -767,6 +767,7 @@ class LocationController extends Controller{
                 $name = "noFound";
                 break;
         }
+        /* return $res; */
         $export = new ArrayExport($res);
         $date = new \DateTime();
         return Excel::download($export, $name.".xlsx");
@@ -1239,7 +1240,7 @@ class LocationController extends Controller{
         return $res;
     }
 
-    public function catologo(){
+    public function catologoStocks(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
@@ -1269,7 +1270,8 @@ class LocationController extends Controller{
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
-                /* "status" => $producto->status->name, */
+                /* "costo" => $producto->cost,
+                "status" => $producto->status->name, */
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
@@ -1283,6 +1285,44 @@ class LocationController extends Controller{
             return $res; */
         })->toArray();
         return $res;
+    }
+
+    public function catologo(){
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $workpoints =  WorkPoint::all();
+        $result = [];
+        foreach($workpoints as $workpoint){
+            $productos = Product::with(['stocks' => function($query) use($workpoint){
+                $query->where("_workpoint", $workpoint->id);
+            } , 'category', 'status', 'provider'])->get();
+            $res = $productos->map(function($producto) use($categories, $arr_categories, $workpoint){
+                if($producto->category->deep == 0){
+                    $familia = $producto->category->name;
+                    $category = "";
+                }else{
+                    $key = array_search($producto->category->root, $arr_categories, true);
+                    $familia = $categories[$key]->name;
+                    $category = $producto->category->name;
+                }
+                return [
+                    "sucursal" => $workpoint->name,
+                    "codigo" => $producto->name,
+                    "modelo" => $producto->code,
+                    "descripcion" => $producto->description,
+                    "costo" => $producto->cost,
+                    "provider" => $producto->provider->name,
+                    "status" => $producto->status->name,
+                    "Familia" => $familia,
+                    "Categoría" => $category,
+                    "piezas x caja" => $producto->pieces,
+                    "stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0
+                ];
+            })->toArray();
+            /* return $res; */
+            $result = array_merge($result, $res);
+        }
+        return $result;
     }
 
     public function updateStocks2(){

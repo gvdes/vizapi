@@ -96,9 +96,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/updateStocks', 'LocationController@updateStocks2');
         $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->post('/', 'ProductController@getProducts');
-        $router->get('/seeder', 'ProductController@seeder');
+        $router->get('/restore', 'ProductController@restoreProducts');
         $router->get('/updateTable', 'ProductController@updateTable');
-        $router->get('/updatePrices', 'ProductController@updatePrices');
+        $router->get('/restorePrices', 'ProductController@restorePrices');
         $router->get('/autocomplete', 'ProductController@autocomplete');
         $router->post('/getMassive', 'ProductController@getMassiveProducts');
         $router->post('/catalog', 'ProductController@getProductByCategory');

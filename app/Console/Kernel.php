@@ -112,9 +112,12 @@ class Kernel extends ConsoleKernel
                 $fac_sales = $fac->getSales($sale, $serie);
                 if($fac_sales){
                     foreach($fac_sales as $venta){
+                        $arr_cajas = array_column($cash_registers[$venta['_workpoint']], "num_cash");
+                        $key = array_search($arr_cajas, $venta["_cash"]);
+                        $_cash = ($key == 0 || $key>0) ? $key : $cash_registers[$venta['_workpoint']][0]['id'];
                         $instance = Sales::create([
                             "num_ticket" => $venta['num_ticket'],
-                            "_cash" => $cash_registers[$venta['_workpoint']][0]['id'],
+                            "_cash" => $_cash/* $cash_registers[$venta['_workpoint']][0]['id'] */,
                             "total" => $venta['total'],
                             "created_at" => $venta['created_at'], 
                             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
