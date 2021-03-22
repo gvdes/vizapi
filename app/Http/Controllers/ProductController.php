@@ -210,7 +210,7 @@ class ProductController extends Controller{
                         ->orWhere('code', 'like','%'.$code.'%')
                         ->orWhere('description', 'like','%'.$code.'%')
                         ->limit('20')->get();
-        if($esElProducto){
+        if($esElProducto && count($products)==20){
             $products[] = $esElProducto;
         }
         return response()->json(ProductResource::collection($products));
