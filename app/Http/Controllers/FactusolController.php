@@ -326,12 +326,12 @@ class FactusolController extends Controller{
     //Ordenar por agente
     //Insertar
     //Realizarlo cada 2 minutos
-    $query = "SELECT TIPFAC, CODFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC, ALMFAC, AGEFAC FROM F_FAC WHERE CODFAC > ".$num_ticket." AND TIPFAC = ".$type;
+    $query = "SELECT TIPFAC, CODFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC, ALMFAC, AGEFAC, TERFAC FROM F_FAC WHERE CODFAC > ".$num_ticket." AND TIPFAC = ".$type;
     $rows = $this->lanzarConsulta($query);
     if($rows){
       $min = $rows->min('CODFAC');
       $max = $rows->max('CODFAC');
-      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA, TERFAC FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
+      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
       $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
       $res = $rows->map(function($row) use($data){
         if(isset($data[$row["CODFAC"]])){
