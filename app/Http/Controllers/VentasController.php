@@ -430,7 +430,7 @@ class VentasController extends Controller{
           foreach($fac_sales as $venta){
             $arr_cajas = array_column($cash_registers[$venta['_workpoint']], "num_cash");
             $key = array_search($venta["_cash"], $arr_cajas);
-            $_cash = ($key == 0 || $key>0) ? $key : $cash_registers[$venta['_workpoint']][0]['id'];
+            $_cash = ($key == 0 || $key>0) ? $cash_registers[$venta['_workpoint']][$key]['id'] : $cash_registers[$venta['_workpoint']][0]['id'];
             $instance = Sales::create([
               "num_ticket" => $venta['num_ticket'],
               "_cash" => $_cash/* $cash_registers[$venta['_workpoint']][0]['id'] */,
@@ -439,7 +439,7 @@ class VentasController extends Controller{
               "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
               "_paid_by" => $venta['_paid_by'],
               "name" => $venta['name'],
-              "serie" => $venta['_cash']
+              "serie" => $venta['serie']
             ]);
             $toAttach = [];
             foreach($venta['body'] as $row){

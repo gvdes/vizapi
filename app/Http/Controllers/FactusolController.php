@@ -466,6 +466,7 @@ class FactusolController extends Controller{
           "total" => intval($row["TOTFAC"]),
           "name" => intval($row["CNOFAC"]),
           "_paid_by" => $_paid_by,
+          "serie"=> intval($row["TIPFAC"]),
           "body" => $body
         ];
       })->filter(function($sale){
