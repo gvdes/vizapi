@@ -767,7 +767,6 @@ class LocationController extends Controller{
                 $name = "noFound";
                 break;
         }
-        /* return $res; */
         $export = new ArrayExport($res);
         $date = new \DateTime();
         return Excel::download($export, $name.".xlsx");
@@ -1290,39 +1289,30 @@ class LocationController extends Controller{
     public function catologo(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
-        $workpoints =  WorkPoint::all();
         $result = [];
-        foreach($workpoints as $workpoint){
-            $productos = Product::with(['stocks' => function($query) use($workpoint){
-                $query->where("_workpoint", $workpoint->id);
-            } , 'category', 'status', 'provider'])->get();
-            $res = $productos->map(function($producto) use($categories, $arr_categories, $workpoint){
-                if($producto->category->deep == 0){
-                    $familia = $producto->category->name;
-                    $category = "";
-                }else{
-                    $key = array_search($producto->category->root, $arr_categories, true);
-                    $familia = $categories[$key]->name;
-                    $category = $producto->category->name;
-                }
-                return [
-                    "sucursal" => $workpoint->name,
-                    "codigo" => $producto->name,
-                    "modelo" => $producto->code,
-                    "descripcion" => $producto->description,
-                    "costo" => $producto->cost,
-                    "provider" => $producto->provider->name,
-                    "status" => $producto->status->name,
-                    "Familia" => $familia,
-                    "Categoría" => $category,
-                    "piezas x caja" => $producto->pieces,
-                    "stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0
-                ];
-            })->toArray();
-            /* return $res; */
-            $result = array_merge($result, $res);
-        }
-        return $result;
+        $productos = Product::with(['stocks' => function($query){
+            $query->where("_workpoint", 1);
+        } , 'category'])->get();
+        $res = $productos->map(function($producto) use($categories, $arr_categories){
+            if($producto->category->deep == 0){
+                $familia = $producto->category->name;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
+            return [
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "Piezas x caja" => $producto->pieces,
+                "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0
+            ];
+        })->toArray();
+        return $res;
     }
 
     public function updateStocks2(){
