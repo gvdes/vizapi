@@ -603,23 +603,33 @@ class ProductController extends Controller{
     }
 
     public function addProductsLastYears(){
-        $products = null;
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, "localhost/access/public/product");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,10);
+        $products = json_decode(curl_exec($client), true);
+        curl_close($client);
         if($products){
-            $instance = Product::firstOrCreate([
-                'code'=> $product['code']
-            ], [
-                'name' => $product['name'],
-                'description' => $product['description'],
-                'dimensions' => $product['dimensions'],
-                'pieces' => $product['pieces'],
-                '_category' => $product['_category'],
-                '_status' => 4,
-                '_provider' => $product['_provider'],
-                '_unit' => $product['_unit'],
-                'created_at' => new \DateTime(),
-                'updated_at' => new \DateTime(),
-                'cost' => $product['cost']
-            ]);
+            DB::transaction(function() use ($products){
+                foreach($products as $product){
+                    Product::firstOrCreate([
+                        'code'=> $product['code']
+                    ], [
+                        'name' => $product['name'],
+                        'description' => $product['description'],
+                        'dimensions' => $product['dimensions'],
+                        'pieces' => $product['pieces'],
+                        '_category' => $product['_category'],
+                        '_status' => 4,
+                        '_provider' => $product['_provider'],
+                        '_unit' => $product['_unit'],
+                        'created_at' => $product['created_at'],
+                        'updated_at' => new \DateTime(),
+                        'cost' => $product['cost']
+                    ]);
+                }
+            });
         }
     }
 }

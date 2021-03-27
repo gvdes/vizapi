@@ -573,4 +573,27 @@ class MiniPrinterController extends Controller{
             return false;
         } */
     }
+
+    public function demo(){
+        $printer = $this->printer;
+        if(!$printer){
+            return false;
+        }
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(1,1);
+        $printer->text("--------------------------------------------\n");
+        $printer->setTextSize(2,1);
+        $printer->text("PRUEBA DE CONEXIÓN");
+        $printer->setTextSize(1,1);
+        $printer->text("--------------------------------------------\n");
+        $printer->setTextSize(2,1);
+        $printer->feed(1);
+        $printer->cut();
+        $printer->close();
+        return true;
+        /* try{
+        }catch(\Exception $e){
+            return false;
+        } */
+    }
 }

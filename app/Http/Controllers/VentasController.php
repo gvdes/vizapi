@@ -14,6 +14,7 @@ use App\Sales;
 use App\PaidMethod;
 use App\Client;
 use App\Exports\ArrayExport;
+use App\Exports\InvoicesPerCategorySheet;
 
 class VentasController extends Controller{
   /**
@@ -340,22 +341,21 @@ class VentasController extends Controller{
     $start = new \DateTime($request->date_from);
     $end = new \DateTime($request->date_to);
     $days = [];
+    $categories = \App\ProductCategory::where('deep', 0)->get();
+    $ids_categories = array_column($categories->toArray(), 'id');
     for($i = $start; $i <= $end; $i->modify('+1 day')){
       $date_from = new \DateTime($i->format("Y-m-d"));
       $date_to = new \DateTime($i->format("Y-m-d"));
       $date_from->setTime(0,0,0);
       $date_to->setTime(23,59,59);
-      /* $days[] = [$date_from, $date_to]; */
-      $categories = \App\ProductCategory::where('deep', 0)->get();
-      $ids_categories = array_column($categories->toArray(), 'id');
       $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
         $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
           $query->where('_workpoint', $workpoint->id);
         });
       })->with(["sales" => function($query) use($workpoint, $date_from, $date_to){
-        $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->with(["cash" => function($query) use($workpoint){
+        $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
           $query->where('_workpoint', $workpoint->id);
-        }]);
+        });
       }, 'category'])->get()->map(function($product) use($categories, $ids_categories, $i, $workpoint){
         $venta = $product->sales->sum(function($product){
           return $product->pivot->total;
@@ -363,15 +363,18 @@ class VentasController extends Controller{
         $piezas = $product->sales->sum(function($product){
           return $product->pivot->amount;
         });
-  
-        $costos = $product->sales->sum(function($product){
-          return $product->pivot->costo;
+        $piezas2 = $piezas;
+        $piezas = $piezas == 0 ? 1 : $piezas;
+        $costo_real = $product->cost;
+        $costos = $product->sales->sum(function($product) use($costo_real){
+          $costo = intval($product->pivot->costo) == 0 ? $costo_real : $product->pivot->costo;
+          return $costo * $product->pivot->amount;
         });
-        
+
         $tickets = count($product->sales);
   
-        $costoPromedio = $costos/$tickets;
-        $precioPromedio = $venta/$tickets;
+        $costoPromedio = $costos/abs($piezas);
+        $precioPromedio = $venta/$piezas;
         if($product->category->deep == 0){
           $familia = $product->category->name;
           $category = "";
@@ -393,19 +396,97 @@ class VentasController extends Controller{
           "Familia" => $familia,
           "Categoría" => $category,
           "tickets" => $tickets,
-          "Unidades vendidas" => $piezas,
+          "Unidades vendidas" => $piezas2,
           "Costo Promedio" => $costoPromedio,
           "Precio Promedio" => $precioPromedio,
-          "venta" => $venta
+          "venta" => $venta,
+          "Movimiento" => $piezas2 > 0 ? "VENTA" : "DEVOLUCIÓN"
         ];
         return $product;
       })->toArray();
-      $days = array_merge($days, $products);
+      if(count($products)>0){
+        $days = array_merge($days, $products);
+      }
     }
     /* return $days; */
     $export = new ArrayExport($days);
     $date = new \DateTime();
-    return Excel::download($export, $workpoint->alias."_ventas.xlsx");
+    return Excel::download($export, $workpoint->alias."_".$start->format("Y-m-d")."_".$end->format("Y-m-d")."_ventas.xlsx");
+  }
+
+  public function pedidosXArticulos(Request $request){
+    $workpoint = WorkPoint::find($request->_workpoint);
+    $start = new \DateTime($request->date_from);
+    $end = new \DateTime($request->date_to);
+    $days = [];
+    $categories = \App\ProductCategory::where('deep', 0)->get();
+    $ids_categories = array_column($categories->toArray(), 'id');
+    for($i = $start; $i <= $end; $i->modify('+1 day')){
+      $date_from = new \DateTime($i->format("Y-m-d"));
+      $date_to = new \DateTime($i->format("Y-m-d"));
+      $date_from->setTime(0,0,0);
+      $date_to->setTime(23,59,59);
+      $products = Product::whereHas("requisitions", function($query) use($workpoint, $date_from, $date_to){
+        $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to], ["_workpoint", $workpoint->id]]);
+      })->with(["requisitions" => function($query) use($workpoint, $date_from, $date_to){
+        $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to], ["_workpoint", $workpoint->id]]);
+      }, 'category'])->get()/* ->map(function($product) use($categories, $ids_categories, $i, $workpoint){
+        $venta = $product->requisition->sum(function($product){
+          return $product->pivot->units;
+        });
+        $piezas = $product->sales->sum(function($product){
+          return $product->pivot->units;
+        });
+        $piezas2 = $piezas;
+        $piezas = $piezas == 0 ? 1 : $piezas;
+        $costo_real = $product->cost;
+        $costos = $product->sales->sum(function($product) use($costo_real){
+          $costo = intval($product->pivot->costo) == 0 ? $costo_real : $product->pivot->costo;
+          return $costo * $product->pivot->amount;
+        });
+
+        $tickets = count($product->sales);
+  
+        $costoPromedio = $costos/abs($piezas);
+        $precioPromedio = $venta/$piezas;
+        if($product->category->deep == 0){
+          $familia = $product->category->name;
+          $category = "";
+        }else{
+          $key = array_search($product->category->root, $ids_categories, true);
+          $familia = $categories[$key]->name;
+          $category = $product->category->name;
+        }
+        return [
+          "Fecha" => $i->format("Y-m-d"),
+          "Año" => $i->format("Y"),
+          "Mes" => $i->format("m"),
+          "Día" => $i->format("d"),
+          "Sucursal" => $workpoint->name,
+          "Codigo" => $product->code,
+          "Modelo" => $product->name,
+          "Descripción" => $product->description,
+          "Unidad de medida" => $product->pieces,
+          "Familia" => $familia,
+          "Categoría" => $category,
+          "tickets" => $tickets,
+          "Unidades vendidas" => $piezas2,
+          "Costo Promedio" => $costoPromedio,
+          "Precio Promedio" => $precioPromedio,
+          "venta" => $venta,
+          "Movimiento" => $piezas2 > 0 ? "VENTA" : "DEVOLUCIÓN"
+        ];
+        return $product;
+      })->toArray() */;
+      /* if(count($products)>0){
+        $days = array_merge($days, $products);
+      } */
+      $days[] = $products;
+    }
+    return $days;
+    $export = new ArrayExport($days);
+    $date = new \DateTime();
+    return Excel::download($export, $workpoint->alias."_".$start->format("Y-m-d")."_".$end->format("Y-m-d")."_ventas.xlsx");
   }
 
   public function getVentas(Request $request){
@@ -537,7 +618,7 @@ class VentasController extends Controller{
   }
 
   public function getVentas2019(Request $request){
-    $workpoint = WorkPoint::find(9);
+    $workpoint = WorkPoint::find($request->_workpoint);
     $start = microtime(true);
     $a = 0;
     $clientes = Client::all()->toArray();
@@ -549,6 +630,7 @@ class VentasController extends Controller{
     curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($client,CURLOPT_TIMEOUT,10);
     $ventas = json_decode(curl_exec($client), true);
+    /* return $ventas; */
     curl_close($client);
     if($ventas){
       $a++;
@@ -563,9 +645,11 @@ class VentasController extends Controller{
             "_cash" => $cash_registers[$index_caja]['id'],
             "total" => $venta['total'],
             "created_at" => $venta['created_at'],
+            "updated_at" => $venta['created_at'],
             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
             "_paid_by" => $venta['_paid_by'],
             "name" => $venta['name'],
+            "serie" => 2019
           ]);
           $insert = [];
           foreach($venta['body'] as $row){
@@ -635,7 +719,7 @@ class VentasController extends Controller{
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       })->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-      })-> */with(['sales' => function($query) use($date_from, $date_to, $cash){
+      })-> */with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       }])->get();
     }
@@ -674,9 +758,10 @@ class VentasController extends Controller{
         "Familia" => $familia,
         "Categoría" => $category,
         "Total" => $vendidos,
-        "tickets" => $tickets
+        "tickets" => $tickets,
+        "precios" => $product->prices
       ];
-      return array_merge($desgloce, $a);
+      return array_merge($a, $desgloce);
     });
 
     return response()->json($result);
