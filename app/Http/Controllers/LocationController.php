@@ -1291,7 +1291,7 @@ class LocationController extends Controller{
         $arr_categories = array_column($categories->toArray(), "id");
         $result = [];
         $productos = Product::with(['stocks' => function($query){
-            $query->where("_workpoint", 1);
+            $query->where("_workpoint", $this->account->_workpoint/* 1 */);
         } , 'category'])->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             if($producto->category->deep == 0){

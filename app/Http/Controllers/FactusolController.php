@@ -437,25 +437,6 @@ class FactusolController extends Controller{
           break;
         }
         $_cash = $this->getTerminal([$row["TERFAC"]]);
-        /* if(str_contains($row["TIPFAC"], "UNO")){
-          $_cash = 1;
-        }else if(str_contains($row["TIPFAC"], "DOS")){
-          $_cash = 2;
-        }else if(str_contains($row["TIPFAC"], "TRES")){
-          $_cash = 3;
-        }else if(str_contains($row["TIPFAC"], "CUATRO")){
-          $_cash = 4;
-        }else if(str_contains($row["TIPFAC"], "CINCO")){
-          $_cash = 5;
-        }else if(str_contains($row["TIPFAC"], "SEIS")){
-          $_cash = 6;
-        }else if(str_contains($row["TIPFAC"], "SIETE")){
-          $_cash = 7;
-        }else if(str_contains($row["TIPFAC"], "OCHO")){
-          $_cash = 8;
-        }else if(str_contains($row["TIPFAC"], "NUEVE")){
-          $_cash = 9;
-        } */
 
         return [
           "_cash" => $_cash,
@@ -480,6 +461,151 @@ class FactusolController extends Controller{
           return true;
         }
       })->values()->all();
+      return $res;
+    }
+    return false;
+  }
+
+  public function getSalidas($type = 1){
+    //Obtener el ultimo folio del año
+    //Ordenar por agente
+    //Insertar
+    //Realizarlo cada 2 minutos
+    $query = "SELECT TIPFAC, CODFAC, REFFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC, ALMFAC, AGEFAC, TERFAC FROM F_FAC WHERE REFFAC !=''  AND TIPFAC = ".$type;
+    $rows = $this->lanzarConsulta($query);
+    if($rows){
+      $min = $rows->min('CODFAC');
+      $max = $rows->max('CODFAC');
+      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
+      $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
+      $res = $rows->map(function($row) use($data){
+        if(isset($data[$row["CODFAC"]])){
+          $body = $data[$row["CODFAC"]]->map(function($row){
+            return [
+              "_product" => $row["ARTLFA"],
+              "amount" => $row["CANLFA"],
+              "price" => $row["PRELFA"],
+              "total" => $row["TOTLFA"],
+              "costo" => $row["COSLFA"]
+            ];
+          });
+        }else{
+          $body = [];
+        }
+        $hora = count(explode(" ", $row["HORFAC"]))>1 ? explode(" ", $row["HORFAC"])[1] : "00:00:00";
+        $date = explode("T", $row["FECFAC"])[0]." ".$hora;
+        $_paid_by = 1;
+        switch($row["FOPFAC"]){
+          case "EFE":
+            $_paid_by = 1;
+          break;
+          case "TCD":
+            $_paid_by = 2;
+          break;
+          case "DEP":
+            $_paid_by = 3;
+          break;
+          case "TRA":
+            $_paid_by = 4;
+          break;
+          case "C30":
+            $_paid_by = 5;
+          break;
+          case "CHE":
+            $_paid_by = 6;
+          break;
+          case "TBA":
+            $_paid_by = 7;
+          break;
+          case "TDA":
+            $_paid_by = 8;
+          break;
+          case "TDB":
+            $_paid_by = 9;
+          break;
+          case "TDS":
+            $_paid_by = 10;
+          break;
+          case "TSA":
+            $_paid_by = 11;
+          break;
+          case "TSC":
+            $_paid_by = 12;
+          break;
+        }
+        $_workpoint = 0;
+        switch($row["ALMFAC"]){
+          case "GEN": //CEDISSP
+            $_workpoint = 1;
+          break;
+          case "SP3": //SP3
+            $_workpoint = 13;
+          break;
+          case "CR2": //CR2
+            $_workpoint = 6;
+          break;
+          case "RA2": //RC2
+            $_workpoint = 10;
+          break;
+          case "SP2": //SP2
+            $_workpoint = 4;
+          break;
+          case "RA1": //RC1
+            $_workpoint = 9;
+          break;
+          case "BR2": //BR2
+            $_workpoint = 12;
+          break;
+          case "BR1": //BR1
+            $_workpoint = 11;
+          break;
+          case "SP1": //SP1
+            $_workpoint = 3;
+          break;
+          case "CR1": //CR1
+            $_workpoint = 5;
+          break;
+          case "AP2": //AP2
+            $_workpoint = 8;
+          break;
+          case "SP4": //SP4
+            $_workpoint = 15;
+          break;
+          case "AP1": //AP1
+            $_workpoint = 7;
+          break;
+          case "BOL": //BOL
+            $_workpoint = 13;
+          break;
+          case "17": //EST
+            $_workpoint = 0;
+          break;
+        }
+        $_cash = $this->getTerminal([$row["TERFAC"]]);
+
+        return [
+          "_cash" => $_cash,
+          "_workpoint" => $_workpoint,
+          "num_ticket" => intval($row["CODFAC"]),
+          "created_at" => $date,
+          "_client" => intval($row["CLIFAC"]),
+          "total" => intval($row["TOTFAC"]),
+          "name" => intval($row["CNOFAC"]),
+          "_paid_by" => $_paid_by,
+          "serie"=> intval($row["TIPFAC"]),
+          "body" => $body
+        ];
+      })/* ->filter(function($sale){
+        $key = array_search($sale["_client"], [0, 1, 2, 551, 3, 4, 5, 248, 6, 73, 7, 122, 389, 60, 874]);
+        if($key === 0 || $key >0 ){
+          return false;
+        }else{
+          if($sale["_workpoint"] == 0){
+            return false;
+          }
+          return true;
+        }
+      })->values()->all() */;
       return $res;
     }
     return false;

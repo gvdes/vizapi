@@ -182,3 +182,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');
         });
+
+        $router->group(['prefix' => 'sdelsol'], function () use ($router){
+            $router->get('/getSalidas/{type}', 'FactusolController@demoImpresion');
+        });
