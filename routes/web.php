@@ -106,6 +106,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
         $router->post('/getCategories', 'ProductController@getCategory');
+        $router->get('/pricesAAA', 'ProductController@getPriceAAA');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){

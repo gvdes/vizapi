@@ -1309,10 +1309,51 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0
+                "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
+                "General" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->gen : 0,
+                "Exhibición" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->exh : 0
             ];
         })->toArray();
         return $res;
+    }
+
+    public function catologo2(){
+        $categories = \App\ProductCategory::all();
+        $arr_categories = array_column($categories->toArray(), "id");
+        $result = [];
+        $sucursales = WorkPoint::all();
+        foreach($sucursales as $sucursal){ 
+            $productos = Product::with(['stocks' => function($query) use($sucursal){
+                $query->where("_workpoint", $sucursal->id);
+            }, 'category', 'prices' => function($query){
+                $query->where('_type', 7);
+            }])->get();
+            $res = $productos->map(function($producto) use($categories, $arr_categories, $sucursal){
+                if($producto->category->deep == 0){
+                    $familia = $producto->category->name;
+                    $category = "";
+                }else{
+                    $key = array_search($producto->category->root, $arr_categories, true);
+                    $familia = $categories[$key]->name;
+                    $category = $producto->category->name;
+                }
+                return [
+                    "sucursal" => $sucursal->name,
+                    "Código" => $producto->name,
+                    "Modelo" => $producto->code,
+                    "Descripción" => $producto->description,
+                    "Familia" => $familia,
+                    "Categoría" => $category,
+                    "Piezas x caja" => $producto->pieces,
+                    "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
+                    "Precio AAA" => count($producto->prices)>0 ? $producto->prices[0]->pivot->price : 0,
+                    "Costo" => $producto->cost
+                ];
+            })->toArray();
+            $result = array_merge($result, $res);
+            /* $result[] = $sucursal; */
+        }
+        return $result;
     }
 
     public function updateStocks2(){

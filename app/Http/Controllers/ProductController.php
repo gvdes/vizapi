@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\ProductCategory;
 use App\ProductStatus;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ArrayExport;
 
 use App\Http\Resources\Product as ProductResource;
 
@@ -77,8 +79,16 @@ class ProductController extends Controller{
         try{
             $start = microtime(true);
             $products = Product::all()->toArray();
-            $fac = new FactusolController();
-            $prices = $fac->getPrices();
+            /* $fac = new FactusolController();
+            $prices = $fac->getPrices(); */
+            $client = curl_init();
+            curl_setopt($client, CURLOPT_URL, "localhost/access/public/prices");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            $prices = collect(json_decode(curl_exec($client), true));
+            curl_close($client);
+            /* return response()->json($prices); */
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
                     DB::table('product_prices')->delete();
@@ -354,6 +364,7 @@ class ProductController extends Controller{
         $filter = $category->attributes->toArray();
         return array_merge($children_attributes, $filter);
     }
+
     public function getIdsTree($category){
         $children = collect($category->children);
         $children_ids = $children->reduce(function($ids, $category){
@@ -565,8 +576,6 @@ class ProductController extends Controller{
         //Validar
     }
 
-    
-
     public function getMochilaPrices(){
         $now = Product::whereIn('_category', range(1,16))->where('updated_at', ">", "2021-03-10 00:00:00")->where('updated_at', "<", "2021-03-10 23:59:59")/* ->paginate(500) */->get();
         $prices = $this->getPrices_access(array_column($now->toArray(), 'code'));
@@ -631,5 +640,41 @@ class ProductController extends Controller{
                 }
             });
         }
+    }
+
+    public function getPriceAAA(){
+        $categories = \App\ProductCategory::where('deep', 0)->get();
+        $ids_categories = array_column($categories->toArray(), 'id');
+        $products = Product::whereHas('prices',)->with(['prices' => function($query){
+            $query->where('_type', 7);
+        }])->get()->map(function($product) use($categories, $ids_categories){
+            if($product->category->deep == 0){
+                $familia = $product->category->name;
+                $category = "";
+            }else{
+                $key = array_search($product->category->root, $ids_categories, true);
+                if($product->category === 2){
+                    $key = array_search($categories[$key]->root, $ids_categories, true);
+                    $familia = $categories[$key]->name;
+                    $category = $product->category->name;
+                }
+                $familia = $categories[$key]->name;
+                $category = $product->category->name;
+            }
+            return [
+                "Codigo" => $product->code,
+                "Modelo" => $product->name,
+                "Descripción" => $product->description,
+                "Unidad de medida" => $product->pieces,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "Costo" => $product->cost,
+                "Precio AAA" => count($product->prices)>0 ? $product->prices[0]->pivot->price : 0
+            ];
+        });
+        /* return $products; */
+        $export = new ArrayExport($products->toArray());
+        $date = new \DateTime();
+        return Excel::download($export, "2018_precios.xlsx");
     }
 }

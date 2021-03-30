@@ -348,15 +348,17 @@ class VentasController extends Controller{
       $date_to = new \DateTime($i->format("Y-m-d"));
       $date_from->setTime(0,0,0);
       $date_to->setTime(23,59,59);
-      $products = Product::whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
+      $products = Product::/* whereHas("sales", function($query) use($workpoint, $date_from, $date_to){
         $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
           $query->where('_workpoint', $workpoint->id);
         });
-      })->with(["sales" => function($query) use($workpoint, $date_from, $date_to){
+      })-> */with(["sales" => function($query) use($workpoint, $date_from, $date_to){
         $query->where([['created_at',">=", $date_from], ['created_at',"<=", $date_to]])->whereHas("cash", function($query) use($workpoint){
           $query->where('_workpoint', $workpoint->id);
         });
-      }, 'category'])->get()->map(function($product) use($categories, $ids_categories, $i, $workpoint){
+      }, 'category'])->get()->filter(function($product){
+        return count($product->sales)>0;
+      })->map(function($product) use($categories, $ids_categories, $i, $workpoint){
         $venta = $product->sales->sum(function($product){
           return $product->pivot->total;
         });
@@ -406,6 +408,7 @@ class VentasController extends Controller{
       })->toArray();
       if(count($products)>0){
         $days = array_merge($days, $products);
+        /* $days = count($products); */
       }
     }
     /* return $days; */
@@ -489,7 +492,7 @@ class VentasController extends Controller{
     return Excel::download($export, $workpoint->alias."_".$start->format("Y-m-d")."_".$end->format("Y-m-d")."_ventas.xlsx");
   }
 
-  public function getVentas(Request $request){
+  public function getVentasX(Request $request){
     try{
       $clientes = Client::all()->toArray();
       $ids_clients = array_column($clientes, 'id');
@@ -542,6 +545,22 @@ class VentasController extends Controller{
     }catch(Exception $e){
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
+  }
+
+  public function getVentas(Request $request){
+    $sale = Sales::where("serie", 6)->get();
+    $consecutivos = range(1, 2213);
+    $consecutivos2 = array_column($sale->toArray(), "num_ticket");
+    $res = [];
+    foreach($consecutivos as $i){
+      $exist = array_search($i, $consecutivos2);
+      if($exist === 0 || $exist > 0){
+
+      }else{
+        $res [] = $i;
+      }
+    }
+    return $res;
   }
 
   public function getLastVentas(Request $request){
