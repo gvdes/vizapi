@@ -998,10 +998,10 @@ class PdfController extends Controller{
                     $font_size_prices = 2.7;
                 break;
                 case 2:
-                    $font_size_prices = 1.7;
+                    $font_size_prices = 1.5;
                 break;
                 case 3:
-                    $font_size_prices = 1.6;
+                    $font_size_prices = 1.5;
                 break;
                 case 4:
                     $font_size_prices = 1.4;
