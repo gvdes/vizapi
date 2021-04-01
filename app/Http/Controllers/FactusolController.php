@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Exports\ArrayExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FactusolController extends Controller{
   /**
@@ -19,6 +21,10 @@ class FactusolController extends Controller{
     $data = http_build_query(["codigoFabricante" => env('DELSOL_FABRICANTE'), "codigoCliente" => env('DELSOL_CLIENTE'), "baseDatosCliente" => env('DELSOL_BD'), "password" => base64_encode(env('DELSOL_PASSWORD'))]);
     curl_setopt($client, CURLOPT_POSTFIELDS, $data);
     $this->token = json_decode(curl_exec($client), true);
+    $access = env('ACCESS_FILE');
+    /* $access = "C:\Users\Carlo\Desktop\2020\VPA2020"; */
+    $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
+    $this->con = $db;
   }
 
   public function formattedData($data){
@@ -466,149 +472,382 @@ class FactusolController extends Controller{
     return false;
   }
 
-  public function getSalidas($type = 1){
+  public function getSalidas2($type = 1){
     //Obtener el ultimo folio del año
     //Ordenar por agente
     //Insertar
     //Realizarlo cada 2 minutos
-    $query = "SELECT TIPFAC, CODFAC, REFFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC, ALMFAC, AGEFAC, TERFAC FROM F_FAC WHERE REFFAC !=''  AND TIPFAC = ".$type;
-    $rows = $this->lanzarConsulta($query);
-    if($rows){
-      $min = $rows->min('CODFAC');
-      $max = $rows->max('CODFAC');
-      $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
-      $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
-      $res = $rows->map(function($row) use($data){
-        if(isset($data[$row["CODFAC"]])){
-          $body = $data[$row["CODFAC"]]->map(function($row){
-            return [
-              "_product" => $row["ARTLFA"],
-              "amount" => $row["CANLFA"],
-              "price" => $row["PRELFA"],
-              "total" => $row["TOTLFA"],
-              "costo" => $row["COSLFA"]
-            ];
-          });
-        }else{
-          $body = [];
-        }
-        $hora = count(explode(" ", $row["HORFAC"]))>1 ? explode(" ", $row["HORFAC"])[1] : "00:00:00";
-        $date = explode("T", $row["FECFAC"])[0]." ".$hora;
-        $_paid_by = 1;
-        switch($row["FOPFAC"]){
-          case "EFE":
-            $_paid_by = 1;
-          break;
-          case "TCD":
-            $_paid_by = 2;
-          break;
-          case "DEP":
-            $_paid_by = 3;
-          break;
-          case "TRA":
-            $_paid_by = 4;
-          break;
-          case "C30":
-            $_paid_by = 5;
-          break;
-          case "CHE":
-            $_paid_by = 6;
-          break;
-          case "TBA":
-            $_paid_by = 7;
-          break;
-          case "TDA":
-            $_paid_by = 8;
-          break;
-          case "TDB":
-            $_paid_by = 9;
-          break;
-          case "TDS":
-            $_paid_by = 10;
-          break;
-          case "TSA":
-            $_paid_by = 11;
-          break;
-          case "TSC":
-            $_paid_by = 12;
-          break;
-        }
-        $_workpoint = 0;
-        switch($row["ALMFAC"]){
-          case "GEN": //CEDISSP
-            $_workpoint = 1;
-          break;
-          case "SP3": //SP3
-            $_workpoint = 13;
-          break;
-          case "CR2": //CR2
-            $_workpoint = 6;
-          break;
-          case "RA2": //RC2
-            $_workpoint = 10;
-          break;
-          case "SP2": //SP2
-            $_workpoint = 4;
-          break;
-          case "RA1": //RC1
-            $_workpoint = 9;
-          break;
-          case "BR2": //BR2
-            $_workpoint = 12;
-          break;
-          case "BR1": //BR1
-            $_workpoint = 11;
-          break;
-          case "SP1": //SP1
-            $_workpoint = 3;
-          break;
-          case "CR1": //CR1
-            $_workpoint = 5;
-          break;
-          case "AP2": //AP2
-            $_workpoint = 8;
-          break;
-          case "SP4": //SP4
-            $_workpoint = 15;
-          break;
-          case "AP1": //AP1
-            $_workpoint = 7;
-          break;
-          case "BOL": //BOL
-            $_workpoint = 13;
-          break;
-          case "17": //EST
-            $_workpoint = 0;
-          break;
-        }
-        $_cash = $this->getTerminal([$row["TERFAC"]]);
-
-        return [
-          "_cash" => $_cash,
-          "_workpoint" => $_workpoint,
-          "num_ticket" => intval($row["CODFAC"]),
-          "created_at" => $date,
-          "_client" => intval($row["CLIFAC"]),
-          "total" => intval($row["TOTFAC"]),
-          "name" => intval($row["CNOFAC"]),
-          "_paid_by" => $_paid_by,
-          "serie"=> intval($row["TIPFAC"]),
-          "body" => $body
-        ];
-      })/* ->filter(function($sale){
-        $key = array_search($sale["_client"], [0, 1, 2, 551, 3, 4, 5, 248, 6, 73, 7, 122, 389, 60, 874]);
-        if($key === 0 || $key >0 ){
-          return false;
-        }else{
-          if($sale["_workpoint"] == 0){
-            return false;
+    $series = range(1,9);
+    $ventas = [];
+    $categories = \App\ProductCategory::where('deep', 0)->get();
+    $ids_categories = array_column($categories->toArray(), 'id');
+    foreach($series as $type){
+      $query = "SELECT TIPFAC, CODFAC, REFFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC, ALMFAC, AGEFAC, TERFAC FROM F_FAC WHERE REFFAC !=''  AND TIPFAC = ".$type;
+      $rows = $this->lanzarConsulta($query);
+      if($rows){
+        $min = $rows->min('CODFAC');
+        $max = $rows->max('CODFAC');
+        $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
+        $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
+        $res = $rows->map(function($row) use($data, $categories, $ids_categories){
+          if(isset($data[$row["CODFAC"]])){
+            $body = $data[$row["CODFAC"]]->map(function($row){
+              return [
+                "code" => $row["ARTLFA"],
+                "amount" => $row["CANLFA"],
+                "price" => $row["PRELFA"],
+                "total" => $row["TOTLFA"],
+                "costo" => $row["COSLFA"]
+              ];
+            })->toArray();
+          }else{
+            $body = [];
           }
-          return true;
-        }
-      })->values()->all() */;
-      return $res;
+          $hora = count(explode(" ", $row["HORFAC"]))>1 ? explode(" ", $row["HORFAC"])[1] : "00:00:00";
+          $date = explode("T", $row["FECFAC"])[0]." ".$hora;
+          $_paid_by = 1;
+          switch($row["FOPFAC"]){
+            case "EFE":
+              $_paid_by = 1;
+            break;
+            case "TCD":
+              $_paid_by = 2;
+            break;
+            case "DEP":
+              $_paid_by = 3;
+            break;
+            case "TRA":
+              $_paid_by = 4;
+            break;
+            case "C30":
+              $_paid_by = 5;
+            break;
+            case "CHE":
+              $_paid_by = 6;
+            break;
+            case "TBA":
+              $_paid_by = 7;
+            break;
+            case "TDA":
+              $_paid_by = 8;
+            break;
+            case "TDB":
+              $_paid_by = 9;
+            break;
+            case "TDS":
+              $_paid_by = 10;
+            break;
+            case "TSA":
+              $_paid_by = 11;
+            break;
+            case "TSC":
+              $_paid_by = 12;
+            break;
+          }
+          $_workpoint = 0;
+          switch($row["ALMFAC"]){
+            case "GEN": //CEDISSP
+              $_workpoint = 1;
+            break;
+            case "SP3": //SP3
+              $_workpoint = 13;
+            break;
+            case "CR2": //CR2
+              $_workpoint = 6;
+            break;
+            case "RA2": //RC2
+              $_workpoint = 10;
+            break;
+            case "SP2": //SP2
+              $_workpoint = 4;
+            break;
+            case "RA1": //RC1
+              $_workpoint = 9;
+            break;
+            case "BR2": //BR2
+              $_workpoint = 12;
+            break;
+            case "BR1": //BR1
+              $_workpoint = 11;
+            break;
+            case "SP1": //SP1
+              $_workpoint = 3;
+            break;
+            case "CR1": //CR1
+              $_workpoint = 5;
+            break;
+            case "AP2": //AP2
+              $_workpoint = 8;
+            break;
+            case "SP4": //SP4
+              $_workpoint = 15;
+            break;
+            case "AP1": //AP1
+              $_workpoint = 7;
+            break;
+            case "BOL": //BOL
+              $_workpoint = 13;
+            break;
+            case "17": //EST
+              $_workpoint = 0;
+            break;
+          }
+          $_cash = $this->getTerminal([$row["TERFAC"]]);
+          $ticket = $row["REFFAC"];
+          $pedido = \App\Requisition::with('products')->find($ticket);
+          $result = [];
+          if($pedido){
+            /* $ordered = $pedido->products->toArray();
+            $ordered = array_column($ordered, 'code'); */
+            $body_codes = array_column($body, 'code');
+            foreach($pedido->products as $product){
+              $key = array_search($product->code, $body_codes);
+              $entregado = ($key === 0 || $key>0) ? $body[$key]['amount'] : 0;
+              $ordenado = $product->units->id == 3 ? $product->pivot->units * $product->pieces : $product->pivot->units;
+              if($product->category->deep == 0){
+                $familia = $product->category->name;
+                $category = "";
+              }else{
+                  $key = array_search($product->category->root, $ids_categories, true);
+                  if($product->category === 2){
+                      $key = array_search($categories[$key]->root, $ids_categories, true);
+                      $familia = $categories[$key]->name;
+                      $category = $product->category->name;
+                  }
+                  $familia = $categories[$key]->name;
+                  $category = $product->category->name;
+              }
+              $result[] = [
+                "workpoint" => $pedido->from->name,
+                "num_ticket_salida" => $row["TIPFAC"]."-".$row["CODFAC"],
+                "num_ticket_pedido" => $pedido->id,
+                "created_at" => $pedido->created_at,
+                "updated_at" => $pedido->updated_at,
+                "nota" => $pedido->notes,
+                "modelo" => $product->code,
+                "codigo" => $product->name,
+                "Familia" => $familia,
+                "categoría" => $category,
+                "description" => $product->description,
+                "ordenado" => $ordenado,
+                "entregado" => $entregado
+              ];
+            }
+            $result_codes = array_column($result, 'modelo');
+            foreach($body as $product){
+              $key = array_search($product['code'], $result_codes);
+              if($key === 0 || $key>0){
+              }else{
+                $product2 = \App\Product::where('code', $product['code'])->first();
+                if($product2->category->deep == 0){
+                  $familia = $product2->category->name;
+                  $category = "";
+                }else{
+                    $key = array_search($product2->category->root, $ids_categories, true);
+                    if($product2->category === 2){
+                        $key = array_search($categories[$key]->root, $ids_categories, true);
+                        $familia = $categories[$key]->name;
+                        $category = $product2->category->name;
+                    }
+                    $familia = $categories[$key]->name;
+                    $category = $product2->category->name;
+                }
+                $result[] = [
+                  "workpoint" => $pedido->from->name,
+                  "num_ticket_salida" => $row["TIPFAC"]."-".$row["CODFAC"],
+                  "num_ticket_pedido" => $pedido->id,
+                  "created_at" => $pedido->created_at,
+                  "updated_at" => $pedido->updated_at,
+                  "nota" => $pedido->notes,
+                  "modelo" => $product['code'],
+                  "codigo" => $product2->name,
+                  "Familia" => $familia,
+                  "categoría" => $category,
+                  "description" => $product2->description,
+                  "ordenado" => 0,
+                  "entregado" => $product['amount']
+                ];
+              }
+            }
+            return $result;
+          }
+        })->filter(function($sale){
+          return $sale != null;
+        })->values()->all();
+        /* return $res; */
+        $ventas = array_merge($ventas, $res);
+      }
     }
-    return false;
+    /* return $ventas; */
+    $export = new ArrayExport($ventas);
+    return Excel::download($export, "pedidosVsEntradas2021.xlsx");
+    /* return false; */
+  }
+
+  public function getSalidas(){
+    //Obtener el ultimo folio del año
+    //Ordenar por agente
+    //Insertar
+    //Realizarlo cada 2 minutos
+    $series = range(1,9);
+    $ventas = [];
+    $categories = \App\ProductCategory::where('deep', 0)->get();
+    $ids_categories = array_column($categories->toArray(), 'id');
+    foreach($series as $type){
+      $query = "SELECT TIPFAC, CODFAC, REFFAC, FECFAC, CLIFAC, CNOFAC, FOPFAC, HORFAC, TOTFAC FROM F_FAC WHERE TIPFAC = ?";
+      $exec = $this->con->prepare($query);
+      $exec->execute([$type]);
+      $rows = collect($exec->fetchAll(\PDO::FETCH_ASSOC));
+      /* $ventas[] = count($rows); */
+      /* $rows = $this->lanzarConsulta($query); */
+      if($rows){
+        $min = $rows->min('CODFAC');
+        $max = $rows->max('CODFAC');
+        $query_body = "SELECT CODLFA, ARTLFA, CANLFA, PRELFA, TOTLFA, COSLFA FROM F_LFA WHERE TIPLFA = ".$type." AND CODLFA >= ".$min." AND CODLFA <=". $max;
+        $data = $this->lanzarConsulta($query_body)->groupBy("CODLFA");
+        $res = $rows->map(function($row) use($data, $categories, $ids_categories){
+          if(isset($data[$row["CODFAC"]])){
+            $body = $data[$row["CODFAC"]]->map(function($row){
+              return [
+                "code" => $row["ARTLFA"],
+                "amount" => $row["CANLFA"],
+                "price" => $row["PRELFA"],
+                "total" => $row["TOTLFA"],
+                "costo" => $row["COSLFA"]
+              ];
+            })->toArray();
+          }else{
+            $body = [];
+          }
+          $hora = count(explode(" ", $row["HORFAC"]))>1 ? explode(" ", $row["HORFAC"])[1] : "00:00:00";
+          $date = explode("T", $row["FECFAC"])[0]." ".$hora;
+          $_paid_by = 1;
+          switch($row["FOPFAC"]){
+            case "EFE":
+              $_paid_by = 1;
+            break;
+            case "TCD":
+              $_paid_by = 2;
+            break;
+            case "DEP":
+              $_paid_by = 3;
+            break;
+            case "TRA":
+              $_paid_by = 4;
+            break;
+            case "C30":
+              $_paid_by = 5;
+            break;
+            case "CHE":
+              $_paid_by = 6;
+            break;
+            case "TBA":
+              $_paid_by = 7;
+            break;
+            case "TDA":
+              $_paid_by = 8;
+            break;
+            case "TDB":
+              $_paid_by = 9;
+            break;
+            case "TDS":
+              $_paid_by = 10;
+            break;
+            case "TSA":
+              $_paid_by = 11;
+            break;
+            case "TSC":
+              $_paid_by = 12;
+            break;
+          }
+          /* $_cash = $this->getTerminal([$row["TERFAC"]]); */
+          $ticket = $row["REFFAC"];
+          $pedido = \App\Requisition::with('products')->find($ticket);
+          $result = [];
+          if($pedido){
+            $body_codes = array_column($body, 'code');
+            foreach($pedido->products as $product){
+              $key = array_search($product->code, $body_codes);
+              $entregado = ($key === 0 || $key>0) ? $body[$key]['amount'] : 0;
+              $ordenado = $product->units->id == 3 ? $product->pivot->units * $product->pieces : $product->pivot->units;
+              if($product->category->deep == 0){
+                $familia = $product->category->name;
+                $category = "";
+              }else{
+                  $key = array_search($product->category->root, $ids_categories, true);
+                  if($product->category === 2){
+                      $key = array_search($categories[$key]->root, $ids_categories, true);
+                      $familia = $categories[$key]->name;
+                      $category = $product->category->name;
+                  }
+                  $familia = $categories[$key]->name;
+                  $category = $product->category->name;
+              }
+              $result[] = [
+                "workpoint" => $pedido->from->name,
+                "num_ticket_salida" => $row["TIPFAC"]."-".$row["CODFAC"],
+                "num_ticket_pedido" => $pedido->id,
+                "created_at" => $pedido->created_at,
+                "updated_at" => $pedido->updated_at,
+                "nota" => $pedido->notes,
+                "modelo" => $product->code,
+                "codigo" => $product->name,
+                "Familia" => $familia,
+                "categoría" => $category,
+                "description" => $product->description,
+                "ordenado" => $ordenado,
+                "entregado" => $entregado
+              ];
+            }
+            $result_codes = array_column($result, 'modelo');
+            foreach($body as $product){
+              $key = array_search($product['code'], $result_codes);
+              if($key === 0 || $key>0){
+              }else{
+                $product2 = \App\Product::where('code', $product['code'])->first();
+                if($product2){
+                  if($product2->category->deep == 0){
+                    $familia = $product2->category->name;
+                    $category = "";
+                  }else{
+                      $key = array_search($product2->category->root, $ids_categories, true);
+                      if($product2->category === 2){
+                          $key = array_search($categories[$key]->root, $ids_categories, true);
+                          $familia = $categories[$key]->name;
+                          $category = $product2->category->name;
+                      }
+                      $familia = $categories[$key]->name;
+                      $category = $product2->category->name;
+                  }
+                  $result[] = [
+                    "workpoint" => $pedido->from->name,
+                    "num_ticket_salida" => $row["TIPFAC"]."-".$row["CODFAC"],
+                    "num_ticket_pedido" => $pedido->id,
+                    "created_at" => $pedido->created_at,
+                    "updated_at" => $pedido->updated_at,
+                    "nota" => $pedido->notes,
+                    "modelo" => $product['code'],
+                    "codigo" => $product2->name,
+                    "Familia" => $familia,
+                    "categoría" => $category,
+                    "description" => $product2->description,
+                    "ordenado" => 0,
+                    "entregado" => $product['amount']
+                  ];
+                }
+              }
+            }
+            return $result;
+          }
+        })->filter(function($sale){
+          return $sale != null;
+        })->values()->all();
+        $ventas = array_merge($ventas, $res);
+      }
+    }
+    /* return response()->json($ventas); */
+    $export = new ArrayExport($ventas);
+    return Excel::download($export, "pedidosVsEntradas2021.xlsx");
   }
 
   public function getEntradas(){
