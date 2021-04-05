@@ -21,10 +21,6 @@ class FactusolController extends Controller{
     $data = http_build_query(["codigoFabricante" => env('DELSOL_FABRICANTE'), "codigoCliente" => env('DELSOL_CLIENTE'), "baseDatosCliente" => env('DELSOL_BD'), "password" => base64_encode(env('DELSOL_PASSWORD'))]);
     curl_setopt($client, CURLOPT_POSTFIELDS, $data);
     $this->token = json_decode(curl_exec($client), true);
-    $access = env('ACCESS_FILE');
-    /* $access = "C:\Users\Carlo\Desktop\2020\VPA2020"; */
-    $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-    $this->con = $db;
   }
 
   public function formattedData($data){
