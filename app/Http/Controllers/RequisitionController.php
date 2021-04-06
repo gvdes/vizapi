@@ -551,7 +551,7 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ]);
-        }, '>', 0)->where('_status', 1)->get();
+        }, '>', 0)->where('_status', 1)->whereNotBetween('_category', [130,172])->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
