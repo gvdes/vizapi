@@ -1322,7 +1322,7 @@ class LocationController extends Controller{
         $arr_categories = array_column($categories->toArray(), "id");
         $result = [];
         $sucursales = WorkPoint::all();
-        foreach($sucursales as $sucursal){ 
+        /* foreach($sucursales as $sucursal){ 
             $productos = Product::with(['stocks' => function($query) use($sucursal){
                 $query->where("_workpoint", $sucursal->id);
             }, 'category', 'prices' => function($query){
@@ -1351,8 +1351,31 @@ class LocationController extends Controller{
                 ];
             })->toArray();
             $result = array_merge($result, $res);
-            /* $result[] = $sucursal; */
-        }
+        } */
+        $productos = Product::with(['locations' => function($query){
+            $query->where('_celler', 1);
+        }, 'category'])->get();
+        $result = $productos->map(function($producto) use($categories, $arr_categories){
+            if($producto->category->deep == 0){
+                $familia = $producto->category->name;
+                $category = "";
+            }else{
+                $key = array_search($producto->category->root, $arr_categories, true);
+                $familia = $categories[$key]->name;
+                $category = $producto->category->name;
+            }
+            return [
+                "Código" => $producto->name,
+                "Modelo" => $producto->code,
+                "Descripción" => $producto->description,
+                "Familia" => $familia,
+                "Categoría" => $category,
+                "Piezas x caja" => $producto->pieces,
+                "locations" => $producto->locations->reduce(function($res, $location){
+                    return $res.$location->path.",";
+                }, '')
+            ];
+        })->toArray();
         return $result;
     }
 

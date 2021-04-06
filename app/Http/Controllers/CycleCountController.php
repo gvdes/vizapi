@@ -143,46 +143,46 @@ class CycleCountController extends Controller{
         $inventory = CycleCount::find($request->_inventory);
         $products_add = [];
         if($inventory){
-            if($inventory->_type == 1){
-                $products = Product::with(['stocks' => function($query) use ($inventory){
-                    $query->where('_workpoint', $inventory->_workpoint);
-                },'locations' => function($query){
-                    $query->whereHas('celler', function($query){
-                        $query->where('_workpoint', $this->account->_workpoint);
-                    });
-                }])->whereIn('id', $_products)->get();
-                foreach($products as $product){
-                    $inventory->products()->attach($product->id, [
-                        'stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
-                        "details" => json_encode([
+            $products = Product::with(['stocks' => function($query) use ($inventory){
+                $query->where('_workpoint', $inventory->_workpoint);
+            },'locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                });
+            }])->whereIn('id', $_products)->get();
+            foreach($products as $product){
+                $inventory->products()->attach($product->id, [
+                    'stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                    "details" => json_encode([
+                        "editor" => ""
+                    ])
+                ]);
+                array_push($products_add, [
+                    "id" => $product->id,
+                    "code" => $product->code,
+                    "name" => $product->name,
+                    "description" => $product->description,
+                    "dimensions" => $product->dimensions,
+                    "pieces" => $product->pieces,
+                    "ordered" => [
+                        "stocks" => $product->stocks[0]->pivot->gen,
+                        "stocks_acc" => null,
+                        "details" => [
                             "editor" => ""
-                        ])
-                    ]);
-                    array_push($products_add, [
-                        "id" => $product->id,
-                        "code" => $product->code,
-                        "name" => $product->name,
-                        "description" => $product->description,
-                        "dimensions" => $product->dimensions,
-                        "pieces" => $product->pieces,
-                        "ordered" => [
-                            "stocks" => $product->stocks[0]->pivot->gen,
-                            "stocks_acc" => null,
-                            "details" => [
-                                "editor" => ""
-                            ]
-                        ],
-                        "units" => $product->units,
-                        'locations' => $product->locations->map(function($location){
-                            return [
-                                "id" => $location->id,
-                                "name" => $location->name,
-                                "alias" => $location->alias,
-                                "path" => $location->path
-                            ];
-                        })
-                    ]);
-                }
+                        ]
+                    ],
+                    "units" => $product->units,
+                    'locations' => $product->locations->map(function($location){
+                        return [
+                            "id" => $location->id,
+                            "name" => $location->name,
+                            "alias" => $location->alias,
+                            "path" => $location->path
+                        ];
+                    })
+                ]);
+            }
+            /* if($inventory->_type == 1){
             }else{
                 $products = Product::with(['stocks' => function($query) use ($inventory){
                     $query->where('_workpoint', $inventory->_workpoint);
@@ -223,7 +223,7 @@ class CycleCountController extends Controller{
                         })
                     ]);
                 }
-            }
+            } */
             $inventory->settings = json_encode($request->settings);
             $inventory->save();
             return response()->json(["success" => true, "products" => $products_add]);
