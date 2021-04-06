@@ -38,7 +38,8 @@ class CycleCountController extends Controller{
                 $this->log(1, $counter);
                 return $counter->fresh('workpoint', 'created_by', 'type', 'status', 'responsables', 'log');
             });
-            return response()->json(["success" => true, "inventory" => new InventoryResource($counter)]);
+            $token = isset($request->token) ? $request->token : "";
+            return response()->json(["success" => true, "inventory" => new InventoryResource($counter), "token" => $token]);
         }catch(\Exception $e){
             return response()->json(["message"=> "No se ha podido crear el contador"]);
         }
@@ -55,9 +56,22 @@ class CycleCountController extends Controller{
 
     public function index(Request $request){
         $account = User::find($this->account->_account);
-        $now = new \DateTime();
+        /* $now = new \DateTime();
         if(isset($request->date)){
             $now = $request->date;
+        } */
+        if(isset($request->date_from) && isset($request->date_to)){
+            $date_from = new \DateTime($request->date_from);
+            $date_to = new \DateTime($request->date_to);
+            if($request->date_from == $request->date_to){
+                $date_from->setTime(0,0,0);
+                $date_to->setTime(23,59,59);
+            }
+        }else{
+            $date_from = new \DateTime();
+            $date_from->setTime(0,0,0);
+            $date_to = new \DateTime();
+            $date_to->setTime(23,59,59);
         }
 
         $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'])->withCount('products')
@@ -67,18 +81,21 @@ class CycleCountController extends Controller{
                 $query->where([['_account', $this->account->_account], ['_workpoint', $this->account->_workpoint]]);
             });
         })
-        ->where(function($query) use($now){
+        ->where(function($query) use($date_to, $date_from){
             $query->whereIn("_status", [1,2,3,4])
-                ->whereDate("created_at", $now);
-        })
-        ->orWhere(function($query) use($now){
-            $query->whereDate("created_at", $now);
-        })
+                ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        })/* 
+        ->orWhere(function($query) use($date_to, $date_from){
+            $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        }) */
         ->get();
+        /* return response()->json($invetories); */
         return response()->json([
             "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
-            "inventory" => InventoryResource::collection($invetories)
+            "inventory" => InventoryResource::collection($invetories),
+            /* "token" => isset($request->token) ? $request->token : "",
+            "auth" => $this->account */
         ]);
     }
 
