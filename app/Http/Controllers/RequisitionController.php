@@ -338,9 +338,22 @@ class RequisitionController extends Controller{
         if($this->account->_rol == 4 ||  $this->account->_rol == 5 || $this->account->_rol == 7){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
-        $now = new \DateTime();
+        /* $now = new \DateTime();
         if(isset($request->date)){
             $now = $request->date;
+        } */
+        if(isset($request->date_from) && isset($request->date_to)){
+            $date_from = new \DateTime($request->date_from);
+            $date_to = new \DateTime($request->date_to);
+            if($request->date_from == $request->date_to){
+                $date_from->setTime(0,0,0);
+                $date_to->setTime(23,59,59);
+            }
+        }else{
+            $date_from = new \DateTime();
+            $date_from->setTime(0,0,0);
+            $date_to = new \DateTime();
+            $date_to->setTime(23,59,59);
         }
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
                                         $query->with(['prices' => function($query){
@@ -349,7 +362,7 @@ class RequisitionController extends Controller{
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
-                                    ->whereDate('created_at', $now)
+                                    ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     /* ->orWhere(function($query){
                                         $now = new \DateTime();
                                         $query->whereDate('created_at', $now);

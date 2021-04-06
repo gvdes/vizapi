@@ -185,9 +185,22 @@ class OrderController extends Controller{
     }
 
     public function index(Request $request){
-        $now =  new \DateTime();
+        /* $now =  new \DateTime();
         if(isset($request->date)){
             $now = $request->date;
+        } */
+        if(isset($request->date_from) && isset($request->date_to)){
+            $date_from = new \DateTime($request->date_from);
+            $date_to = new \DateTime($request->date_to);
+            if($request->date_from == $request->date_to){
+                $date_from->setTime(0,0,0);
+                $date_to->setTime(23,59,59);
+            }
+        }else{
+            $date_from = new \DateTime();
+            $date_from->setTime(0,0,0);
+            $date_to = new \DateTime();
+            $date_to->setTime(23,59,59);
         }
         $status = OrderProcess::all();
         $printers = Printer::where('_workpoint', $this->account->_workpoint)->get();
@@ -202,7 +215,7 @@ class OrderController extends Controller{
             $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
             }, 'units', 'variants']);
-        }, 'status', 'created_by', 'workpoint', "history"])->where($clause)->whereDate('created_at', $now)->get();
+        }, 'status', 'created_by', 'workpoint', "history"])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->get();
 
         return response()->json([
             'status' => $status,
