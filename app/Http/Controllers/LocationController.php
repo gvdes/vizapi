@@ -167,10 +167,14 @@ class LocationController extends Controller{
                 /* $products_counted = Product::whereHas('locations', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 })->whereIn('_category', $ids_categories)->count(); */
-                foreach($sections as $location){
-                    array_push($res, $location->products()->whereIn('_category', $ids_categories)->detach());
+                $products = Product::has('locations')->whereIn('_category', $ids_categories)->get();
+                $ids_sections = array_column($sections->toArray(), 'id');
+                foreach($products as $product){
+                    $product->locations()->wherePivotIn('_location', $ids_sections)->detach();
                 }
             }
+            $products_counted = 0;
+            return response()->json(["res" => $res, "products" => $products_counted]);
         }
         if(isset($request->_section)){
             /* ELIMINAR POR SECCION TODO */
@@ -183,6 +187,8 @@ class LocationController extends Controller{
                     $location->products()->detach();
                 }
             }
+            $products_counted = 0;
+            return response()->json(["res" => true, "products" => $products_counted]);
         }
         if(isset($request->_category)){
             /* ELIMINAR POR CATEGORIAS TODOS LADOS */
@@ -194,10 +200,10 @@ class LocationController extends Controller{
             $productos = Product::whereIn('_category', $ids)->whereHas('locations', function($query){
                 $query->whereIn('_location', $ids);
             },'>', 0)->get();
+            $products_counted = 0;
+            return response()->json(["res" => true, "products" => $products_counted]);
         }
 
-        $products_counted = 0;
-        return response()->json(["res" => true, "products" => $products_counted]);
     }
 
     /**
@@ -413,7 +419,7 @@ class LocationController extends Controller{
             });
         },'>',0)->count();
         $withoutLocation = Product::whereHas('stocks', function($query){
-            $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -495,7 +501,7 @@ class LocationController extends Controller{
             ["alias" => "conMaximos", "value" => $conMaximos, "description" => "Con stock con máximos", "_excel" => 9],
             ["alias" => "cedis", "value" => count($cedis), "description" => "Con stock en CEDIS", "_excel" => 11],
             ["alias" => "stock", "value" => $withoutStock, "description" => "Sin stock", "_excel" => 4],
-            ["alias" => "withLocation", "value" => $withLocationWithoutStock, "description" => "Sin stock con ubicar", "_excel" => 5],
+            ["alias" => "withLocation", "value" => $withLocationWithoutStock, "description" => "Sin stock con ubicación", "_excel" => 5],
             ["alias" => "generalVsCedis", "value" => count($generalVsCedis), "description" => "Almacen general vs CEDIS", "_excel" => 8],
             ["alias" => "negativos", "value" => $negativos, "description" => "Productos en negativo", "_excel" => 10],
         ]);

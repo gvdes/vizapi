@@ -716,31 +716,17 @@ class VentasController extends Controller{
       $p = array_column($request->products,"code")/* $request->products */;
       $products = [];
       $notFound = [];
-      /* foreach($p as $pp){
-        $res = Product::where('code', $pp)->orWhere('name', $pp)
-        ->with(['sales' => function($query) use($date_from, $date_to){
-          $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-        }])->first();
-        if($res){
-          array_push($products, $res);
-        }else{
-          array_push($notFound, $pp);
-        }
-      } */
       $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
       ->with(['sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }])->get();
-      /* return response()->json([$notFound, $p]); */
     }else{
       $cash = CashRegister::all()->toArray();
       $products = Product::whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-      })->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
+      })->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-      })-> */with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
-        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-      }])->get();
+      }, 'stocks'])->get();
     }
     
     $categories = \App\ProductCategory::all();
@@ -778,9 +764,12 @@ class VentasController extends Controller{
         "Categoría" => $category,
         "Total" => $vendidos,
         "tickets" => $tickets,
-        "precios" => $product->prices
+        "stock" => $product->stocks->reduce(function($total, $store){
+          return $store->pivot->stock + $total;
+        }, 0)
       ];
-      return array_merge($a, $desgloce);
+      return $a;
+      /* return array_merge($a, $desgloce); */
     });
 
     return response()->json($result);
