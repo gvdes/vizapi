@@ -153,7 +153,7 @@ class VentasController extends Controller{
     ]);
   }
 
-  public function tiendasXArticulosForDay(Request $request){
+  public function tiendasXArticulos(Request $request){
     if(isset($request->date_from) && isset($request->date_to)){
       $date_from = new \DateTime($request->date_from);
       $date_to = new \DateTime($request->date_to);
@@ -249,7 +249,7 @@ class VentasController extends Controller{
     return response()->json($result);
   }
 
-  public function tiendasXArticulosFor(Request $request){
+  public function tiendasXArticulosF(Request $request){
     $workpoint = WorkPoint::find($request->_workpoint);
     $start = new \DateTime($request->date_from);
     $end = new \DateTime($request->date_to);
@@ -329,14 +329,16 @@ class VentasController extends Controller{
       $products["A"] = $resumen;
       ksort($products);
       $export = new WithMultipleSheetsExport($products);
+      /* return $products; */
       /* $days[] = $workpoint->alias."_".$i->format("Y-m-d"); */
       /* return */ /* $days[] = Excel::download($export, $workpoint->alias."_".$i->format("Y-m-d").".xlsx"); */
-      Excel::store($export, $workpoint->alias."_".$i->format("Y-m-d").".xlsx");
+      /* Excel::store($export, $workpoint->alias."_".$i->format("Y-m-d").".xlsx"); */
+      return Excel::download($export, $workpoint->alias."_".$i->format("Y-m-d").".xlsx");
     }
-    return $days;
+    /* return $days; */
   }
 
-  public function tiendasXArticulos(Request $request){
+  public function tiendasXArticulosFor(Request $request){
     $workpoint = WorkPoint::find($request->_workpoint);
     $start = new \DateTime($request->date_from);
     $end = new \DateTime($request->date_to);
