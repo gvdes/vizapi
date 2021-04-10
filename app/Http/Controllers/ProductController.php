@@ -24,7 +24,7 @@ class ProductController extends Controller{
 
     public $account = null;
     public function __construct(){
-        /* $this->account = Auth::payload()['workpoint']; */
+        $this->account = Auth::payload()['workpoint'];
     }
 
     public function restoreProducts(){
@@ -519,9 +519,9 @@ class ProductController extends Controller{
         }
 
         if(isset($request->paginate)){
-            $products = $query->paginate($request->paginate);
+            $products = $query->orderBy('_status', 'asc')->paginate($request->paginate);
         }else{
-            $products = $query->get();
+            $products = $query->orderBy('_status', 'asc')->get();
         }
         /* return response()->json($products); */
         return response()->json(ProductResource::collection($products));
