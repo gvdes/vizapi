@@ -218,7 +218,7 @@ class ProductController extends Controller{
                         ->orWhere('code', $request->code)
                         ->orWhere('name', 'like','%'.$code.'%')
                         ->orWhere('code', 'like','%'.$code.'%')
-                        ->orWhere('description', 'like','%'.$code.'%')
+                        ->orWhere('description', 'like','%'.$code.'%')->orderBy('_status', 'asc')
                         ->limit('20')->get();
         if($esElProducto && count($products)==20){
             $products[] = $esElProducto;
