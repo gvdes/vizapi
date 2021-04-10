@@ -160,10 +160,11 @@ class Kernel extends ConsoleKernel
                     foreach($products as $product){
                         $key = array_search($product->code, $codes_stocks, true);
                         if($key === 0 || $key > 0){
-                            $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
-                            if(gettype($stock) == "boolean"){
+                            $gen = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
+                            $exh = count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : false;
+                            if(gettype($gen) == "boolean" || gettype($exh) == "boolean"){
                                 $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
-                            }elseif($stock != $stocks[$key]["gen"]){
+                            }elseif($gen != $stocks[$key]["gen"] || $exh != $stocks[$key]["exh"]){
                                 $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
                             }
                         }
