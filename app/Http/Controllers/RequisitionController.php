@@ -513,6 +513,9 @@ class RequisitionController extends Controller{
             case 14:
                 return ["domain" => $dominio, "port" => 9100];
                 break;
+            case 15:
+                return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
+                break;
         }
     }
 

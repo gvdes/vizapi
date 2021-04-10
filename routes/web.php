@@ -178,6 +178,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->group(['prefix' => 'test'], function () use ($router){
             /* $router->get('/', 'FactusolController@getSales'); */
             $router->get('/', 'ProductController@getMochilaPrices');
+            $router->get('/products', 'ProductController@depure2');
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');

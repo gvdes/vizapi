@@ -696,4 +696,27 @@ class ProductController extends Controller{
             "time" => microtime(true) - $start
         ]);
     }
+
+    public function depure2(Request $request){
+        $start = microtime(true);
+        $arr_codes = array_column($request->products, 'code');
+        $depure = [];
+        $notDepure = [];
+        $notFound = [];
+        $products = Product::all();
+        $arr_products = array_column($products->toArray(), "code");
+        foreach($arr_codes as $code){
+            $key = array_search($code, $arr_products);
+            if($key === 0 || $key>0){
+                if($products[$key]->_status == 4){
+                    $depure[] = $code;
+                }else{
+                    $notDepure[] = $products[$key]->code;
+                }
+            }else{
+                $notFound[] = $code;
+            }
+        }
+        return response()->json(["depure" => $depure, "notDepure" => $notDepure, "notFound" => $notFound]);
+    }
 }
