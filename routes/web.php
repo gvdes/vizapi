@@ -96,7 +96,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/updateStocks', 'LocationController@updateStocks2');
         $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->post('/', 'ProductController@getProducts');
-        $router->get('/restore', 'ProductController@addProductsLastYears');/* restoreProducts */
+        $router->get('/restore', 'ProductController@restoreProducts');/* addProductsLastYears */
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/restorePrices', 'ProductController@restorePrices');
         $router->get('/autocomplete', 'ProductController@autocomplete');
@@ -183,6 +183,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');
         });
 
-        /* $router->group(['prefix' => 'sdelsol'], function () use ($router){
+        $router->group(['prefix' => 'sdelsol'], function () use ($router){
             $router->get('/salidas', 'FactusolController@getSalidas');
-        }); */
+            $router->get('/depure', 'ProductController@depure');
+        });

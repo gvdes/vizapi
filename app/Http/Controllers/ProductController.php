@@ -24,7 +24,7 @@ class ProductController extends Controller{
 
     public $account = null;
     public function __construct(){
-        $this->account = Auth::payload()['workpoint'];
+        /* $this->account = Auth::payload()['workpoint']; */
     }
 
     public function restoreProducts(){
@@ -676,5 +676,24 @@ class ProductController extends Controller{
         $export = new ArrayExport($products->toArray());
         $date = new \DateTime();
         return Excel::download($export, "2018_precios.xlsx");
+    }
+
+    public function depure(Request $request){
+        $start = microtime(true);
+        /* $arr_codes = array_column($request->products, 'code'); */
+        /* $products = []; */
+        $found = [];
+        $notFound = [];
+        foreach (array_chunk($request->products/* $arr_codes */, 50) as $codes){
+            $fac = new FactusolController();
+            $found = array_merge($found, $fac->depure($codes)["found"]);
+            $notFound = array_merge($notFound, $fac->depure($codes)["notFound"]);
+        }
+        return response()->json([
+            "success" => true,
+            "found" => $found,
+            "notFound" => $notFound,
+            "time" => microtime(true) - $start
+        ]);
     }
 }

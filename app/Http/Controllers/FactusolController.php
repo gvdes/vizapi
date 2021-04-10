@@ -911,4 +911,45 @@ class FactusolController extends Controller{
     }
     return $_cash;
   }
+
+  public function depure($codes = ["36", "106"]){
+    /* return $this->token; */
+    $found = [];
+    $notFound = [];
+    if(isset($this->token["resultado"])){
+      $client = curl_init();
+      $year = date("Y");
+      $authorization = "Authorization: Bearer ".$this->token["resultado"];
+      curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type: application/json' , $authorization ));
+      foreach($codes as $code){
+        curl_setopt($client, CURLOPT_URL, env("DELSOL_API")."/admin/BorrarRegistros/".$year."/F_ART/CODART='".$code."'");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT,10);
+        if(isset(json_decode(curl_exec($client), true)['respuesta'])){
+          if(json_decode(curl_exec($client), true)['respuesta']  == "OK"){
+            $found [] = $code;
+            curl_setopt($client, CURLOPT_URL, env("DELSOL_API")."/admin/BorrarRegistros/".$year."/F_STO/ARTSTO='".$code."'");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            curl_exec($client);
+            curl_setopt($client, CURLOPT_URL, env("DELSOL_API")."/admin/BorrarRegistros/".$year."/F_LTA/ARTLTA='".$code."'");
+            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, TRUE);
+            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($client,CURLOPT_TIMEOUT,10);
+            curl_exec($client);
+          }else{
+            $notFound [] = $code;  
+          }
+        }else{
+          $notFound [] = $code;
+        }
+      }
+      return ["found" => $found, "notFound" => $notFound];
+    }else{
+      return ["found" => $found, "notFound" => $notFound];
+    }
+  }
+
 }
