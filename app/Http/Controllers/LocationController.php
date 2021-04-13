@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\WorkPoint;
 use App\Product;
+use App\Celler;
 use App\CellerSection;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -1451,8 +1452,8 @@ class LocationController extends Controller{
 
     public function setMassiveLocation(Request $request){
         $sections = CellerSection::whereHas('celler', function($query){
-            $query->where('_workpoint', 1);
-        })->where('deep', 2)->get();
+            $query->where('_workpoint', $request->_workpoint);
+        })/* ->where('deep', 2) */->get();
         $arr_sections = array_column($sections->toArray(), 'path');
         $rows = collect($request->products);
         $res = $rows->map(function($row) use($sections, $arr_sections){
@@ -1462,14 +1463,15 @@ class LocationController extends Controller{
             $found = [];
             $notFound = [];
             foreach($paths as $location){
-                $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
+                /* $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
                 $numeros = count(preg_split('/^\D/', $location))>1 ? explode("-",preg_split('/^\D/', $location)[1]) : "";
 
                 if(count($numeros)>1){
                     $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
                 }else{
                     $full_path = trim($location);
-                }
+                } */
+                $full_path = trim($location);
                 /* if(count(explode('-', $location))==2){
                     $full_path = explode('-', $location)[0].'-P1-T'.explode('-', $location)[1];
                 }else{
@@ -1515,4 +1517,48 @@ class LocationController extends Controller{
         });
         return response()->json($product_ex);
     }
+
+    public function getStructureCellers(Request $request){
+        $cellers = Celler::with(['sections' => function($query){
+            $query->where('deep', 0);
+        }])->where('_workpoint', $request->_workpoint)->get();
+        $sections = [];
+
+        foreach($cellers as $celler){
+            foreach($celler->sections as $section){
+                $descendents = $this->getDescendentsSection2($section);
+                if(count($descendents)>0){
+                    /* $section->children = $descendents; */
+                    $section->aux = explode(' ',$descendents[0]->name)[0].' ('.count($descendents).')';
+                }else{
+                    $section->children = null;
+                    $section->aux = '';
+                }
+                $sections[] = $section;
+            }
+        }
+        /* $export = new ArrayExport($sections);
+        $date = new \DateTime();
+        return Excel::download($export,"Tienda".$request->_workpoint.".xlsx"); */
+        return response()->json($sections);
+    }
+
+    public function getDescendentsSection2($section){
+        $children = CellerSection::where('root', $section->id)->get();
+        if(count($children)>0){
+            return $children->map(function($section){
+                $descendents = $this->getDescendentsSection($section);
+                if(count($descendents)>0){
+                    $section->children = $descendents;
+                    $section->aux = explode(' ',$descendents[0]->name)[0].' ('.count($descendents).')';
+                }else{
+                    $section->children = null;
+                    $section->aux = '';
+                }
+                return $section;
+            });
+        }
+        return $children;
+    }
+
 }

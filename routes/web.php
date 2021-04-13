@@ -147,6 +147,12 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/etiquetas', 'PdfController@generatePdf');
     });
 
+    $router->group(['prefix' => 'test'], function () use ($router){
+        /* $router->get('/', 'FactusolController@getSales'); */
+        $router->get('/', 'ProductController@getMochilaPrices');
+        $router->get('/products', 'ProductController@depure2');
+        $router->get('/celler/structure', 'LocationController@getStructureCellers');
+    });
 });
         $router->group(['prefix' => 'reports'], function () use ($router){
             /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
@@ -173,12 +179,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
             $router->post('/tiendasXArticulos', 'VentasController@tiendasXArticulos');
-        });
-
-        $router->group(['prefix' => 'test'], function () use ($router){
-            /* $router->get('/', 'FactusolController@getSales'); */
-            $router->get('/', 'ProductController@getMochilaPrices');
-            $router->get('/products', 'ProductController@depure2');
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');

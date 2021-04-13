@@ -79,15 +79,15 @@ class ProductController extends Controller{
         try{
             $start = microtime(true);
             $products = Product::all()->toArray();
-            /* $fac = new FactusolController();
-            $prices = $fac->getPrices(); */
-            $client = curl_init();
+            $fac = new FactusolController();
+            $prices = $fac->getPrices();
+            /* $client = curl_init();
             curl_setopt($client, CURLOPT_URL, "localhost/access/public/prices");
             curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($client,CURLOPT_TIMEOUT,10);
             $prices = collect(json_decode(curl_exec($client), true));
-            curl_close($client);
+            curl_close($client); */
             /* return response()->json($prices); */
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
