@@ -13,6 +13,7 @@ use App\CashRegister;
 use App\Sales;
 use App\PaidMethod;
 use App\Client;
+use App\Seller;
 use App\Exports\ArrayExport;
 use App\Exports\InvoicesPerCategorySheet;
 
@@ -151,6 +152,40 @@ class VentasController extends Controller{
         "cajas" => CashResource::collection($cash)
       ]
     ]);
+  }
+
+  public function tiendaXSeller(Request $request){
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+    
+    $workpoint = WorkPoint::find($request->_workpoint);
+    
+    $paid_methods = PaidMethod::all();
+
+    $sales = Sales::with('seller', 'client')->whereHas("cash", function($query) use($workpoint){
+      $query->where('_workpoint', $workpoint->id);
+    })->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get()->groupBy(function($sale){
+      return $sale->seller->name;
+    });
+    $vendedores = array_keys($sales->toArray());
+    $result = [];
+    foreach($vendedores as $vendedor){
+      $ventas = collect($sales[$vendedor]);
+      $total = $ventas->sum('total');
+      $result[] = ["vendedor"=> $vendedor, "ventas" => $ventas, "total" => $total, "tickets" => count($ventas)];
+    }
+    return response()->json($result);
   }
 
   public function tiendasXArticulos(Request $request){
@@ -498,18 +533,18 @@ class VentasController extends Controller{
     try{
       $clientes = Client::all()->toArray();
       $ids_clients = array_column($clientes, 'id');
+      $sellers = Seller::all()->toArray();
+      $ids_sellers = array_column($sellers, 'id');
       $cash_registers = CashRegister::all()->groupBy('_workpoint')->toArray();
       $series = range(1,9);
       $ventas = [];
       $products = Product::all()->toArray();
       $codes = array_column($products, 'code');
-      $cash__ =[];
       foreach($series as $serie){
         $sale = Sales::whereDate('created_at', '>','2021-01-10')->where("serie", $serie)->max('num_ticket');
         if(!$sale){
           $sale = 0;
         }
-        $cash__[$serie] = $sale;
         $fac = new FactusolController();
         $fac_sales = $fac->getSales($sale, $serie);
         if($fac_sales){
@@ -519,13 +554,14 @@ class VentasController extends Controller{
             $_cash = ($key == 0 || $key>0) ? $cash_registers[$venta['_workpoint']][$key]['id'] : $cash_registers[$venta['_workpoint']][0]['id'];
             $instance = Sales::create([
               "num_ticket" => $venta['num_ticket'],
-              "_cash" => $_cash/* $cash_registers[$venta['_workpoint']][0]['id'] */,
+              "_cash" => $_cash,
               "total" => $venta['total'],
               "created_at" => $venta['created_at'], 
               "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
               "_paid_by" => $venta['_paid_by'],
               "name" => $venta['name'],
-              "serie" => $venta['serie']
+              "serie" => $venta['serie'],
+              "_seller" => (array_search($venta['_seller'], $ids_sellers) > 0 || array_search($venta['_seller'], $ids_sellers) === 0) ? $venta['_seller'] : 404
             ]);
             $toAttach = [];
             foreach($venta['body'] as $row){
@@ -543,7 +579,7 @@ class VentasController extends Controller{
           }
         }
       }
-      return response()->json(["ventas" => $cash__]);
+      return response()->json(["success" => true]);
     }catch(Exception $e){
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
@@ -583,7 +619,6 @@ class VentasController extends Controller{
           }
         }
         if(count($caja_x_ticket)>0){
-          /* $resumen[$workpoint->alias] = $caja_x_ticket; */
           $client = curl_init();
           curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/new");
           curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -851,10 +886,24 @@ class VentasController extends Controller{
     return response()->json(true);
   }
 
-  public function getSales(){
-    //Obtener el ultimo folio del año
-    //Ordenar por agente
-    //Insertar
-    //Realizarlo cada 2 minutos
+  public function seederSellers(){
+    $start = microtime(true);
+    $fac = new FactusolController();
+    $fac_sellers = $fac->getSellers();
+    try{
+      if($fac_sellers){
+        DB::transaction(function() use ($fac_sellers){
+          $success = DB::table('sellers')->insert($fac_sellers->toArray());
+        });
+        return response()->json([
+          "success" => true,
+          "agentes" => count($fac_sellers),
+          "time" => microtime(true) - $start
+        ]);
+      }
+      return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
+    }catch(Exception $e){
+        return response()->json(["message" => "No se ha podido poblar la base de datos"]);
+    }
   }
 }

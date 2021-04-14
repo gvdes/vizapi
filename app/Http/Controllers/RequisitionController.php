@@ -438,14 +438,12 @@ class RequisitionController extends Controller{
         /* return response()->json(["success" => $requisition->save()]); */
     }
 
-    public function demoImpresion(/* Request $request */){
-        $workpoint_to_print = Workpoint::find(6/* $request->_workpoint */);
+    public function demoImpresion(Request $request){
+        $workpoint_to_print = Workpoint::find($request->_workpoint);
         $printer = $this->getPrinter($workpoint_to_print, $workpoint_to_print->id);
-        /* return response()->json($printer); */
         $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
         $res = $cellerPrinter->demo();
         return response()->json(["success" => $res]);
-        /* return response()->json(["success" => $requisition->save()]); */
     }
 
     public function search(Request $request){

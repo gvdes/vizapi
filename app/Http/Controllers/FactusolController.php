@@ -447,9 +447,10 @@ class FactusolController extends Controller{
           "created_at" => $date,
           "_client" => intval($row["CLIFAC"]),
           "total" => intval($row["TOTFAC"]),
-          "name" => intval($row["CNOFAC"]),
+          "name" => $row["CNOFAC"],
           "_paid_by" => $_paid_by,
           "serie"=> intval($row["TIPFAC"]),
+          "_seller" => intval($row["AGEFAC"]),
           "body" => $body
         ];
       })->filter(function($sale){
@@ -952,4 +953,15 @@ class FactusolController extends Controller{
     }
   }
 
+  public function getSellers(){
+    $query = "SELECT CODAGE, FALAGE, NOMAGE FROM F_AGE";
+    $rows = $this->lanzarConsulta($query);
+    return $rows->map(function($row){
+      return [
+        "id" => $row["CODAGE"],
+        "name" => $row["NOMAGE"],
+        "created_at" => $row["FALAGE"]
+      ];
+    });
+  }
 }

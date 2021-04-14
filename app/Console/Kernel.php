@@ -101,13 +101,11 @@ class Kernel extends ConsoleKernel
             $ventas = [];
             $products = Product::all()->toArray();
             $codes = array_column($products, 'code');
-            $cash__ =[];
             foreach($series as $serie){
                 $sale = Sales::whereDate('created_at', '>','2021-01-10')->where("serie", $serie)->max('num_ticket');
                 if(!$sale){
                     $sale = 0;
                 }
-                $cash__[$serie] = $sale;
                 $fac = new FactusolController();
                 $fac_sales = $fac->getSales($sale, $serie);
                 if($fac_sales){
@@ -117,13 +115,14 @@ class Kernel extends ConsoleKernel
                         $_cash = ($key == 0 || $key>0) ? $cash_registers[$venta['_workpoint']][$key]['id'] : $cash_registers[$venta['_workpoint']][0]['id'];
                         $instance = Sales::create([
                             "num_ticket" => $venta['num_ticket'],
-                            "_cash" => $_cash/* $cash_registers[$venta['_workpoint']][0]['id'] */,
+                            "_cash" => $_cash,
                             "total" => $venta['total'],
                             "created_at" => $venta['created_at'], 
                             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                             "_paid_by" => $venta['_paid_by'],
                             "name" => $venta['name'],
-                            "serie" => $venta['serie']
+                            "serie" => $venta['serie'],
+                            "_seller" => $venta['_seller']
                         ]);
                         $toAttach = [];
                         foreach($venta['body'] as $row){

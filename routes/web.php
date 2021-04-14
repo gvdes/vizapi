@@ -152,6 +152,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/', 'ProductController@getMochilaPrices');
         $router->get('/products', 'ProductController@depure2');
         $router->get('/celler/structure', 'LocationController@getStructureCellers');
+        /* $router->get('/agentes', 'FactusolController@getSellers'); */
+        $router->get('/ventasAgente', 'VentasController@tiendaXSeller');
     });
 });
         $router->group(['prefix' => 'reports'], function () use ($router){
@@ -173,8 +175,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
             $router->post('/articulos', 'VentasController@VentasxArticulos');
+            $router->get('/tiendaAgente', 'VentasController@tiendaXSeller');
             $router->get('/seeder', 'VentasController@getVentas');
             $router->get('/seeder2', 'VentasController@getVentas2019');
+            $router->get('/seeder3', 'VentasController@getVentasX');
             $router->get('/lastVentas', 'VentasController@getLastVentas');
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
