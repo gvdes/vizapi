@@ -75,27 +75,21 @@ class CycleCountController extends Controller{
         }
 
         $invetories = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log'])->withCount('products')
-        ->orWhere([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account]])
-        ->orWhere(function($query){
+        ->orWhere([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account], ['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
+        ->orWhere(function($query) use($date_to, $date_from){
             $query->whereHas('responsables', function($query){
                 $query->where([['_account', $this->account->_account], ['_workpoint', $this->account->_workpoint]]);
-            });
+            })->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         })
         ->where(function($query) use($date_to, $date_from){
             $query->whereIn("_status", [1,2,3,4])
                 ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
-        })/* 
-        ->orWhere(function($query) use($date_to, $date_from){
-            $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
-        }) */
+        })
         ->get();
-        /* return response()->json($invetories); */
         return response()->json([
             "type" => CycleCountType::all(),
             "status" => CycleCountStatus::all(),
-            "inventory" => InventoryResource::collection($invetories),
-            /* "token" => isset($request->token) ? $request->token : "",
-            "auth" => $this->account */
+            "inventory" => InventoryResource::collection($invetories)
         ]);
     }
 

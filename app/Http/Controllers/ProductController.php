@@ -719,4 +719,138 @@ class ProductController extends Controller{
         }
         return response()->json(["depure" => $depure, "notDepure" => $notDepure, "notFound" => $notFound]);
     }
+
+    public function getABC(Request $request){
+        if(isset($request->date_from) && isset($request->date_to)){
+            $date_from = new \DateTime($request->date_from);
+            $date_to = new \DateTime($request->date_to);
+            if($request->date_from == $request->date_to){
+                $date_from->setTime(0,0,0);
+                $date_to->setTime(23,59,59);
+            }
+        }else{
+            $date_from = new \DateTime();
+            $date_from->setTime(0,0,0);
+            $date_to = new \DateTime();
+            $date_to->setTime(23,59,59);
+        }
+        $products = Product::with(['sales' => function($query) use($date_from, $date_to){
+            $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        }, 'stocks', 'prices' => function($query){
+            $query->where('_type', 6);
+        }])->where([['_status', '!=', 4]])->whereIn('_category', range(130,172))->get()->map(function($product){
+            $unidades_vendidas = $product->sales->sum(function($sale){
+                return $sale->pivot->amount;
+            });
+            /* $costo_total = $product->sales->sum(function($sale){
+                return $sale->pivot->costo * $sale->pivot->amount;
+            }); */
+            $costo_total = $unidades_vendidas * $product->cost;
+            $venta_total = $product->sales->sum(function($sale){
+                return $sale->pivot->total;
+            });
+            $rentabilidad = 0;
+            $price = count($product->prices) > 0 ? $product->prices[0]->pivot->price : 0;
+            if($unidades_vendidas > 0 && $venta_total > 0){
+                if($costo_total <= 0 || /* $venta_total<=0 || */ $costo_total/$venta_total>2){
+                    $costo_total = $product->cost * $unidades_vendidas;
+                }
+                if($costo_total>0){
+                    $rentabilidad = ($venta_total - $costo_total) / $costo_total;
+                }else{
+                    $rentabilidad = $price;
+                }
+            }else{
+                if($product->cost>0){
+                    $rentabilidad = ($price - $product->cost) / $product->cost;
+                }else{
+                    $rentabilidad = $price;
+                }
+            }
+            return [
+                "Modelo" => $product->code,
+                "Código" => $product->name,
+                "Descripción" => $product->description,
+                "Costo" => $product->cost,
+                "Precio Centro" => $price,
+                "Unidades vendidas" => $unidades_vendidas,
+                "Venta total" => $venta_total,
+                "Costo total" => $costo_total,
+                "Rentabilidad" => $rentabilidad,
+                "Ganancia bruta" => $venta_total - $costo_total,
+                "stock" => $product->stocks->sum(function($stock){
+                    return $stock->pivot->stock;
+                })
+            ];
+        });
+        $min_stock = $products->min('stock');
+        $min_stock = $min_stock < 0 ? 0 : $min_stock;
+        $max_stock = $products->max('stock');
+        $median_stock = ($max_stock + $min_stock) /2;
+        /* $median_stock = $products->median('stock'); */
+        $limites_inventario = [$min_stock, ($min_stock + $median_stock)/2, $median_stock , ($max_stock + $median_stock)/2 , $max_stock];
+        
+        /* $min_ventas = $products->min('Venta total');
+        $max_ventas = $products->max('Venta total'); */
+        $min_ventas = $products->min('Unidades vendidas');
+        $max_ventas = $products->max('Unidades vendidas');
+        $median_ventas = ($max_ventas + $min_ventas) /2;
+        /* $median_ventas = $products->median('Venta total'); */
+        $limites_ventas = [$min_ventas, ($median_ventas + $min_ventas)/2, $median_ventas, ($median_ventas + $max_ventas)/2 , $max_ventas];
+        
+        $min_rentabilidad = $products->min('Rentabilidad');
+        $min_rentabilidad = $min_rentabilidad >= 0 ? $min_rentabilidad : 0;
+        $max_rentabilidad = $products->max('Rentabilidad');
+        $max_rentabilidad = $max_rentabilidad > 1 ? 1 : $max_rentabilidad;
+        $median_rentabilidad = ($max_rentabilidad + $min_rentabilidad) /2;
+        /* $median_rentabilidad = $products->median('Rentabilidad'); */
+        $limites_rentabilidad = [$min_rentabilidad, ($median_rentabilidad + $min_rentabilidad)/2 , $median_rentabilidad, ($median_rentabilidad + $max_rentabilidad)/2, $max_rentabilidad];
+
+        $result = $products->map(function($product) use($limites_rentabilidad, $limites_ventas, $limites_inventario){
+            if(/* $product['stock'] >= $limites_inventario[0] &&  */$product['stock'] <= $limites_inventario[1]/*  || $product['stock'] <= 0 */){
+                $stock = "D";
+            }else if($product['stock'] >= $limites_inventario[1] && $product['stock'] <= $limites_inventario[2]){
+                $stock = "C";
+            }else if($product['stock'] >= $limites_inventario[2] && $product['stock'] <= $limites_inventario[3]){
+                $stock = "B";
+            }else{
+                $stock = "A";
+            }
+
+            if(/* $product['Rentabilidad'] >= $limites_rentabilidad[0] &&  */$product['Rentabilidad'] <= $limites_rentabilidad[1]/*  || $product['Rentabilidad'] <= 0 */){
+                $rentabilidad = "D";
+            }else if($product['Rentabilidad'] >= $limites_rentabilidad[1] && $product['Rentabilidad'] <= $limites_rentabilidad[2]){
+                $rentabilidad = "C";
+            }else if($product['Rentabilidad'] >= $limites_rentabilidad[2] && $product['Rentabilidad'] <= $limites_rentabilidad[3]){
+                $rentabilidad = "B";
+            }else{
+                $rentabilidad = "A";
+            }
+
+            if(/* $product['Venta total'] >= $limites_ventas[0] &&  */$product['Unidades vendidas'] <= $limites_ventas[1]){
+                $venta = "D";
+            }else if($product['Unidades vendidas'] >= $limites_ventas[1] && $product['Unidades vendidas'] <= $limites_ventas[2]){
+                $venta = "C";
+            }else if($product['Unidades vendidas'] >= $limites_ventas[2] && $product['Unidades vendidas'] <= $limites_ventas[3]){
+                $venta = "B";
+            }else{
+                $venta = "A";
+            }
+            $product['Clasificacion rentabilidad'] = $rentabilidad;
+            $product['Clasificación stock'] = $stock;
+            $product['Clasificación venta'] = $venta;
+            return $product;
+        });
+        /* return response()->json($products); */
+        /* return response()->json(["limites_inventario" => $limites_inventario, "limites_ventas" => $limites_ventas, "limites_rentabilidad" => $limites_rentabilidad]); */
+        $export = new ArrayExport($result->toArray());
+        $date = new \DateTime();
+        return Excel::download($export, "ABCD_PRODUCTOS.xlsx");
+        /* return response()->json([
+            "products" => $products,
+            "limites_inventario" => $limites_inventario,
+            "limites_ventas" => $limites_ventas,
+            "limites_rentabilidad" => $limites_rentabilidad,
+        ]); */
+    }
 }

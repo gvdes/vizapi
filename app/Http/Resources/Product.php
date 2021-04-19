@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Resources;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -62,9 +64,22 @@ class Product extends JsonResource{
                         "path" => $location->path
                     ];
                 });
-            })/* ,
+            }),
+            'stocks' => $this->whenLoaded('stocks', function(){
+                return $this->stocks->map(function($stock){
+                    return [
+                        "alias" => $stock->alias,
+                        "name" => $stock->name,
+                        "stock" => $stock->pivot->stock,
+                        "gen" => $stock->pivot->gen,
+                        "exh" => $stock->pivot->exh,
+                        "min" => $stock->pivot->min,
+                        "max" => $stock->pivot->max,
+                    ];
+                });
+            }),
             "created_at" => $this->created_at->format('Y-m-d H:i'),
-            "updated_at" => $this->updated_at->format('Y-m-d H:i'), */
+            "updated_at" => $this->updated_at->format('Y-m-d H:i'),
         ];
     }
 }

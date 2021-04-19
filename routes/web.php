@@ -148,12 +148,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'test'], function () use ($router){
-        /* $router->get('/', 'FactusolController@getSales'); */
         $router->get('/', 'ProductController@getMochilaPrices');
         $router->get('/products', 'ProductController@depure2');
         $router->get('/celler/structure', 'LocationController@getStructureCellers');
-        /* $router->get('/agentes', 'FactusolController@getSellers'); */
-        $router->get('/ventasAgente', 'VentasController@tiendaXSeller');
+        $router->get('/productABC', 'ProductController@getABC');
     });
 });
         $router->group(['prefix' => 'reports'], function () use ($router){
@@ -183,6 +181,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
             $router->post('/tiendasXArticulos', 'VentasController@tiendasXArticulos');
+            $router->post('/tiendasXArticulosFor', 'VentasController@tiendasXArticulosFor');
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');
