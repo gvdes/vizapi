@@ -313,10 +313,7 @@ class RequisitionController extends Controller{
     public function index(Request $request){
         $workpoints = WorkPoint::where('_type', 1)->get();
         $account = Account::with(['permissions'])->find($this->account->id);
-        $permissions = array_column($account->permissions->toArray(), 'id')/* $account->permissions->map(function($permission){
-            $id = $permission->id - 28;
-            return [$id];
-        }) */;
+        $permissions = array_column($account->permissions->toArray(), 'id');
         $_types = [];
         if(in_array(29,$permissions)){
             array_push($_types, 1);
@@ -338,10 +335,6 @@ class RequisitionController extends Controller{
         if($this->account->_rol == 4 ||  $this->account->_rol == 5 || $this->account->_rol == 7){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
-        /* $now = new \DateTime();
-        if(isset($request->date)){
-            $now = $request->date;
-        } */
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -363,10 +356,6 @@ class RequisitionController extends Controller{
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
-                                    /* ->orWhere(function($query){
-                                        $now = new \DateTime();
-                                        $query->whereDate('created_at', $now);
-                                    }) */
                                     ->get();
         return response()->json([
             "workpoints" => $workpoints,
@@ -395,9 +384,9 @@ class RequisitionController extends Controller{
 
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
-            $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4/* ,5,6,7 */])->orderBy('_type');
-            }, 'units', 'variants']);
+            $query->with([/* 'prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+            }, */ 'units', 'variants']);
         }, 'to', 'from', 'created_by', 'log'])->find($id);
         return response()->json(new RequisitionResource($requisition));
     }
@@ -410,7 +399,6 @@ class RequisitionController extends Controller{
             if($result){
                 $requisition->_status= $status;
                 $requisition->save();
-                /* $requisition->refresh(); */
                 $requisition->load(['type', 'status', 'products', 'to', 'from', 'created_by', 'log']);
             }
             return response()->json(["success" => $result, 'order' => new RequisitionResource($requisition)]);
@@ -435,7 +423,6 @@ class RequisitionController extends Controller{
         $requisition->printed = $requisition->printed +1;
         $requisition->save();
         return response()->json(["success" => $res]);
-        /* return response()->json(["success" => $requisition->save()]); */
     }
 
     public function demoImpresion(Request $request){

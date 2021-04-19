@@ -349,56 +349,13 @@ class LocationController extends Controller{
      * @param int request.max
      */
     public function setMax(Request $request){
-        $client = curl_init();
-        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
+        $workpoint = WorkPoint::find($this->account->_workpoint);
         $product = Product::where('code', $request->code)->first();
         if($product){
             $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
             return response()->json(["success" => true]);
         }
         return response()->json(["success" => false]);
-    }
-
-    public function ProductsWithoutLocation(){
-        $products = \App\Product::has('locations', '=', 0)->select('id','code', 'description')->get()->toArray();
-        $stocks = collect(AccessController::getProductWithStock());
-        $res = $stocks->map(function($product) use ($products){
-            $index = array_search($product['code'], array_column($products, 'code'));
-            if($index){
-                return [
-                    'id' => $products[$index]['id'],
-                    'code' => $product['code'],
-                    'description' => $products[$index]['description'],
-                    'stock' => intval($product['stock'])
-                ];
-            }else{
-                return null;
-            }
-        })->filter(function($product){
-            return !is_null($product);
-        })->values()->all();
-        return $res;
-    }
-
-    public function ProductsWithoutStock(){
-        $products = \App\Product::has('locations', '>', 0)->select('id','code', 'description')->get()->toArray();
-        $stocks = collect(AccessController::getProductWithoutStock());
-        $res = $stocks->map(function($product) use ($products){
-            $index = array_search($product['code'], array_column($products, 'code'));
-            if($index){
-                return [
-                    'id' => $products[$index]['id'],
-                    'code' => $product['code'],
-                    'description' => $products[$index]['description'],
-                    'stock' => intval($product['stock'])
-                ];
-            }else{
-                return null;
-            }
-        })->filter(function($product){
-            return !is_null($product);
-        })->values()->all();
-        return $res;
     }
 
     public function index(){
@@ -473,25 +430,6 @@ class LocationController extends Controller{
             $query->where([["stock", "<", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)   ->count();
 
-        /* return response()->json([
-            "withStock" => [
-                "stock" => $withStock,
-                "withLocation" => $withLocation,
-                "withoutLocation" => $withoutLocation,
-                "generalVsExhibicion" => $generalVsExhibicion,
-                "sinMaximos" => $sinMaximos,
-                "conMaximos" => $conMaximos,
-                "cedis" => count($cedis)
-            ],
-            "withoutStock" => [
-                "stock" => $withoutStock,
-                "withLocation" => $withLocationWithoutStock,
-                "generalVsCedis" => count($generalVsCedis),
-                "negativos" => $negativos
-            ],
-            "products" => $counterProducts,
-            "connection" => false
-        ]); */
         return response()->json([
             ["alias" => "catalogo", "value" => $counterProducts, "description" => "Artículos en catalogo", "_excel" => 12],
             ["alias" => "stock", "value" => $withStock, "description" => "Con stock", "_excel" => 1],

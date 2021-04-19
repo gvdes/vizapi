@@ -45,7 +45,7 @@ class VentasController extends Controller{
         $query->where('created_at',">=", $date_from)
         ->where('created_at',"<=", $date_to);
       }]);
-    }])/* ->where('_type', 2) */->get();
+    }])->get();
     $paid_methods = PaidMethod::all();
     $formas_pago = $paid_methods->map(function($method){
       $method->total = 0;

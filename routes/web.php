@@ -96,7 +96,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/updateStocks', 'LocationController@updateStocks2');
         $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->post('/', 'ProductController@getProducts');
-        $router->get('/restore', 'ProductController@restoreProducts');/* addProductsLastYears */
+        $router->get('/restore', 'ProductController@restoreProducts');
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/restorePrices', 'ProductController@restorePrices');
         $router->get('/autocomplete', 'ProductController@autocomplete');
@@ -148,20 +148,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'test'], function () use ($router){
-        $router->get('/', 'ProductController@getMochilaPrices');
-        $router->get('/products', 'ProductController@depure2');
         $router->get('/celler/structure', 'LocationController@getStructureCellers');
         $router->get('/productABC', 'ProductController@getABC');
     });
 });
-        $router->group(['prefix' => 'reports'], function () use ($router){
-            /* $router->get('/', 'MiniPrinterController@requisitionTicket'); */
-            $router->get('/stocks', 'ReportsController@chechStocks');
-            $router->post('/ventas', 'ReportsController@ventas');
-            $router->get('/test', 'RequisitionController@test');
-            $router->get('/sinUbicacion', 'ReportsController@sinUbicaciones');
-            $router->get('/sinMaximos', 'ReportsController@sinMaximos');
-        });
 
         $router->group(['prefix' => 'clients'], function () use ($router){
             /* $router->get('/seeder', 'ClientController@Seeder'); */

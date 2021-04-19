@@ -185,10 +185,6 @@ class OrderController extends Controller{
     }
 
     public function index(Request $request){
-        /* $now =  new \DateTime();
-        if(isset($request->date)){
-            $now = $request->date;
-        } */
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);

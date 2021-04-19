@@ -81,14 +81,6 @@ class ProductController extends Controller{
             $products = Product::all()->toArray();
             $fac = new FactusolController();
             $prices = $fac->getPrices();
-            /* $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, "localhost/access/public/prices");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,10);
-            $prices = collect(json_decode(curl_exec($client), true));
-            curl_close($client); */
-            /* return response()->json($prices); */
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
                     DB::table('product_prices')->delete();
@@ -172,7 +164,6 @@ class ProductController extends Controller{
     }
 
     public function addAtributes(Request $request){
-        /* $products = array_slice($request->products, 1700); */
         $products = $request->products;
         $total = 0;
         foreach($products as $row){
@@ -263,7 +254,6 @@ class ProductController extends Controller{
     }
 
     public function getProductByCategory(Request $request){
-        /* return response()->json($request); */
         $products = [];
         $filter = null;
         if(!isset($request->_category)){
@@ -307,23 +297,15 @@ class ProductController extends Controller{
             $_category = $request->_category;
             $category = ProductCategory::with('attributes')->find($_category);
             $category->children = $this->getDescendentsCategory($category);
-            /* $ascendents = $this->getAscendentsCategory($category);
-            $filter = $this->getFilter($ascendents); */
         }else{
             $categories = ProductCategory::with('attributes')->where('deep', 0)->get();
             $map = $categories->map(function($category){
                 $category->children = $this->getDescendentsCategory($category);
-                /* $ascendents = $this->getAscendentsCategory($category);
-                $filter = $this->getFilter($ascendents); */
                 return $category;
             });
             return response()->json($map);
         }
         return response()->json($category);
-        /* return response()->json([
-            "filter" => $filter,
-            "category" => $ascendents
-        ]); */
 
         if(isset($request->attributes)){    
             $attributes = $request->attributes;
@@ -377,7 +359,6 @@ class ProductController extends Controller{
 
     public function getCategory(Request $request){
         $products = collect($request->products);
-        /* return response()->json($products); */
         $res = $products->map(function($p){
             $product = Product::with('category')->where('code',$p['pro_code'])->orWhere('name',$p['pro_code'])->first();
             if($product){
@@ -452,10 +433,6 @@ class ProductController extends Controller{
         }
 
         if(isset($request->_category)){
-            /* $_categories = [];
-            foreach($request->_category as $_category){
-                $categories = array_merge($categories, $this->getCategoriesChildren($category));
-            } */
             $_categories = $this->getCategoriesChildren($request->_category);
             $query = $query->whereIn('_category', $_categories);
         }
@@ -576,41 +553,6 @@ class ProductController extends Controller{
         //Validar
     }
 
-    public function getMochilaPrices(){
-        $now = Product::whereIn('_category', range(1,16))->where('updated_at', ">", "2021-03-10 00:00:00")->where('updated_at', "<", "2021-03-10 23:59:59")/* ->paginate(500) */->get();
-        $prices = $this->getPrices_access(array_column($now->toArray(), 'code'));
-        $arr_products = array_column($prices, "code");
-        /* return response()->json(["now" => $arr_products]); */
-        $result = $now->filter(function($product) use($prices, $arr_products){
-            $key = array_search($product->code, $arr_products);
-            if($key === 0 || $key > 0){
-                $now = array_column($product->prices->toArray(), "price");
-                $yesterday = array_column($prices[$key]["prices"], "price");
-                return count(array_diff($now, $yesterday))>0;
-            }
-            return false;
-        });
-        return response()->json([/* "now" => count($now), "access" => $prices,  */"result" => $result]);
-    }
-
-    public function getPrices_access($codes){
-        $access = "C:\\Users\Carlo\\Desktop\\VPAO1O32021.accdb";
-        $query = "SELECT TARLTA as _type, PRELTA as price FROM F_LTA WHERE ARTLTA = ?";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $res = [];
-            foreach($codes as $code){
-                $exec = $db->prepare($query);
-                $exec->execute([$code]);
-                $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-                $res [] = ["code" => $code, "prices" => $rows];
-            }
-            return $res;
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
-    }
-
     public function addProductsLastYears(){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, "localhost/access/public/product");
@@ -695,29 +637,6 @@ class ProductController extends Controller{
             "notFound" => $notFound,
             "time" => microtime(true) - $start
         ]);
-    }
-
-    public function depure2(Request $request){
-        $start = microtime(true);
-        $arr_codes = array_column($request->products, 'code');
-        $depure = [];
-        $notDepure = [];
-        $notFound = [];
-        $products = Product::all();
-        $arr_products = array_column($products->toArray(), "code");
-        foreach($arr_codes as $code){
-            $key = array_search($code, $arr_products);
-            if($key === 0 || $key>0){
-                if($products[$key]->_status == 4){
-                    $depure[] = $code;
-                }else{
-                    $notDepure[] = $products[$key]->code;
-                }
-            }else{
-                $notFound[] = $code;
-            }
-        }
-        return response()->json(["depure" => $depure, "notDepure" => $notDepure, "notFound" => $notFound]);
     }
 
     public function getABC(Request $request){
