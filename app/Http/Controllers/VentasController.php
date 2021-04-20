@@ -173,7 +173,7 @@ class VentasController extends Controller{
     
     $paid_methods = PaidMethod::all();
 
-    $sales = Sales::with('seller', 'client')->whereHas("cash", function($query) use($workpoint){
+    $sales = Sales::with('seller', 'client')->withCount('products')->whereHas("cash", function($query) use($workpoint){
       $query->where('_workpoint', $workpoint->id);
     })->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->get()->groupBy(function($sale){
       return $sale->seller->name;
@@ -183,9 +183,12 @@ class VentasController extends Controller{
     foreach($vendedores as $vendedor){
       $ventas = collect($sales[$vendedor]);
       $total = $ventas->sum('total');
-      $result[] = ["vendedor"=> $vendedor, "ventas" => $ventas, "total" => $total, "tickets" => count($ventas)];
+      $result[] = ["vendedor"=> $vendedor/* , "ventas" => $ventas */, "total" => $total, "tickets" => count($ventas), "productos" => $ventas->sum('products_count')];
     }
-    return response()->json($result);
+    /* return response()->json($result); */
+    $export = new ArrayExport($result);
+    $date = new \DateTime();
+    return Excel::download($export, $date->format("Y-m-d")."_ventas.xlsx");
   }
 
   public function tiendasXArticulos(Request $request){

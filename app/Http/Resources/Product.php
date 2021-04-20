@@ -14,12 +14,17 @@ class Product extends JsonResource{
      * @return array
      */
     public function toArray($request){
+        /* $_account = Auth::payload()['workpoint'];
+        $stock = $this->whenLoaded('stocks', function() use($_account){
+            return $this->stocks->filter(function($stock) use($_account){
+                return $stock->id == $_account->_workpoint;
+            });
+        }); */
         return [
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
             'description' => $this->description,
-            'stock' => $this->stock,
             'pieces' => $this->pieces,
             'dimensions' => $this->dimensions,
             'weight' => $this->weight,

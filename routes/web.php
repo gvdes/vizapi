@@ -154,8 +154,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
 });
 
         $router->group(['prefix' => 'clients'], function () use ($router){
-            /* $router->get('/seeder', 'ClientController@Seeder'); */
-            $router->get('/{id}', 'CycleCountController@generateReport');
+            $router->get('/seeder', 'ClientController@Seeder');
         });
 
         $router->group(['prefix' => 'ventas'], function () use ($router){
@@ -167,6 +166,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/seeder', 'VentasController@getVentas');
             $router->get('/seeder2', 'VentasController@getVentas2019');
             $router->get('/seeder3', 'VentasController@getVentasX');
+            $router->get('/seederSellers', 'VentasController@seederSellers');
             $router->get('/lastVentas', 'VentasController@getLastVentas');
             $router->get('/insertVentas', 'VentasController@insertVentas');
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');

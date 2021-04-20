@@ -307,9 +307,19 @@ class LocationController extends Controller{
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->id == $this->account->_workpoint;
         })->values()->all();
-        $product->stock = count($stock)>0 ? $stock[0]->pivot->stock : 0;
-        $product->min = count($stock)>0 ? $stock[0]->pivot->min : 0;
-        $product->max = count($stock)>0 ? $stock[0]->pivot->max : 0;
+        if($inCycleCount>0){
+            $product->stock = "En inventario";
+            $product->min = "En inventario";
+            $product->max = "En inventario";
+        }else if(count($stock)>0){
+            $product->stock = $stock[0]->pivot->stock;
+            $product->min = $stock[0]->pivot->min;
+            $product->max = $stock[0]->pivot->max;
+        }else{
+            $product->stock = 0;
+            $product->min = 0;
+            $product->max = 0;
+        }
         $product->stocks_stores = $product->stocks->filter(function($stocks){
             return $stocks->id != $this->account->_workpoint;
         })->values()->map(function($stock){
@@ -964,7 +974,7 @@ class LocationController extends Controller{
     }
 
     public function generalVsExhibicion(){
-        $categories = \App\ProductCategory::where('_status', '!=', 4)->get();
+        $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -1003,7 +1013,7 @@ class LocationController extends Controller{
     }
 
     public function generalVsCedis(){
-        $categories = \App\ProductCategory::where('_status', '!=', 4)->get();
+        $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
 
         if($this->account->_workpoint == 1){
@@ -1033,7 +1043,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])->orWhere([["gen", "<", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->get();
 
         $generalVsCedis = [];
@@ -1043,6 +1053,7 @@ class LocationController extends Controller{
             if($key === 0 || $key>0){
                 //exist
             }else{
+
                 array_push($generalVsCedis, $product);
             }
         }

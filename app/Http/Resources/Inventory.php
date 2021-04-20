@@ -59,6 +59,7 @@ class Inventory extends JsonResource{
             "ordered" => [
               "stocks" => $product->pivot->stock,
               "stocks_acc" => $product->pivot->stock_acc,
+              "stocks_end" => $product->pivot->stock_end,
               "details" => json_decode($product->pivot->details)
             ],
             "units" => $product->units,

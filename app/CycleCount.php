@@ -29,7 +29,7 @@ class CycleCount extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'cyclecount_body', '_cyclecount', '_product')
-                    ->withPivot(['stock', 'stock_acc', 'details']);
+                    ->withPivot(['stock', 'stock_end', 'stock_acc', 'details']);
     }
 
     public function responsables(){
