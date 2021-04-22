@@ -168,6 +168,50 @@ class AccessController2 extends Controller{
     return response()->json(["res" => true]);
   }
 
+  public function F_TRA($store = 3){
+    /* ELIMINAR ALBARANES */
+    $query_delete = "DELETE * FROM F_TRA WHERE (NOT AORTRA = ? AND NOT AORTRA = ?) OR (NOT ADETRA = ? AND NOT ADETRA = ?)";
+    $almacenes = $this->almacenes($store);
+    $exec_delete = $this->con->prepare($query_delete);
+    return response()->json($exec_delete);
+    $almacenes2 = array_merge($almacenes, $almacenes);
+    $exec_delete->execute($almacenes2);
+
+    $query_select = "SELECT * FROM F_TRA";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
+
+    $codes = collect(array_column($headers, 'DOCTRA'))->sort()->values()->all();
+
+    if(count($codes)>0){
+      $query_body = "DELETE * FROM F_LTR WHERE NOT DOCLTR = ?";
+      for($i=0; $i<count($codes)-1; $i++){
+        $query_body = $query_body. " AND NOT DOCLTR = ?";
+      }
+      $exec_body = $this->con->prepare($query_body);
+      $exec_body->execute($codes);
+  
+      $query_update_tra = "UPDATE F_TRA SET DOCTRA = ? WHERE DOCTRA = ?";
+      $exec_update_tra = $this->con->prepare($query_update_tra);
+  
+      $query_update_ltr= "UPDATE F_LTR SET DOCLTR = ? WHERE DOCLTR = ?";
+      $exec_update_ltr = $this->con->prepare($query_update_ltr);
+      foreach(range(1, count($codes)) as $next){
+        if($next != $codes[$next-1]){
+          $exec_update_tra->execute([$next, $codes[$next-1]]);
+          $exec_update_ltr->execute([$next, $codes[$next-1]]);
+        }
+      }
+    }else{
+      $query_delete = "DELETE * FROM F_LTR";
+      $exec_delete = $this->con->prepare($query_delete);
+      $exec_delete->execute();
+    }
+    
+    return response()->json(["res" => true]);
+  }
+
   public function F_FAC($store = 3){
     /* ELIMINAR ALBARANES */
     $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?";
@@ -388,13 +432,48 @@ class AccessController2 extends Controller{
     return response()->json(["res" => $res]);
   }
 
-  public function T_PRO($store = 3){
+  public function F_PRO($store = 3){
     /* DELETE ALMACENES QUE NO PERTENECEN A LAS TIENDAS */
-    $query = "DELETE * FROM T_TPV WHERE NOT CODPRO = 5";
-    $codes = merge(range(250, 261), range(800,850));
-    $almacenes = $this->almacenes($store);
+    $query = "DELETE * FROM F_PRO WHERE NOT CODPRO = 5";
+    $codes = array_merge(range(250, 261), range(800,850));
+    for($i=0; $i<count($codes)-1; $i++){
+      $query = $query. " AND NOT CODPRO = ?";
+    }
+
     $exec = $this->con->prepare($query);
-    $res = $exec->execute($almacenes);
+    $res = $exec->execute($codes);
+    return response()->json(["res" => $res]);
+  }
+
+  public function F_RET($store = 3){
+    /* DELETE ALMACENES QUE NO PERTENECEN A LAS TIENDAS */
+    $query = "DELETE * FROM F_RET WHERE NOT CAJRET = ?";
+    
+    $terminales = $this->terminales($store);
+    
+    for($i=0; $i<count($terminales)-1; $i++){
+      $query = $query. " AND NOT CAJRET = ?";
+    }
+
+    $exec = $this->con->prepare($query);
+    $res = $exec->execute($terminales);
+
+    $query_select = "SELECT * FROM F_RET";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
+
+    $codes = collect(array_column($headers, 'CODRET'))->sort()->values()->all();
+    if(count($codes)>0){
+      $query_update_ter = "UPDATE F_RET SET CODRET = ? WHERE CODRET = ?";
+      $exec_update_ter = $this->con->prepare($query_update_ter);
+      foreach(range(1, count($codes)) as $next){
+        if($next != $codes[$next-1]){
+          $exec_update_ter->execute([$next, $codes[$next-1]]);
+        }
+      }
+    }
+
     return response()->json(["res" => $res]);
   }
 

@@ -150,7 +150,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'test'], function () use ($router){
         $router->get('/celler/structure', 'LocationController@getStructureCellers');
         $router->get('/productABC', 'ProductController@getABC');
-        $router->get('/delete', 'AccessController2@T_ATE');
+        $router->get('/delete', 'AccessController2@F_TRA');
     });
 });
 

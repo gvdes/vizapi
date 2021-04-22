@@ -121,8 +121,8 @@ class Kernel extends ConsoleKernel
                             "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
                             "_paid_by" => $venta['_paid_by'],
                             "name" => $venta['name'],
-                            "serie" => $venta['serie'],
-                            "_seller" => $venta['_seller']
+                            "serie" => $venta['serie']/* ,
+                            "_seller" => $venta['_seller'] */
                         ]);
                         $toAttach = [];
                         foreach($venta['body'] as $row){

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class Sales extends Model{
     
     protected $table = 'sales';
-    protected $fillable = ['num_ticket', 'name', 'total', 'created_at', '_cash', '_client', '_paid_by', 'serie', '_seller'];
+    protected $fillable = ['num_ticket', 'name', 'total', 'created_at', '_cash', '_client', '_paid_by', 'serie'/* , '_seller' */];
     
     /*****************
      * Relationships *
@@ -29,7 +29,7 @@ class Sales extends Model{
       return $this->belongsTo('App\Client', '_client');
     }
 
-    public function seller(){
+    /* public function seller(){
       return $this->belongsTo('App\Seller', '_seller');
-    }
+    } */
 }
