@@ -307,11 +307,11 @@ class LocationController extends Controller{
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->id == $this->account->_workpoint;
         })->values()->all();
-        if($inCycleCount>0){
+        /* if($inCycleCount>0){
             $product->stock = "En inventario";
             $product->min = "En inventario";
             $product->max = "En inventario";
-        }else if(count($stock)>0){
+        }else  */if(count($stock)>0){
             $product->stock = $stock[0]->pivot->stock;
             $product->min = $stock[0]->pivot->min;
             $product->max = $stock[0]->pivot->max;
