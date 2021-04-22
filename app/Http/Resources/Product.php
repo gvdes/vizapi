@@ -82,9 +82,9 @@ class Product extends JsonResource{
                         "max" => $stock->pivot->max,
                     ];
                 });
-            }),
+            })/* ,
             "created_at" => $this->created_at->format('Y-m-d H:i'),
-            "updated_at" => $this->updated_at->format('Y-m-d H:i'),
+            "updated_at" => $this->updated_at->format('Y-m-d H:i'), */
         ];
     }
 }
