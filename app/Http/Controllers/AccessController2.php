@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Illuminate\Http\Request;
 
 class AccessController2 extends Controller{
   /**
@@ -23,43 +24,7 @@ class AccessController2 extends Controller{
     $query = "DELETE * FROM F_AGE WHERE CODAGE > 1";
     $exec = $this->con->prepare($query);
     $res = $exec->execute();
-    /* return response()->json(["res" => $res]); */
   }
-
-  /* public function F_ALB($store = 3){
-    $query_delete = "DELETE * FROM F_ALB WHERE NOT ALMALB = ? AND NOT ALMALB = ?";
-    $almacenes = $this->almacenes($store);
-    $exec_delete = $this->con->prepare($query_delete);
-    $exec_delete->execute($almacenes);
-
-    $query_select = "SELECT * FROM F_ALB";
-    $exec_select = $this->con->prepare($query_select);
-    $exec_select->execute();
-    $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
-
-    $codes = collect(array_column($headers, 'CODALB'))->sort()->values()->all();
-
-    $query_body = "DELETE * FROM F_LAL WHERE NOT CODLAL = ?";
-    for($i=0; $i<count($codes)-1; $i++){
-      $query_body = $query_body. " AND NOT CODLAL = ?";
-    }
-    $exec_body = $this->con->prepare($query_body);
-    $exec_body->execute($codes);
-
-    $query_update_alb = "UPDATE F_ALB SET CODALB = ? WHERE CODALB = ?";
-    $exec_update_alb = $this->con->prepare($query_update_alb);
-
-    $query_update_lal = "UPDATE F_LAL SET CODLAL = ? WHERE CODLAL = ?";
-    $exec_update_lal = $this->con->prepare($query_update_lal);
-
-    foreach(range(1, count($codes)) as $next){
-      if($next != $codes[$next-1]){
-        $exec_update_alb->execute([$next, $codes[$next-1]]);
-        $exec_update_lal->execute([$next, $codes[$next-1]]);
-      }
-    }
-    return response()->json(["res" => true]);
-  } */
 
   public function F_ALM(){
     /* ELIMINAR ALMACENES */
@@ -250,9 +215,11 @@ class AccessController2 extends Controller{
       }
     }
     $exec_delete_series_lac = $this->con->prepare($query_delete_series_lac);
-    $exec_delete_series_lac->execute($series);
-    $exec_delete_series_lal = $this->con->prepare($query_delete_series_lal);
-    $exec_delete_series_lal->execute($series);
+    if($exec_delete_series_lac){
+      $exec_delete_series_lac->execute($series);
+      $exec_delete_series_lal = $this->con->prepare($query_delete_series_lal);
+      $exec_delete_series_lal->execute($series);
+    }
   }
 
   public function F_TRA($store = 3){
@@ -295,48 +262,6 @@ class AccessController2 extends Controller{
       $exec_delete->execute();
     }
   }
-
-  /* public function F_FAC2($store = 3){
-    $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?";
-    $almacenes = $this->almacenes($store);
-    $exec_delete = $this->con->prepare($query_delete);
-    $exec_delete->execute($almacenes);
-
-    $query_select = "SELECT * FROM F_FAC";
-    $exec_select = $this->con->prepare($query_select);
-    $exec_select->execute();
-    $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
-
-    $codes = collect(array_column($headers, 'CODFAC'))->sort()->values()->all();
-
-    if(count($codes)>0){
-      $query_body = "DELETE * FROM F_LFA WHERE NOT CODLFA = ?";
-      for($i=0; $i<count($codes)-1; $i++){
-        $query_body = $query_body. " AND NOT CODLFA = ?";
-      }
-      $exec_body = $this->con->prepare($query_body);
-      $exec_body->execute($codes);
-  
-      $query_update_fac = "UPDATE F_FAC SET CODFAC = ? WHERE CODFAC = ?";
-      $exec_update_fac = $this->con->prepare($query_update_fac);
-  
-      $query_update_lfa = "UPDATE F_LFA SET CODLFA = ? WHERE CODLFA = ?";
-      $exec_update_lfa = $this->con->prepare($query_update_lfa);
-      foreach(range(1, count($codes)) as $next){
-        if($next != $codes[$next-1]){
-          $exec_update_fac->execute([$next, $codes[$next-1]]);
-          $exec_update_lfa->execute([$next, $codes[$next-1]]);
-        }
-      }
-
-    }else{
-      $query_body = "DELETE * FROM F_LFA";
-      $exec_body = $this->con->prepare($query_body);
-      $exec_body->execute($codes);
-    }
-    
-    return response()->json(["res" => true]);
-  } */
 
   public function F_FAC($store = 3){
     /* ELIMINAR FACTURAS */
@@ -509,8 +434,8 @@ class AccessController2 extends Controller{
       $exec_update_lfd = $this->con->prepare($query_update_lfd);
       foreach(range(1, count($codes)) as $next){
         if($next != $codes[$next-1]){
-          $exec_update_fac->execute([$next, $codes[$next-1]]);
-          $exec_update_lfa->execute([$next, $codes[$next-1]]);
+          $exec_update_frd->execute([$next, $codes[$next-1]]);
+          $exec_update_lfd->execute([$next, $codes[$next-1]]);
         }
       }
 
@@ -728,7 +653,7 @@ class AccessController2 extends Controller{
       case 1: //CEDISSP
         $almacenes = ["GEN", ""];
       break;
-      case 13: //SP3
+      case 14: //SP3
         $almacenes = ["SP3", "011"];
       break;
       case 6: //CR2
