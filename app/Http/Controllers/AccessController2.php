@@ -26,8 +26,7 @@ class AccessController2 extends Controller{
     /* return response()->json(["res" => $res]); */
   }
 
-  public function F_ALB($store = 3){
-    /* ELIMINAR ALBARANES */
+  /* public function F_ALB($store = 3){
     $query_delete = "DELETE * FROM F_ALB WHERE NOT ALMALB = ? AND NOT ALMALB = ?";
     $almacenes = $this->almacenes($store);
     $exec_delete = $this->con->prepare($query_delete);
@@ -60,7 +59,7 @@ class AccessController2 extends Controller{
       }
     }
     return response()->json(["res" => true]);
-  }
+  } */
 
   public function F_ALM(){
     /* ELIMINAR ALMACENES */
@@ -68,7 +67,6 @@ class AccessController2 extends Controller{
     $almacenes = $this->almacenes(3);
     $exec = $this->con->prepare($query);
     $res = $exec->execute($almacenes);
-    return response()->json(["res" => $res]);
   }
 
   public function F_STO($store = 3){
@@ -77,7 +75,6 @@ class AccessController2 extends Controller{
     $almacenes = $this->almacenes($store);
     $exec = $this->con->prepare($query);
     $res = $exec->execute($almacenes);
-    return response()->json(["res" => $res]);
   }
 
   public function F_CIN($store = 3){
@@ -86,7 +83,33 @@ class AccessController2 extends Controller{
     $almacenes = $this->almacenes($store);
     $exec = $this->con->prepare($query);
     $res = $exec->execute($almacenes);
-    return response()->json(["res" => $res]);
+  }
+
+  public function F_ANT($store = 3){
+    /* DELETE ALMACENES QUE NO PERTENECEN A LAS TIENDAS */
+    $query = "DELETE * FROM F_ANT WHERE NOT CAJANT = ?";
+    $terminales = $this->terminales($store);
+    for($i=0; $i<count($terminales)-1; $i++){
+      $query = $query. " AND NOT CAJANT = ?";
+    }
+    $exec = $this->con->prepare($query);
+    /* return response()->json($exec); */
+    $res = $exec->execute($terminales);
+    $query_select = "SELECT * FROM F_ANT";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
+
+    $codes = collect(array_column($headers, 'CODANT'))->sort()->values()->all();
+    if(count($codes)>0){
+      $query_update_ant = "UPDATE F_ANT SET CODANT = ? WHERE CODANT = ?";
+      $exec_update_ant = $this->con->prepare($query_update_ant);
+      foreach(range(1, count($codes)) as $next){
+        if($next != $codes[$next-1]){
+          $exec_update_ant->execute([$next, $codes[$next-1]]);
+        }
+      }
+    }
   }
 
   public function F_ENT($store = 3){
@@ -122,7 +145,6 @@ class AccessController2 extends Controller{
         $exec_update_len->execute([$next, $codes[$next-1]]);
       }
     }
-    return response()->json(["res" => true]);
   }
 
   public function F_FAB($store = 3){
@@ -164,16 +186,80 @@ class AccessController2 extends Controller{
       $exec_body = $this->con->prepare($query_body);
       $exec_body->execute($codes);
     }
+  }
+
+  public function F_ALB($store = 3){
+    /* ELIMINAR ALBARANES */
+
+    $query_delete = "DELETE * FROM F_ALB WHERE NOT ALMALB = ? AND NOT ALMALB = ?";
+    $almacenes = $this->almacenes($store);
+    $exec_delete = $this->con->prepare($query_delete);
+    $exec_delete->execute($almacenes);
+
+    $query_select = "SELECT * FROM F_ALB";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = collect($exec_select->fetchAll(\PDO::FETCH_ASSOC))->groupBy('TIPALB');
+    $series = array_keys($headers->toArray());
+    $x = [];
+    $query_delete_series_lac = "DELETE * FROM F_LAC WHERE";
+    $query_delete_series_lal = "DELETE * FROM F_LAL WHERE";
+    $y = [];
+    foreach($series as $serie){
+      $query_delete_series_lac = $query_delete_series_lac. " NOT TFALAC = ?";
+      $query_delete_series_lal = $query_delete_series_lal. " NOT TIPLAL = ?";
+
+      $codes = collect(array_column($headers[$serie]->toArray(), 'CODALB'))->sort()->values()->all();
+      $y[] = $codes;
+      if(count($codes)>0){
+        $query_delete_lal = "DELETE * FROM F_LAL WHERE TIPLAL = ?";
+        $query_delete_lac = "DELETE * FROM F_LAC WHERE TFALAC = ?";
+        for($i=0; $i<count($codes); $i++){
+          $query_delete_lal = $query_delete_lal. " AND NOT CODLAL = ?";
+          $query_delete_lac = $query_delete_lac. " AND NOT CALLAC = ?";
+        }
+        $array_codes = array_merge([strval($serie)],$codes);
+
+        $exec_delete_lal = $this->con->prepare($query_delete_lal);
+        $res2 = $exec_delete_lal->execute($array_codes);
+        $x[] = [$res2, $exec_delete_lal];
+        $exec_delete_lac = $this->con->prepare($query_delete_lac);
+        $res2 = $exec_delete_lac->execute($array_codes);
+        $x[] = [$res2, $exec_delete_lac];
     
-    return response()->json(["res" => true]);
+        $query_update_alb = "UPDATE F_ALB SET CODALB = ? WHERE CODALB = ? AND TIPALB = ?";
+        $exec_update_alb = $this->con->prepare($query_update_alb);
+    
+        $query_update_lal= "UPDATE F_LAL SET CODLAL = ? WHERE CODLAL = ? AND TIPLAL = ?";
+        $exec_update_lal = $this->con->prepare($query_update_lal);
+
+        $query_update_lac = "UPDATE F_LAC SET CALLAC = ? WHERE CALLAC = ? AND TFALAC = ?";
+        $exec_update_lac = $this->con->prepare($query_update_lac);
+
+        foreach(range(1, count($codes)) as $next){
+          if($next != $codes[$next-1]){
+            $exec_update_alb->execute([$next, $codes[$next-1], $serie]);
+            $exec_update_lal->execute([$next, $codes[$next-1], $serie]);
+            $exec_update_lac->execute([$next, $codes[$next-1], $serie]);
+          }
+        }
+      }else{
+        $query_delete = "DELETE * FROM F_LAC";
+        $exec_delete = $this->con->prepare($query_delete);
+        $exec_delete->execute();
+      }
+    }
+    $exec_delete_series_lac = $this->con->prepare($query_delete_series_lac);
+    $exec_delete_series_lac->execute($series);
+    $exec_delete_series_lal = $this->con->prepare($query_delete_series_lal);
+    $exec_delete_series_lal->execute($series);
   }
 
   public function F_TRA($store = 3){
     /* ELIMINAR ALBARANES */
-    $query_delete = "DELETE * FROM F_TRA WHERE (NOT AORTRA = ? AND NOT AORTRA = ?) OR (NOT ADETRA = ? AND NOT ADETRA = ?)";
+    $query_delete = "DELETE * FROM F_TRA WHERE (NOT AORTRA = ? AND NOT AORTRA = ?) AND (NOT ADETRA = ? AND NOT ADETRA = ?)";
     $almacenes = $this->almacenes($store);
     $exec_delete = $this->con->prepare($query_delete);
-    return response()->json($exec_delete);
     $almacenes2 = array_merge($almacenes, $almacenes);
     $exec_delete->execute($almacenes2);
 
@@ -208,12 +294,9 @@ class AccessController2 extends Controller{
       $exec_delete = $this->con->prepare($query_delete);
       $exec_delete->execute();
     }
-    
-    return response()->json(["res" => true]);
   }
 
-  public function F_FAC($store = 3){
-    /* ELIMINAR ALBARANES */
+  /* public function F_FAC2($store = 3){
     $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?";
     $almacenes = $this->almacenes($store);
     $exec_delete = $this->con->prepare($query_delete);
@@ -253,6 +336,148 @@ class AccessController2 extends Controller{
     }
     
     return response()->json(["res" => true]);
+  } */
+
+  public function F_FAC($store = 3){
+    /* ELIMINAR FACTURAS */
+
+    $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?";
+    $almacenes = $this->almacenes($store);
+    $exec_delete = $this->con->prepare($query_delete);
+    $exec_delete->execute($almacenes);
+
+    $query_select = "SELECT * FROM F_FAC";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = collect($exec_select->fetchAll(\PDO::FETCH_ASSOC))->groupBy('TIPFAC');
+    $series = array_keys($headers->toArray());
+
+    $query_delete_series_lfa = "DELETE * FROM F_LFA WHERE";
+    $query_delete_series_lco = "DELETE * FROM F_LCO WHERE";
+
+    foreach($series as $serie){
+      /* MODIFICAR PARA CEDIS */
+      $query_delete_series_lco = $query_delete_series_lco. " NOT TFALCO = ?";
+      $query_delete_series_lfa = $query_delete_series_lfa. " NOT TIPLFA = ?";
+
+      $codes = collect(array_column($headers[$serie]->toArray(), 'CODFAC'))->sort()->values()->all();
+      if(count($codes)>0){
+        $start = "0";
+        foreach (array_chunk($codes, 50) as $insert) {
+          $query_delete_lfa = "DELETE * FROM F_LFA WHERE TIPLFA = ?";
+          $query_delete_lco = "DELETE * FROM F_LCO WHERE TFALCO = ?";
+          for($i=0; $i<count($insert); $i++){
+            $query_delete_lfa = $query_delete_lfa. " AND NOT CODLFA = ?";
+            $query_delete_lco = $query_delete_lco. " AND NOT CFALCO = ?";
+          }
+          $query_delete_lfa = $query_delete_lfa. " AND CODLFA > ? AND CODLFA < ?";
+          $query_delete_lco = $query_delete_lco. " AND CFALCO > ? AND CFALCO < ?";
+          $array_codes = array_merge([strval($serie)],$insert, [$start, $insert[count($insert)-1]]);
+          $exec_delete_lfa = $this->con->prepare($query_delete_lfa);
+          $exec_delete_lfa->execute($array_codes);
+          $exec_delete_lco = $this->con->prepare($query_delete_lco);
+          $exec_delete_lco->execute($array_codes);
+          $start = $insert[count($insert)-1];
+        }
+    
+        $query_update_fac = "UPDATE F_FAC SET CODFAC = ? WHERE CODFAC = ? AND TIPFAC = ?";
+        $exec_update_fac = $this->con->prepare($query_update_fac);
+    
+        $query_update_lfa= "UPDATE F_LFA SET CODLFA = ? WHERE CODLFA = ? AND TIPLFA = ?";
+        $exec_update_lfa = $this->con->prepare($query_update_lfa);
+
+        $query_update_lco = "UPDATE F_LCO SET CFALCO = ? WHERE CFALCO = ? AND TFALCO = ?";
+        $exec_update_lco = $this->con->prepare($query_update_lco);
+
+        foreach(range(1, count($codes)) as $next){
+          if($next != $codes[$next-1]){
+            $exec_update_fac->execute([$next, $codes[$next-1], $serie]);
+            $exec_update_lfa->execute([$next, $codes[$next-1], $serie]);
+            $exec_update_lco->execute([$next, $codes[$next-1], $serie]);
+          }
+        }
+      }else{
+        $query_delete = "DELETE * FROM F_LCO";
+        $exec_delete = $this->con->prepare($query_delete);
+        $exec_delete->execute();
+      }
+    }
+    $exec_delete_series_lco = $this->con->prepare($query_delete_series_lco);
+    $exec_delete_series_lco->execute($series);
+    $exec_delete_series_lfa = $this->con->prepare($query_delete_series_lfa);
+    $exec_delete_series_lfa->execute($series);
+  }
+
+  public function F_FRE($store = 3){
+    /* ELIMINAR FACTURAS */
+
+    $query_delete = "DELETE * FROM F_FRE WHERE NOT ALMFRE = ? AND NOT ALMFRE = ?";
+    $almacenes = $this->almacenes($store);
+    $exec_delete = $this->con->prepare($query_delete);
+    $exec_delete->execute($almacenes);
+
+    $query_select = "SELECT * FROM F_FRE";
+    $exec_select = $this->con->prepare($query_select);
+    $exec_select->execute();
+    $headers = collect($exec_select->fetchAll(\PDO::FETCH_ASSOC))->groupBy('TIPFRE');
+    $series = array_keys($headers->toArray());
+
+    $query_delete_series_lfr = "DELETE * FROM F_LFR WHERE NOT TIPLFR = ?";
+    $a = [];
+    $i = 0;
+    foreach($series as $serie){
+      /* MODIFICAR PARA CEDIS */
+      if($i>0){
+        $query_delete_series_lfr = $query_delete_series_lfr. " AND NOT TIPLFR = ?";
+      }
+      $i++;
+      $codes = collect(array_column($headers[$serie]->toArray(), 'CODFRE'))->sort()->values()->all();
+      if(count($codes)>0){
+        $start = "0";
+        $b = [];
+        $max = ceil(count($codes)/50);
+        foreach (array_chunk($codes, 50) as $key => $insert) {
+          $b[] = $key;
+          
+          $query_delete_lfr = "DELETE * FROM F_LFR WHERE TIPLFR = ?";
+          for($i=0; $i<count($insert); $i++){
+            $query_delete_lfr = $query_delete_lfr. " AND NOT CODLFR = ?";
+          }
+          $query_delete_lfr = $query_delete_lfr. " AND CODLFR > ? AND CODLFR < ?";
+          $a[] = ($max-1)."---".strval($key);
+          $a[] = $max == strval($key-1);
+          $a[] = "---";
+          if($max-1 == strval($key)){
+            $array_codes = array_merge([strval($serie)],$insert, [$start, 1000000]);
+          }else{
+            $array_codes = array_merge([strval($serie)],$insert, [$start, $insert[count($insert)-1]]);
+          }
+          $exec_delete_lfr = $this->con->prepare($query_delete_lfr);
+          $exec_delete_lfr->execute($array_codes);
+          $start = $insert[count($insert)-1];
+        }
+    
+        $query_update_fre = "UPDATE F_FRE SET CODFRE = ? WHERE CODFRE = ? AND TIPFRE = ?";
+        $exec_update_fre = $this->con->prepare($query_update_fre);
+    
+        $query_update_lfr = "UPDATE F_LFR SET CODLFR = ? WHERE CODLFR = ? AND TIPLFR = ?";
+        $exec_update_lfr = $this->con->prepare($query_update_lfr);
+
+        foreach(range(1, count($codes)) as $next){
+          if($next != $codes[$next-1]){
+            $exec_update_fre->execute([$next, $codes[$next-1], $serie]);
+            $exec_update_lfr->execute([$next, $codes[$next-1], $serie]);
+          }
+        }
+      }else{
+        $query_delete = "DELETE * FROM F_LFR";
+        $exec_delete = $this->con->prepare($query_delete);
+        $exec_delete->execute();
+      }
+    }
+    $exec_delete_series_lfr = $this->con->prepare($query_delete_series_lfr);
+    $a [] = $exec_delete_series_lfr;
+    $a [] = $exec_delete_series_lfr->execute($series);
   }
 
   public function F_FRD($store = 3){
@@ -294,8 +519,6 @@ class AccessController2 extends Controller{
       $exec_body = $this->con->prepare($query_body);
       $exec_body->execute($codes);
     }
-    
-    return response()->json(["res" => true]);
   }
 
   public function F_ING($store = 3){
@@ -303,18 +526,37 @@ class AccessController2 extends Controller{
     $query = "DELETE * FROM F_ING";
     $exec = $this->con->prepare($query);
     $res = $exec->execute();
-    return response()->json(["res" => $res]);
   }
 
-  public function next(){
-    $this->F_LPF();
-    $this->F_LPP();
-    $this->F_LPS();
-    $this->F_OBR();
-    $this->F_PDA();
-    $this->F_PPR();
-    $this->F_PRC();
-    $this->F_PRE();
+  public function next(Request $request){
+    $_workpoint = $request->_workpoint;
+    $this->F_RET($_workpoint);
+    $this->F_PRO($_workpoint);
+    $this->T_TPV($_workpoint);
+    $this->T_TER($_workpoint);
+    $this->T_ATE($_workpoint);
+    $this->F_PRE($_workpoint);
+    $this->F_PRC($_workpoint);
+    $this->F_PPR($_workpoint);
+    $this->F_PDA($_workpoint);
+    $this->F_OBR($_workpoint);
+    $this->F_LPS($_workpoint);
+    $this->F_CNP($_workpoint);
+    $this->F_LPP($_workpoint);
+    $this->F_LPF($_workpoint);
+    $this->F_ING($_workpoint);
+    $this->F_FRD($_workpoint);
+    $this->F_FRE($_workpoint);
+    $this->F_FAC($_workpoint);
+    $this->F_TRA($_workpoint);
+    $this->F_ALB($_workpoint);
+    $this->F_FAB($_workpoint);
+    $this->F_ENT($_workpoint);
+    $this->F_ANT($_workpoint);
+    $this->F_CIN($_workpoint);
+    $this->F_STO($_workpoint);
+    $this->F_ALM($_workpoint);
+    $this->F_AGE($_workpoint);
     return response()->json(["result" => true]);
   }
 
@@ -334,6 +576,16 @@ class AccessController2 extends Controller{
     $res = true;
     if($store != 1){
       $query = "DELETE * FROM F_LPP";
+      $exec = $this->con->prepare($query);
+      $res = $exec->execute();
+    }
+  }
+
+  public function F_CNP($store = 3){
+    /* ELIMINAR TODO */
+    $res = true;
+    if($store != 1){
+      $query = "DELETE * FROM F_CNP";
       $exec = $this->con->prepare($query);
       $res = $exec->execute();
     }
@@ -408,7 +660,6 @@ class AccessController2 extends Controller{
     }
     $exec = $this->con->prepare($query);
     $res = $exec->execute($terminales);
-    return response()->json(["res" => $res]);
   }
 
   public function T_TER($store = 3){
@@ -420,7 +671,6 @@ class AccessController2 extends Controller{
     }
     $exec = $this->con->prepare($query);
     $res = $exec->execute($terminales);
-    return response()->json(["res" => $res]);
   }
 
   public function T_TPV($store = 3){
@@ -429,7 +679,6 @@ class AccessController2 extends Controller{
     $almacenes = $this->almacenes($store);
     $exec = $this->con->prepare($query);
     $res = $exec->execute($almacenes);
-    return response()->json(["res" => $res]);
   }
 
   public function F_PRO($store = 3){
@@ -442,9 +691,8 @@ class AccessController2 extends Controller{
 
     $exec = $this->con->prepare($query);
     $res = $exec->execute($codes);
-    return response()->json(["res" => $res]);
   }
-
+  
   public function F_RET($store = 3){
     /* DELETE ALMACENES QUE NO PERTENECEN A LAS TIENDAS */
     $query = "DELETE * FROM F_RET WHERE NOT CAJRET = ?";
@@ -473,8 +721,6 @@ class AccessController2 extends Controller{
         }
       }
     }
-
-    return response()->json(["res" => $res]);
   }
 
   public function almacenes($_workpoint){

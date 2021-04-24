@@ -657,7 +657,7 @@ class ProductController extends Controller{
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 6);
-        }])->where([['_status', '!=', 4]])->whereIn('_category', range(130,172))->get()->map(function($product){
+        }])->where([['_status', '!=', 4]])/* ->whereIn('_category', range(130,172)) */->get()->map(function($product){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;
             });

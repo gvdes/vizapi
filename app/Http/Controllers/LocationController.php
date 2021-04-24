@@ -1249,7 +1249,7 @@ class LocationController extends Controller{
         $arr_categories = array_column($categories->toArray(), "id");
         $result = [];
         $productos = Product::with(['stocks' => function($query){
-            $query->where("_workpoint", $this->account->_workpoint/* 1 */);
+            $query->where("_workpoint", $this->account->_workpoint);
         } , 'category'])->where('_status', '!=', 4)->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             if($producto->category->deep == 0){
@@ -1267,6 +1267,10 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
+                /* "Cost" => $producto->cost,
+                "Stock" => $producto->stocks->sum(function($stock){
+                    return $stock->pivot->stock;
+                }) */
                 "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
                 "General" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->gen : 0,
                 "Exhibición" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->exh : 0
