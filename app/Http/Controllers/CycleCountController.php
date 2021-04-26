@@ -145,13 +145,14 @@ class CycleCountController extends Controller{
                 });
             }])->whereIn('id', $_products)->get();
             foreach($products as $product){
+                $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0;
                 $inventory->products()->attach($product->id, [
-                    'stock' => count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                    'stock' => $stock,
+                    "stock_acc" => $stock>0 ? null : 0,
                     "details" => json_encode([
                         "editor" => ""
                     ])
                 ]);
-                $stock = $product->stocks[0]->pivot->stock;
                 array_push($products_add, [
                     "id" => $product->id,
                     "code" => $product->code,
