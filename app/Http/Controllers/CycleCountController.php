@@ -213,7 +213,6 @@ class CycleCountController extends Controller{
             })->values()->all();
             $stock = count($stock_store)>0 ? $stock_store[0]->pivot->stock : 0;
             $inventory->products()->updateExistingPivot($product->id, ["stock_end" => $stock]);
-            return response()->json(["success" => true]);
         }
     }
 
