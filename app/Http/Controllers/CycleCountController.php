@@ -151,6 +151,7 @@ class CycleCountController extends Controller{
                         "editor" => ""
                     ])
                 ]);
+                $stock = $product->stocks[0]->pivot->stock;
                 array_push($products_add, [
                     "id" => $product->id,
                     "code" => $product->code,
@@ -159,8 +160,8 @@ class CycleCountController extends Controller{
                     "dimensions" => $product->dimensions,
                     "pieces" => $product->pieces,
                     "ordered" => [
-                        "stocks" => $product->stocks[0]->pivot->stock,
-                        "stocks_acc" => null,
+                        "stocks" => $stock,
+                        "stocks_acc" => $stock>0 ? null : 0,
                         "details" => [
                             "editor" => ""
                         ]

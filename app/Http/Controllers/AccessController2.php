@@ -26,10 +26,10 @@ class AccessController2 extends Controller{
     $res = $exec->execute();
   }
 
-  public function F_ALM(){
+  public function F_ALM($store = 3){
     /* ELIMINAR ALMACENES */
     $query = "DELETE * FROM F_ALM WHERE NOT CODALM = ? AND NOT CODALM = ?";
-    $almacenes = $this->almacenes(3);
+    $almacenes = $this->almacenes($store);
     $exec = $this->con->prepare($query);
     $res = $exec->execute($almacenes);
   }
@@ -749,7 +749,7 @@ class AccessController2 extends Controller{
       case 1: //CEDISSP
         $caja = [0,25];
       break;
-      case 13: //SP3
+      case 14: //SP3
         $caja = [13];
       break;
       case 6: //CR2
