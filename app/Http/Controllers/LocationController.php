@@ -1343,32 +1343,33 @@ class LocationController extends Controller{
 
     public function updateStocks2(){
         $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
-        $success = 0;
-        $_success = [];
-        $fac = new FactusolController();
-        foreach($workpoints as $workpoint){
-            $stocks = $fac->getStocks($workpoint->id);
-            if($stocks){
-                $success++;
-                array_push($_success, $workpoint->alias);
-                $products = Product::with(["stocks" => function($query) use($workpoint){
-                    $query->where('_workpoint', $workpoint->id);
-                }])->where('_status', 1)->whereNotIn('_category', range(130,172))->get();
-                $codes_stocks = array_column($stocks, 'code');
-                foreach($products as $product){
-                    $key = array_search($product->code, $codes_stocks, true);
-                    if($key === 0 || $key > 0){
-                        $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
-                        if(gettype($stock) == "boolean"){
-                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
-                        }elseif($stock != $stocks[$key]["gen"]){
-                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+            $success = 0;
+            $_success = [];
+            foreach($workpoints as $workpoint){
+                $access = new AccessController($workpoint->dominio);
+                $stocks = $access->getStocks();
+                if($stocks){
+                    $success++;
+                    array_push($_success, $workpoint->alias);
+                    $products = Product::with(["stocks" => function($query) use($workpoint){
+                        $query->where('_workpoint', $workpoint->id);
+                    }])->where('_status', 1)->get();
+                    $codes_stocks = array_column($stocks, 'code');
+                    foreach($products as $product){
+                        $key = array_search($product->code, $codes_stocks, true);
+                        if($key === 0 || $key > 0){
+                            $gen = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
+                            $exh = count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : false;
+                            if(gettype($gen) == "boolean" || gettype($exh) == "boolean"){
+                                $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+                            }elseif($gen != $stocks[$key]["gen"] || $exh != $stocks[$key]["exh"]){
+                                $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+                            }
                         }
                     }
                 }
             }
-        }
-        return response()->json(["completados" => $success, "tiendas" => $_success]);
+            return response()->json(["completados" => $success, "tiendas" => $_success]);
     }
 
     public function getDescendentsSection($section){

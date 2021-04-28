@@ -147,7 +147,6 @@ class Kernel extends ConsoleKernel
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
             $success = 0;
             $_success = [];
-            /* $fac = new FactusolController(); */
             foreach($workpoints as $workpoint){
                 $access = new AccessController($workpoint->dominio);
                 $stocks = $access->getStocks();
