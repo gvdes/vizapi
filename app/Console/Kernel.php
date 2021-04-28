@@ -141,18 +141,14 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyTwoMinutes();
+        })->everyTwoMinutes()->between('9:00', '19:00');
 
         $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
-            $success = 0;
-            $_success = [];
             foreach($workpoints as $workpoint){
                 $access = new AccessController($workpoint->dominio);
                 $stocks = $access->getStocks();
                 if($stocks){
-                    $success++;
-                    array_push($_success, $workpoint->alias);
                     $products = Product::with(["stocks" => function($query) use($workpoint){
                         $query->where('_workpoint', $workpoint->id);
                     }])->where('_status', 1)->get();
@@ -171,7 +167,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-            /* return response()->json(["completados" => $success, "tiendas" => $_success]); */
-        })->everyFourMinutes();
+        })->everyFourMinutes()->between('9:00', '19:00')->withoutOverlapping();
     }
 }

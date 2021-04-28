@@ -21,7 +21,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
         return json_decode(curl_exec($client), true);
     }
 
