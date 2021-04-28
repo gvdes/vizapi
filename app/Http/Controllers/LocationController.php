@@ -1342,12 +1342,14 @@ class LocationController extends Controller{
     }
 
     public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', [11])->get();
+        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
         $success = 0;
         $_success = [];
+        $res = [];
         foreach($workpoints as $workpoint){
             $access = new AccessController($workpoint->dominio);
             $stocks = $access->getStocks();
+            $res[] = $stocks;
             if($stocks){
                 $success++;
                 array_push($_success, $workpoint->alias);
@@ -1369,7 +1371,7 @@ class LocationController extends Controller{
                 }
             }
         }
-        return response()->json(["completados" => $success, "tiendas" => $_success]);
+        return response()->json(["completados" => $success, "tiendas" => $_success, "res" => $res]);
     }
 
     public function getDescendentsSection($section){

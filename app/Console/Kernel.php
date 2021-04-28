@@ -167,6 +167,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyFourMinutes()->between('9:00', '19:00')->withoutOverlapping();
+        })->everyFourMinutes()->between('9:00', '19:00');
     }
 }
