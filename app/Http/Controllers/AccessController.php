@@ -10,16 +10,18 @@ class AccessController extends Controller{
      *
      * @return void
      */
+
     public function __construct($url){
-        $this->client = curl_init();
+        $this->url = $url;
     }
     
     public function getStocks(){
-        curl_setopt($this->client, CURLOPT_URL, $url.env('ACCESS_SERVER').'/warehouse/stocks');
-        curl_setopt($this->client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($this->client, CURLOPT_POST, 1);
-        curl_setopt($this->client,CURLOPT_TIMEOUT, 10);
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/warehouse/stocks');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
         return json_decode(curl_exec($client), true);
     }
 

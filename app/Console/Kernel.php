@@ -150,7 +150,7 @@ class Kernel extends ConsoleKernel
             /* $fac = new FactusolController(); */
             foreach($workpoints as $workpoint){
                 $access = new AccessController($workpoint->dominio);
-                $stocks = $access->getStocks($workpoint->id);
+                $stocks = $access->getStocks();
                 if($stocks){
                     $success++;
                     array_push($_success, $workpoint->alias);
