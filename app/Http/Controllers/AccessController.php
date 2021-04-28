@@ -10,14 +10,17 @@ class AccessController extends Controller{
      *
      * @return void
      */
-    public function __construct(){
-        try{
-            $access = env('ACCESS_FILE');
-            $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-            $this->con = $db;
-        }catch(PDOException $e){
-            return response()->json(["message" => "Algo salio mal con la conexión a la base de datos"]);
-        }
+    public function __construct($url){
+        $this->client = curl_init();
+    }
+    
+    public function getStocks(){
+        curl_setopt($this->client, CURLOPT_URL, $url.env('ACCESS_SERVER').'/warehouse/stocks');
+        curl_setopt($this->client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($this->client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($this->client, CURLOPT_POST, 1);
+        curl_setopt($this->client,CURLOPT_TIMEOUT, 10);
+        return json_decode(curl_exec($client), true);
     }
 
     public function getProducts(){
@@ -194,81 +197,6 @@ class AccessController extends Controller{
             return $categories[strtoupper($family)];
         }else{
             return 404;
-        }
-    }
-
-    public static function getMinMax($code){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "SELECT ACTSTO, MINSTO, MAXSTO FROM F_STO WHERE ARTSTO = '$code' AND ALMSTO = 'GEN'";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            return $rows[0];
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
-    }
-
-    public static function setMinMax($code, $min, $max){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "UPDATE F_STO SET MINSTO = ?, MAXSTO = ? WHERE ARTSTO = ? AND ALMSTO = 'GEN'";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $exec->execute([$min, $max, $code]);
-            return true;
-        }catch(\PDOException $e){
-            return false;
-            /* die($e->getMessage()); */
-        }
-    }
-
-    public static function getStock($code){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "SELECT ACTSTO FROM F_STO WHERE ARTSTO = '$code'";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            $stock = array_reduce($rows,function($res, $row){
-                return $res + $row['ACTSTO'];
-            },0);
-            return $stock;
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
-    }
-
-
-    public static function getProductWithStock(){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "SELECT ARTSTO AS code, ACTSTO AS stock FROM F_STO WHERE ACTSTO > 0 AND ALMSTO = 'GEN'";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            return $rows;
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
-    }
-
-    public static function getProductWithoutStock(){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "SELECT ARTSTO AS code, ACTSTO AS stock FROM F_STO WHERE ACTSTO < 1 AND ALMSTO = 'GEN'";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            return $rows;
-        }catch(\PDOException $e){
-            die($e->getMessage());
         }
     }
 }

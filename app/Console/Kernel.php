@@ -12,6 +12,7 @@ use App\Sales;
 use App\PaidMethod;
 use App\Client;
 use App\Http\Controllers\FactusolController;
+use App\Http\Controllers\AccessController;
 
 class Kernel extends ConsoleKernel
 {
@@ -146,15 +147,16 @@ class Kernel extends ConsoleKernel
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
             $success = 0;
             $_success = [];
-            $fac = new FactusolController();
+            /* $fac = new FactusolController(); */
             foreach($workpoints as $workpoint){
-                $stocks = $fac->getStocks($workpoint->id);
+                $access = new AccessController($workpoint->dominio);
+                $stocks = $access->getStocks($workpoint->id);
                 if($stocks){
                     $success++;
                     array_push($_success, $workpoint->alias);
                     $products = Product::with(["stocks" => function($query) use($workpoint){
                         $query->where('_workpoint', $workpoint->id);
-                    }])->where('_status', 1)->whereNotIn('_category', range(130,172))->get();
+                    }])->where('_status', 1)->get();
                     $codes_stocks = array_column($stocks, 'code');
                     foreach($products as $product){
                         $key = array_search($product->code, $codes_stocks, true);
@@ -170,7 +172,7 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-            return response()->json(["completados" => $success, "tiendas" => $_success]);
+            /* return response()->json(["completados" => $success, "tiendas" => $_success]); */
         })->everyFourMinutes();
     }
 }

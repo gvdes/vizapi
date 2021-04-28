@@ -800,12 +800,16 @@ class VentasController extends Controller{
         "Código" => $product->name,
         "Descripción" => $product->description,
         "Piezas por caja" => $product->pieces,
+        "Costo" => $product->cost,
         "Familia" => $familia,
         "Categoría" => $category,
         "Total" => $vendidos,
         "tickets" => $tickets,
         "stock" => $product->stocks->reduce(function($total, $store){
           return $store->pivot->stock + $total;
+        }, 0),
+        "venta total" => $product->sales->reduce(function($total, $sale){
+          return $total + $sale->pivot->total;
         }, 0)
       ];
       return $a;

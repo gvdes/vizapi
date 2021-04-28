@@ -77,7 +77,7 @@ class AccessController2 extends Controller{
     }
   }
 
-  public function F_ENT($store = 3){
+  public function F_ENT($store = 5){
     /* ELIMINAR ALBARANES */
     $query_delete = "DELETE * FROM F_ENT WHERE NOT ALMENT = ? AND NOT ALMENT = ?";
     $almacenes = $this->almacenes($store);
@@ -90,13 +90,24 @@ class AccessController2 extends Controller{
     $headers = $exec_select->fetchAll(\PDO::FETCH_ASSOC);
 
     $codes = collect(array_column($headers, 'CODENT'))->sort()->values()->all();
-
-    $query_body = "DELETE * FROM F_LEN WHERE NOT CODLEN = ?";
-    for($i=0; $i<count($codes)-1; $i++){
-      $query_body = $query_body. " AND NOT CODLEN = ?";
+    $res = [];
+    $start = "0";
+    $max = ceil(count($codes)/50);
+    foreach (array_chunk($codes, 50) as $key => $insert) {
+      $query_delete_len = "DELETE * FROM F_LEN WHERE NOT CODLEN = ?";
+      for($i=0; $i<count($insert)-1; $i++){
+        $query_delete_len = $query_delete_len. " AND NOT CODLEN = ?";
+      }
+      $query_delete_len = $query_delete_len. " AND CODLEN > ? AND CODLEN < ?";
+      if($max-1 == strval($key)){
+        $array_codes = array_merge($insert, [$start, 1000000]);
+      }else{
+        $array_codes = array_merge($insert, [$start, $insert[count($insert)-1]]);
+      }
+      $exec_delete_len = $this->con->prepare($query_delete_len);
+      $res[] = $exec_delete_len->execute($array_codes);
+      $start = $insert[count($insert)-1];
     }
-    $exec_body = $this->con->prepare($query_body);
-    $exec_body->execute($codes);
 
     $query_update_ent = "UPDATE F_ENT SET CODENT = ? WHERE CODENT = ?";
     $exec_update_ent = $this->con->prepare($query_update_ent);
@@ -263,10 +274,10 @@ class AccessController2 extends Controller{
     }
   }
 
-  public function F_FAC($store = 3){
+  public function F_FAC($store = 4){
     /* ELIMINAR FACTURAS */
 
-    $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?";
+    $query_delete = "DELETE * FROM F_FAC WHERE NOT ALMFAC = ? AND NOT ALMFAC = ?"; 
     $almacenes = $this->almacenes($store);
     $exec_delete = $this->con->prepare($query_delete);
     $exec_delete->execute($almacenes);
@@ -277,18 +288,19 @@ class AccessController2 extends Controller{
     $headers = collect($exec_select->fetchAll(\PDO::FETCH_ASSOC))->groupBy('TIPFAC');
     $series = array_keys($headers->toArray());
 
-    $query_delete_series_lfa = "DELETE * FROM F_LFA WHERE";
-    $query_delete_series_lco = "DELETE * FROM F_LCO WHERE";
+    $query_delete_series_lfa = "DELETE * FROM F_LFA WHERE NOT TIPLFA = ?";/*  AND NOT TIPLFA = ? */
+    $query_delete_series_lco = "DELETE * FROM F_LCO WHERE NOT TFALCO = ?";/*  AND NOT TFALCO = ? */
 
     foreach($series as $serie){
       /* MODIFICAR PARA CEDIS */
-      $query_delete_series_lco = $query_delete_series_lco. " NOT TFALCO = ?";
-      $query_delete_series_lfa = $query_delete_series_lfa. " NOT TIPLFA = ?";
+      /* $query_delete_series_lco = $query_delete_series_lco. " NOT TFALCO = ? AND NOT TFALCO = ?"; 
+      $query_delete_series_lfa = $query_delete_series_lfa. " NOT TIPLFA = ? AND NOT TIPLFA = ?"; */
 
       $codes = collect(array_column($headers[$serie]->toArray(), 'CODFAC'))->sort()->values()->all();
       if(count($codes)>0){
         $start = "0";
-        foreach (array_chunk($codes, 50) as $insert) {
+        $max = ceil(count($codes)/50);
+        foreach (array_chunk($codes, 50) as $key => $insert) {
           $query_delete_lfa = "DELETE * FROM F_LFA WHERE TIPLFA = ?";
           $query_delete_lco = "DELETE * FROM F_LCO WHERE TFALCO = ?";
           for($i=0; $i<count($insert); $i++){
@@ -297,7 +309,12 @@ class AccessController2 extends Controller{
           }
           $query_delete_lfa = $query_delete_lfa. " AND CODLFA > ? AND CODLFA < ?";
           $query_delete_lco = $query_delete_lco. " AND CFALCO > ? AND CFALCO < ?";
-          $array_codes = array_merge([strval($serie)],$insert, [$start, $insert[count($insert)-1]]);
+          /* $array_codes = array_merge([strval($serie)],$insert, [$start, $insert[count($insert)-1]]); */
+          if($max-1 == strval($key)){
+            $array_codes = array_merge([strval($serie)],$insert, [$start, 1000000]);
+          }else{
+            $array_codes = array_merge([strval($serie)],$insert, [$start, $insert[count($insert)-1]]);
+          }
           $exec_delete_lfa = $this->con->prepare($query_delete_lfa);
           $exec_delete_lfa->execute($array_codes);
           $exec_delete_lco = $this->con->prepare($query_delete_lco);
@@ -369,9 +386,6 @@ class AccessController2 extends Controller{
             $query_delete_lfr = $query_delete_lfr. " AND NOT CODLFR = ?";
           }
           $query_delete_lfr = $query_delete_lfr. " AND CODLFR > ? AND CODLFR < ?";
-          $a[] = ($max-1)."---".strval($key);
-          $a[] = $max == strval($key-1);
-          $a[] = "---";
           if($max-1 == strval($key)){
             $array_codes = array_merge([strval($serie)],$insert, [$start, 1000000]);
           }else{
