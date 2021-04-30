@@ -307,11 +307,29 @@ class LocationController extends Controller{
         $stock = $product->stocks->filter(function($stocks){
             return $stocks->id == $this->account->_workpoint;
         })->values()->all();
-        /* if($inCycleCount>0){
-            $product->stock = "En inventario";
-            $product->min = "En inventario";
-            $product->max = "En inventario";
-        }else  */if(count($stock)>0){
+
+        $date_from = new \DateTime();
+        $date_from->setTime(0,0,0);
+        $date_to = new \DateTime();
+        $date_to->setTime(23,59,59);
+
+        $inCycleCount = \App\CycleCount::orWhere([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account], ['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
+        ->orWhere(function($query) use($date_to, $date_from){
+            $query->whereHas('responsables', function($query){
+                $query->where([['_account', $this->account->_account], ['_workpoint', $this->account->_workpoint]]);
+            })->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        })
+        ->where(function($query) use($date_to, $date_from){
+            $query->whereIn("_status", [1,2,3,4])
+                ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        })
+        ->count();
+
+        if($inCycleCount>0){
+            $product->stock = "Inventario";
+            $product->min = $stock[0]->pivot->min;
+            $product->max = $stock[0]->pivot->max;
+        }else if(count($stock)>0){
             $product->stock = $stock[0]->pivot->stock;
             $product->min = $stock[0]->pivot->min;
             $product->max = $stock[0]->pivot->max;
@@ -1349,7 +1367,8 @@ class LocationController extends Controller{
         foreach($workpoints as $workpoint){
             $access = new AccessController($workpoint->dominio);
             $stocks = $access->getStocks();
-            $res[] = $stocks;
+            /* $access = new FactusolController();
+            $stocks = $access->getStocks($workpoint->id); */
             if($stocks){
                 $success++;
                 array_push($_success, $workpoint->alias);
@@ -1371,7 +1390,7 @@ class LocationController extends Controller{
                 }
             }
         }
-        return response()->json(["completados" => $success, "tiendas" => $_success, "res" => $res]);
+        return response()->json(["completados" => $success, "tiendas" => $_success]);
     }
 
     public function getDescendentsSection($section){

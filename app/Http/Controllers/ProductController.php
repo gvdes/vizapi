@@ -39,6 +39,7 @@ class ProductController extends Controller{
                             'code'=> $product['code']
                         ], [
                             'name' => $product['name'],
+                            'barcode' => $product['barcode'],
                             'description' => $product['description'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
@@ -51,6 +52,7 @@ class ProductController extends Controller{
                             'cost' => $product['cost']
                         ]);
                         $instance->name = $product['name'];
+                        $instance->barcode = $product['barcode'];
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
                         $instance->_category = $product['_category'];
@@ -126,6 +128,7 @@ class ProductController extends Controller{
                         'code'=> $product['code']
                     ], [
                         'name' => $product['name'],
+                        'barcode' => $product['barcode'],
                         'description' => $product['description'],
                         'dimensions' => $product['dimensions'],
                         'pieces' => $product['pieces'],
@@ -137,6 +140,7 @@ class ProductController extends Controller{
                         'updated_at' => new \DateTime(),
                         'cost' => $product['cost']
                     ]);
+                    $instance->barcode = $product['barcode'];
                     $instance->name = $product['name'];
                     $instance->cost = $product['cost'];
                     $instance->_status = $product['_status'];

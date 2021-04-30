@@ -55,11 +55,6 @@ class CycleCountController extends Controller{
     }
 
     public function index(Request $request){
-        $account = User::find($this->account->_account);
-        /* $now = new \DateTime();
-        if(isset($request->date)){
-            $now = $request->date;
-        } */
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);

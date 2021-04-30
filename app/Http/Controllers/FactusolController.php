@@ -76,7 +76,7 @@ class FactusolController extends Controller{
 
   public function productosActualizados($date){
     $date = is_null($date) ? date('Y-m-d', time()) : $date;
-    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.PCOART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
+    $query = "SELECT F_ART.CODART, F_ART.CCOART, F_ART.EANART, F_ART.DESART, F_ART.CP3ART, F_ART.FAMART, F_ART.PCOART, F_ART.NPUART, F_ART.PHAART, F_ART.DIMART, F_LTA.TARLTA, F_LTA.PRELTA FROM F_ART INNER JOIN F_LTA ON F_LTA.ARTLTA = F_ART.CODART WHERE F_ART.FUMART LIKE '$date'";
     $rows = $this->lanzarConsulta($query);
     $products = $rows->groupBy('CODART')->map(function($group){
       $category = $this->getCategory($group[0]['FAMART']);
@@ -91,6 +91,7 @@ class FactusolController extends Controller{
       return [
         "code" => $group[0]['CODART']/* mb_convert_encoding($group[0]['CODART'], "UTF-8", "Windows-1252") */,
         "name" => $group[0]['CCOART'],
+        "barcode" => $product['EANART'],
         "description" => $group[0]['DESART']/* mb_convert_encoding($group[0]['DESART'], "UTF-8", "Windows-1252") */,
         "cost" => $group[0]['PCOART'],
         "dimensions" =>json_encode([
@@ -110,7 +111,7 @@ class FactusolController extends Controller{
   }
 
   public function todosProductos(){
-    $query = "SELECT CODART, CCOART, DESART, CP3ART, FAMART, PCOART, NPUART, PHAART, DIMART, FALART FROM F_ART";
+    $query = "SELECT CODART, CCOART, DESART, CP3ART, FAMART, PCOART, NPUART, PHAART, DIMART, FALART, EANART FROM F_ART";
     $rows = $this->lanzarConsulta($query);
     $products = $rows->map(function($product){
       $category = $this->getCategory($product['FAMART']);
@@ -124,6 +125,7 @@ class FactusolController extends Controller{
       return [
         "code" => $product['CODART'],
         "name" => $product['CCOART'],
+        "barcode" => $product['EANART'],
         "description" => $product['DESART'],
         "cost" => $product['PCOART'],
         "dimensions" => json_encode([

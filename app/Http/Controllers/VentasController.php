@@ -695,6 +695,7 @@ class VentasController extends Controller{
       $a++;
       $products = Product::all()->toArray();
       $codes = array_column($products, 'code');
+      $related_codes = array_column($related_codes, 'code');
       $cajas = array_column($cash_registers->toArray(), 'num_cash');
       DB::transaction(function() use ($ventas, $codes, $products, $cajas, $cash_registers, $ids_clients){
         foreach($ventas as $venta){
@@ -720,6 +721,16 @@ class VentasController extends Controller{
                 "total" => $row['total'],
                 "costo" => $row['costo']
               ];
+            }else{
+              $index = array_search($row['_product'], $related_codes);
+              if($index === 0 || $index > 0){
+                $insert[$related_codes[$index]['_product']] = [
+                  "amount" => $row['amount'],
+                  "price" => $row['price'],
+                  "total" => $row['total'],
+                  "costo" => $row['costo']
+                ];
+              }
             }
           }
           $instance->products()->attach($insert);
@@ -762,9 +773,9 @@ class VentasController extends Controller{
       }])->get();
     }else{
       $cash = CashRegister::all()->toArray();
-      $products = Product::whereHas('sales', function($query) use($date_from, $date_to, $cash){
+      $products = Product::where('_provider', 123)->/* whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
-      })->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
+      })-> */with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->whereIn('_cash', array_column($cash, 'id'));
       }, 'stocks'])->get();
     }
@@ -795,6 +806,16 @@ class VentasController extends Controller{
           $category = $product->category->name;
       }
       $tickets = count($product->sales->toArray());
+      $prices = $product->prices->reduce(function($res, $price){
+        $res[$price->name] = $price->pivot->price;
+        return $res;
+      }, []);
+
+      $stocks = $product->stocks->reduce(function($res, $price){
+        $res[$price->name] = $price->pivot->stock;
+        return $res;
+      }, []);
+
       $a = [
         "Modelo" => $product->code,
         "Código" => $product->name,
@@ -812,10 +833,15 @@ class VentasController extends Controller{
           return $total + $sale->pivot->total;
         }, 0)
       ];
-      return $a;
-      /* return array_merge($a, $desgloce); */
+      /* return $a; */
+      $x = array_merge($a, $prices);
+      return array_merge($x, $stocks);
     });
-
+    /* $export = new WithMultipleSheetsExport($result->toArray());
+    return Excel::download($export, "prueba.xlsx"); */
+    $export = new ArrayExport($result->toArray());
+    $date = new \DateTime();
+    return Excel::download($export, "ruz_ofertas.xlsx");
     return response()->json($result);
   }
 
