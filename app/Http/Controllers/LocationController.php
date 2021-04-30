@@ -309,15 +309,12 @@ class LocationController extends Controller{
             }
         },'category', 'status', 'units',
         'cyclecounts' => function($query) use($date_to, $date_from){
-            $query->orWhere([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account], ['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
+            $query->where([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account], ['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
+            ->whereIn("_status", [1,2])
             ->orWhere(function($query) use($date_to, $date_from){
                 $query->whereHas('responsables', function($query){
                     $query->where([['_account', $this->account->_account], ['_workpoint', $this->account->_workpoint]]);
                 })->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
-            })
-            ->where(function($query) use($date_to, $date_from){
-                $query->whereIn("_status", [1,2])
-                    ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
             });
         }])->find($code);
         $stock = $product->stocks->filter(function($stocks){
