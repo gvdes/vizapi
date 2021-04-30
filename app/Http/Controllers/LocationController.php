@@ -320,7 +320,7 @@ class LocationController extends Controller{
             })->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         })
         ->where(function($query) use($date_to, $date_from){
-            $query->whereIn("_status", [1,2,3,4])
+            $query->whereIn("_status", [1,2])
                 ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         })
         ->count();
