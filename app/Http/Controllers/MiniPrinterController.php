@@ -221,7 +221,7 @@ class MiniPrinterController extends Controller{
                     }
                     $printer->setJustification(Printer::JUSTIFY_RIGHT);
                     $printer->setTextSize(2,2);
-                    $pinter->text("{   }\n")
+                    $printer->text("{   }\n")
                     $printer->setTextSize(1,1);
                     $printer->text("UF: ");
                     $printer->setTextSize(2,1);
