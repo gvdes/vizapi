@@ -213,7 +213,7 @@ class MiniPrinterController extends Controller{
                         $printer->text("CAJAS SOLICITADAS: ");
                         $printer->setTextSize(2,1);
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                        $printer->text(rount(product->pivot->units/$pieces));
+                        $printer->text(rount($product->pivot->units/$pieces));
                         $printer->setTextSize(1,1);
                         $printer->text(" x: ");
                         $printer->setTextSize(2,2);
