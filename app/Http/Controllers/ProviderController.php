@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Provider;
 
 class ProviderController extends Controller{
     /**
@@ -18,27 +19,45 @@ class ProviderController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function seeder(){
+    public function updateProviders(Request $request){
         $start = microtime(true);
-        $workpoint = \App\WorkPoint::find($this->account->_workpoint);
-        $client = curl_init();
-        //curl_setopt($client, CURLOPT_URL, "192.168.1.24/access/public/provider");
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/provider");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        $providers = json_decode(curl_exec($client), true);
-        curl_close($client);
+        $clouster = \App\Workpoint::find(1);
+        $access_clouster = new AccessController($clouster->dominio);
+        $date = $request->date ? $request->date : null;
+        $providers = $access_clouster->getProviders($date);
+        $rawProviders = $access_clouster->getRawProviders($date);
+        $stores = $request->stores ? $request->stores : range(3,13);
+        $sync = [];
         try{
-            if($providers){
-                $success = DB::transaction(function() use ($providers){
-                    $success = DB::table('providers')->insert($providers);
-                    return $success;
+            if($providers && $rawProviders){
+                DB::transaction(function() use ($providers){
+                    foreach($providers as $provider){
+                        protected $fillable = ['rfc', 'name', 'alias', 'description', 'address', 'phone', 'email'];
+                        $instance = Provider::firstOrCreate([
+                            'id'=> $provider['id']
+                        ], [
+                            'rfc' => $provider['rfc'],
+                            'name' => $provider['name'],
+                            'alias' => $provider['alias'],
+                            'description' => $provider['description'],
+                            'adress' => $provider['adress'],
+                            'phone' => $provider['phone']
+                        ]);
+                        $instance->rfc = $provider['rfc'];
+                        $instance->name = $provider['name'];
+                        $instance->alias = $provider['alias'];
+                        $instance->description = $provider['description'];
+                        $instance->adress = $provider['adress'];
+                        $instance->phone = $provider['phone'];
+                        $instance->save();
+                    }
                 });
-                return response()->json([
-                    "success" => $success,
-                    "products" => count($providers),
-                    "time" => microtime(true) - $start
-                ]);
+                $workpoints = \App\WorkPoint::whereIn('id', $stores)->get();
+                foreach($workpoints as $workpoint){
+                    $access_store = new AccessController();
+                    $sync[$workpoint->alias] = $access_store->syncProviders($rawProviders);
+                }
+                return response()->json($sync);
             }
             return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
         }catch(\Exception $e){

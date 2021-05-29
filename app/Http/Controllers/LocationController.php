@@ -539,120 +539,6 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function getStocks(Request $request){
-        if(count($request->products)>0){
-            $products = Product::whereIn('id', $request->products)->get();
-            $ids_workpoints = [1, $this->account->_workpoint];
-            $workpoints = WorkPoint::whereIn('id', $ids_workpoints)->get()->sortBy('id');
-            $stocks = $workpoints->reduce(function($products, $workpoint){
-                $client = curl_init();
-                curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-                curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-                curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($client, CURLOPT_POST, 1);
-                curl_setopt($client,CURLOPT_TIMEOUT,100);
-                $data = http_build_query(["products" => array_column($products->toArray(), "code")]);
-                curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-                $stocks = json_decode(curl_exec($client), true);
-                if($stocks){
-                    $codes_array = array_column($stocks, 'code');
-                    return $products->map(function($product) use($codes_array, $stocks, $workpoint){
-                        $id = array_search($product->code, $codes_array);
-                        if(!is_bool($id)){
-                            $stock = isset($product->stockStores) ? $product->stockStores : [];
-                            array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                            $product->stockStores = $stock;
-                        }else{
-                            $stock = isset($product->stockStores) ? $product->stockStores : [];
-                            array_push($stock, ["workpoint" => $workpoint->alias, "stock" => $stocks[$id]['stock']]);
-                            $product->stockStores = $stock;
-                        }
-                        return $product;
-                    });
-                }
-                return $products;
-            }, $products);
-            $sorted = $stocks->sortByDesc(function($product){
-                return array_reduce($product->stockStores,function($total, $store){
-                    return $total + $store['stock'];
-                },0);
-            })->values()->all();
-            return $sorted;
-        }
-        return response()->json(["message" => "Debe mandar almenos un articulo"]);
-    }
-
-    public function setMasiveLocation(Request $request){
-        $products = $request->products;
-        $added = 0;
-        $res = [];
-        $location = [];
-        $path = [];
-        foreach($products as $code){
-            $product = Product::/* find($code['id']) */whereHas('variants', function(Builder $query) use ($code){
-                $query->where('barcode', 'like', '%'.$code['code'].'%');
-            })
-            ->orWhere('name', 'like','%'.$code['code'].'%')
-            ->orWhere('code', 'like','%'.$code['code'].'%')->first();
-            /* $path = $code['path']; */
-            $path = explode('-', $code['path'])[0].'-T'.explode('-', $code['path'])[1];
-
-            /* $path = $path[0].'-P'.substr($path,1,strlen($path)); */
-            if($product){
-                /* $section = CellerSection::whereHas('celler', function($query){
-                    $query->where('_workpoint', $this->account->_workpoint);
-                })->where('path', $path)->first();
-                if($section){
-                    $product->locations()->syncWithoutDetaching([$section->id]);
-                    $added++;
-                }else{
-                    array_push($location, ["code" => $code['code'], "location" => $path]);
-                } */
-                $path[$product->code] = $path;
-            }else{
-                array_push($res, $path);
-                /* array_push($res, ["code" => $code['code'], "location" => $path]); */
-            }
-        }
-        return response()->json(["path" => $path, "res" => $res]);
-        /* return response()->json(["success" => $added, "notFound" => $res, "locationNotFound" => $location]); */
-    }
-
-    public function getStocksFromStores(Request $request){
-        $products = Product::whereIn('id', $request->_products)->get();
-        $stores = Workpoint::whereIn('id', $request->_stores)->get();
-        $codes = array_column($products->toArray(), 'code');
-        $stocks = [];
-        foreach($stores as $workpoint){
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/product/stocks");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($client, CURLOPT_POST, 1);
-            curl_setopt($client,CURLOPT_TIMEOUT,10);
-            $data = http_build_query(["products" => $codes]);
-            curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-            $stocks[$workpoint->alias] = json_decode(curl_exec($client), true);
-        }
-        $result = $products->map(function($product, $key) use($stocks, $stores){
-            $data = [
-                'code' => $product->code,
-                'scode' => $product->name,
-                'category'=> $product->category->name,
-                'descripción' => $product->description
-            ];
-            foreach($stores as $workpoint){
-                if($stocks[$workpoint->alias]){
-                    $data[$workpoint->alias] = $stocks[$workpoint->alias][$key]['stock'];
-                }else{
-                    $data[$workpoint->alias] = '--';
-                }
-            }
-            return $data;
-        })->toArray();
-        return response()->json($result);
-    }
-
     public function updateStocks(){
         $workpoints = WorkPoint::whereIn('id', [1,13])->get();
         foreach($workpoints as $workpoint){
@@ -1221,7 +1107,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }, 'category'/* , 'status', 'provider' */])->where('_status', '!=', 4)->get();
+        }, 'category'])->where('_status', '!=', 4)->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -1234,16 +1120,10 @@ class LocationController extends Controller{
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
-            /* $stocks = [];
-            foreach($producto->stocks as $stock){
-                $stocks[$stock->alias] = $stock->pivot->stock;
-            } */
             return [
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
-                /* "costo" => $producto->cost,
-                "status" => $producto->status->name, */
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
@@ -1251,41 +1131,39 @@ class LocationController extends Controller{
                 "máximo" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->max : 0,
                 "minimo" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->min : 0,
                 "locations" => $locations,
-                /* "provider" => $producto->provider->name, */
             ];
-            /* $res = array_merge($a,$stocks);
-            return $res; */
         })->toArray();
         return $res;
     }
 
     public function catologo(){
         $categories = \App\ProductCategory::all();
-        $arr_categories = array_column($categories->toArray(), "id");
+        $ids_categories = array_column($categories->toArray(), "id");
         $result = [];
         $productos = Product::with(['stocks' => function($query){
             $query->where("_workpoint", $this->account->_workpoint);
-        } , 'category'])->where('_status', '!=', 4)->get();
-        $res = $productos->map(function($producto) use($categories, $arr_categories){
+        } , 'category', 'status'])->where('_status', '!=', 4)->get();
+        $res = $productos->map(function($producto) use($categories, $ids_categories){
             if($producto->category->deep == 0){
-                $familia = $producto->category->name;
+                $family = $producto->category->name;
                 $category = "";
             }else{
-                $key = array_search($producto->category->root, $arr_categories, true);
-                $familia = $categories[$key]->name;
+                $key = array_search($producto->category->root, $ids_categories, true);
+                if($producto->category === 2){
+                    $key = array_search($categories[$key]->root, $ids_categories, true);
+                    $family = $categories[$key]->name;
+                    $category = $producto->category->name;
+                }
+                $family = $categories[$key]->name;
                 $category = $producto->category->name;
             }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $familia,
+                "Familia" => $family,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                /* "Cost" => $producto->cost,
-                "Stock" => $producto->stocks->sum(function($stock){
-                    return $stock->pivot->stock;
-                }) */
                 "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
                 "General" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->gen : 0,
                 "Exhibición" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->exh : 0
@@ -1297,41 +1175,9 @@ class LocationController extends Controller{
     public function catologo2(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
-        $result = [];
-        $sucursales = WorkPoint::all();
-        foreach($sucursales as $sucursal){ 
-            $productos = Product::with(['stocks' => function($query) use($sucursal){
-                $query->where("_workpoint", $sucursal->id);
-            }, 'category', 'prices' => function($query){
-                $query->where('_type', 7);
-            }])->get();
-            $res = $productos->map(function($producto) use($categories, $arr_categories, $sucursal){
-                if($producto->category->deep == 0){
-                    $familia = $producto->category->name;
-                    $category = "";
-                }else{
-                    $key = array_search($producto->category->root, $arr_categories, true);
-                    $familia = $categories[$key]->name;
-                    $category = $producto->category->name;
-                }
-                return [
-                    "sucursal" => $sucursal->name,
-                    "Código" => $producto->name,
-                    "Modelo" => $producto->code,
-                    "Descripción" => $producto->description,
-                    "Familia" => $familia,
-                    "Categoría" => $category,
-                    "Piezas x caja" => $producto->pieces,
-                    "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
-                    "Precio AAA" => count($producto->prices)>0 ? $producto->prices[0]->pivot->price : 0,
-                    "Costo" => $producto->cost
-                ];
-            })->toArray();
-            $result = array_merge($result, $res);
-        }
-        /* $productos = Product::with(['locations' => function($query){
-            $query->where('_celler', 1);
-        }, 'category'])->get();
+        $productos = Product::with(['stocks', 'category', 'prices' => function($query){
+            $query->where('_type', 7);
+        }])->get();
         $result = $productos->map(function($producto) use($categories, $arr_categories){
             if($producto->category->deep == 0){
                 $familia = $producto->category->name;
@@ -1341,31 +1187,34 @@ class LocationController extends Controller{
                 $familia = $categories[$key]->name;
                 $category = $producto->category->name;
             }
-            return [
+            $body = [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
-                "locations" => $producto->locations->reduce(function($res, $location){
-                    return $res.$location->path.",";
-                }, '')
+                "Precio AAA" => count($producto->prices)>0 ? $producto->prices[0]->pivot->price : 0,
+                "Costo" => $producto->cost
             ];
-        })->toArray(); */
+
+            $stocks = [];
+            foreach($producto->stocks as $stock){
+                $stocks[$stock->name] = $stock->pivot->stock;
+            }
+            return array_merge($body, $stocks);
+        })->toArray();
         return $result;
     }
 
     public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13,14,15])->get();
+        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13])->get();
         $success = 0;
         $_success = [];
         $res = [];
         foreach($workpoints as $workpoint){
             $access = new AccessController($workpoint->dominio);
             $stocks = $access->getStocks();
-            /* $access = new FactusolController();
-            $stocks = $access->getStocks($workpoint->id); */
             if($stocks){
                 $success++;
                 array_push($_success, $workpoint->alias);
@@ -1422,74 +1271,6 @@ class LocationController extends Controller{
         return array_merge($children_ids, $id);
     }
 
-    public function setMassiveLocation(Request $request){
-        $sections = CellerSection::whereHas('celler', function($query){
-            $query->where('_workpoint', $request->_workpoint);
-        })/* ->where('deep', 2) */->get();
-        $arr_sections = array_column($sections->toArray(), 'path');
-        $rows = collect($request->products);
-        $res = $rows->map(function($row) use($sections, $arr_sections){
-            $paths = array_filter(explode(',', $row["path"]), function($location){
-                return strlen($location)>0;
-            });
-            $found = [];
-            $notFound = [];
-            foreach($paths as $location){
-                /* $cuarto = count(preg_split('/[0-9]/', $location))>0 ? preg_split('/[0-9]/', $location)[0] : "";
-                $numeros = count(preg_split('/^\D/', $location))>1 ? explode("-",preg_split('/^\D/', $location)[1]) : "";
-
-                if(count($numeros)>1){
-                    $full_path = trim($cuarto.'-P'.$numeros[0].'-T'.$numeros[1]);
-                }else{
-                    $full_path = trim($location);
-                } */
-                $full_path = trim($location);
-                /* if(count(explode('-', $location))==2){
-                    $full_path = explode('-', $location)[0].'-P1-T'.explode('-', $location)[1];
-                }else{
-                    $full_path = $location;
-                } */
-                $key = array_search($full_path, $arr_sections);
-                if($key === 0 || $key>0){
-                    array_push($found, $sections[$key]->id);
-                }else{
-                    array_push($notFound, $full_path);
-                }
-            }
-            return [
-                "model" => $row["model"],
-                "path" => $found,
-                "notFound" => $notFound
-            ];
-        });
-        $notFound = $res->filter(function($product){
-            return count($product['notFound'])>0;
-        })->values()->all();
-        $success = 0;
-        $fail = 0;
-        foreach($res as $row){
-            $product = Product::where('code', $row["model"])->first();
-            if($product){
-                $product->locations()->syncWithoutDetaching($row['path']);
-                $success++;
-            }else{
-                $fail++;
-            }
-        }
-        return response()->json(["success" => $success, "fail" => $fail, "notFound" => $notFound, "res" => $res]);
-    }
-    
-    public function getSimilars(){
-        $products = Product::where('_category', range(1,16))->get()->sortBy('code');
-        $product_ex = $products->map(function($product){
-             $product->base = explode('-', $product->code)[0];
-             return $product;
-        })->groupBy('base')->filter(function($group){
-            return count($group)>1;
-        });
-        return response()->json($product_ex);
-    }
-
     public function getStructureCellers(Request $request){
         $cellers = Celler::with(['sections' => function($query){
             $query->where('deep', 0);
@@ -1532,5 +1313,4 @@ class LocationController extends Controller{
         }
         return $children;
     }
-
 }

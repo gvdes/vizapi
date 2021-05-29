@@ -52,7 +52,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'location'], function () use ($router){
-        $router->get('/', 'RequisitionController@test');
         $router->get('/cellers', 'LocationController@getCellers');
         $router->get('/sections', 'LocationController@getSections');
         $router->get('/allSections', 'LocationController@getAllSections');
@@ -61,10 +60,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/toggle', 'LocationController@setLocation');
         $router->get('/index', 'LocationController@index');
         $router->post('/maximos', 'LocationController@setMax');
-        /* $router->post('/setMassive', 'LocationController@setMasiveLocation'); */
         $router->get('/pro/{id}', 'LocationController@getSectionsChildren');
-        $router->post('/stocks', 'LocationController@getStocks');
-        $router->post('/stocksFromStores', 'LocationController@getStocksFromStores');
         $router->post('/celler', 'LocationController@createCeller');
         $router->post('/section', 'LocationController@createSection');
         $router->post('/updateCeller', 'LocationController@updateCeller');
@@ -72,7 +68,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/remove', 'LocationController@removeLocations');
         $router->post('/deleteSection', 'LocationController@deleteSection');
         $router->get('/sinMaximos', 'LocationController@sinMaximos');
-        $router->post('/setMassive', 'LocationController@setMassiveLocation');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
@@ -92,26 +87,26 @@ $router->group(['middleware' => 'auth'], function() use($router){
 
     $router->group(['prefix' => 'product'], function () use ($router){
         $router->get('/getStatus', 'ProductController@getStatus');
-        $router->get('/prices', 'ProductController@getPrices');
         $router->get('/updateStocks', 'LocationController@updateStocks2');
         $router->post('/updateStatus', 'ProductController@updateStatus');
         $router->post('/', 'ProductController@getProducts');
         $router->get('/restore', 'ProductController@restoreProducts');
+        $router->get('/previous', 'ProductController@addProductsLastYears');
         $router->get('/updateTable', 'ProductController@updateTable');
         $router->get('/restorePrices', 'ProductController@restorePrices');
         $router->get('/autocomplete', 'ProductController@autocomplete');
         $router->post('/getMassive', 'ProductController@getMassiveProducts');
+        $router->post('/saveStocks', 'ProductController@saveStocks');
         $router->post('/catalog', 'ProductController@getProductByCategory');
         $router->post('/tree', 'ProductController@categoryTree');
         $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
         $router->post('/getCategories', 'ProductController@getCategory');
-        $router->get('/pricesAAA', 'ProductController@getPriceAAA');
+        $router->get('/demo', 'ProductController@getDiferenceBetweenStores');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
         $router->get('/seeder', 'RelatesCodeController@seeder');
-        $router->get('/products', 'ProductController@getProductsWithCodes');
     });
 
     $router->group(['prefix' => 'provider'], function () use ($router){
@@ -181,4 +176,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->group(['prefix' => 'sdelsol'], function () use ($router){
             $router->get('/salidas', 'FactusolController@getSalidas');
             $router->get('/depure', 'ProductController@depure');
+        });
+
+        $router->group(['prefix' => 'salidas'], function () use ($router){
+            $router->get('/', 'SalidasController@seederSalidas');
         });

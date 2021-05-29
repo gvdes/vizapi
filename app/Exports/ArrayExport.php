@@ -8,8 +8,9 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 
-class ArrayExport implements FromArray, ShouldAutoSize, WithHeadings, WithStyles, WithColumnFormatting{
+class ArrayExport implements FromArray, ShouldAutoSize, WithHeadings, WithStyles, WithColumnFormatting, WithStrictNullComparison{
     protected $invoices;
 
     public function __construct(array $invoices){

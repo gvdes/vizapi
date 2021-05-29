@@ -25,69 +25,50 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
-    public function getProducts(){
-        $query_products = "SELECT CODART, CCOART, DESART, CP3ART, FAMART, PCOART, NPUART, PHAART, DIMART FROM F_ART";
-        try{
-            $start = microtime(true);
-            //obtener productos
-            $exec = $this->db->prepare($query_products);
-            $exec->execute();
-            $rows_products = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            $products = collect($rows_products);
-            $result = $products->map(function($product){
-                $category = $this->getCategory($product['FAMART']);
-                $dimensions = explode('*', $group[0]['DIMART']);
-                return [
-                    "code" => mb_convert_encoding((string)$product['CODART'], "UTF-8", "Windows-1252"),
-                    "name" => $product['CCOART'],
-                    "description" => mb_convert_encoding($product['DESART'], "UTF-8", "Windows-1252"),
-                    "cost" => $group[0]['x|'],/* me quede aqui */
-                    "dimensions" =>json_encode([
-                        "length" => count($dimensions)>0 ? $dimensions[0] : '',
-                        "height" => count($dimensions)>1 ? $dimensions[1] : '',
-                        "width" => count($dimensions)>2 ? $dimensions[2] : ''
-                    ]),
-                    "pieces" => explode(" ", $product['CP3ART'])[0] ? intval(explode(" ", $product['CP3ART'])[0]) : 0,
-                    "_category" =>  $category ? $category : 404,
-                    "_status" => 1,
-                    "_provider" => (($group[0]['PHAART'] > 0 && $group[0]['PHAART']<139) || $group[0]['PHAART'] == 160 || $group[0]['PHAART'] == 200 || $group[0]['PHAART'] == 1000) ? $group[0]['PHAART'] : 404,
-                    "_unit" => 1
-                ];
-            })->toArray();
-            return $result;
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
+    public function getAllProducts($cols){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/info');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = http_build_query(["cols" => $cols]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        return json_decode(curl_exec($client), true);
     }
 
-    public function getProviders(){
-        $access = "C:\\Users\Carlo\\Desktop\\VPA2020.mdb";
-        $query = "SELECT CODPRO, NIFPRO, NOFPRO, NOCPRO, DOMPRO, PROPRO, TELPRO FROM F_PRO";
-        $db = new \PDO("odbc:DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};charset=UTF-8; DBQ=".$access."; Uid=; Pwd=;");
-        try{
-            $exec = $db->prepare($query);
-            $exec->execute();
-            $rows = $exec->fetchAll(\PDO::FETCH_ASSOC);
-            $items_from_access = collect($rows);
-            $providers = $items_from_access->map(function($provider){
-                return [
-                    "id" => (string)$provider['CODPRO'],
-                    "rfc" => (string)$provider['NIFPRO'],
-                    "name" => mb_convert_encoding((string)$provider['NOFPRO'], "UTF-8", "Windows-1252"),
-                    "alias" => mb_convert_encoding((string)$provider['NOCPRO'], "UTF-8", "Windows-1252"),
-                    "description" => '',
-                    "adress" => json_encode([
-                        'calle' => mb_convert_encoding((string)$provider['DOMPRO'], "UTF-8", "Windows-1252"),
-                        'municipio' => mb_convert_encoding((string)$provider['PROPRO'], "UTF-8", "Windows-1252")
-                    ]),
-                    "phone" => (string)$provider['TELPRO'],
-                ];
-            })->toArray();
-            $success = DB::table('providers')->insert($providers);
-            return $rows;
-        }catch(\PDOException $e){
-            die($e->getMessage());
-        }
+    public function getDifferencesBetweenCatalog($products){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/validate');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["clouster" => $products]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getUpdatedProducts($date){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/update');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = http_build_query(["date" => $date]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getSalidas(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/salidas/all');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        return json_decode(curl_exec($client), true);
     }
 
     public function getRelatedCodes(){
@@ -200,5 +181,120 @@ class AccessController extends Controller{
         }else{
             return 404;
         }
+    }
+
+    /***************
+     * PROVEEDORES *
+     ***************/
+
+    public function getProviders($date){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["date" => $date]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getRawProviders($date){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider/raw');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["date" => $date]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function syncProviders($providers){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider/sync');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["providers" => $providers]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    /*************
+     * PRODUCTOS *
+     *************/
+    public function getProducts(){
+        
+    }
+
+    public function getRawProducts(){
+
+    }
+
+    public function syncProducts(){
+
+    }
+
+    /************
+     * Clientes *
+     ************/
+    public function getClients(){
+
+    }
+
+    public function getRawClients(){
+
+    }
+
+    public function syncClients(){
+
+    }
+
+    /***************
+     * Agentes *
+     ***************/
+    public function getSeller(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/user');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode([]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getRawSeller(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/user/raw');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode([]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function syncSeller($users){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/user/sync');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["users" => $users]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
     }
 }

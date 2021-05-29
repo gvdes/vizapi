@@ -207,10 +207,21 @@ class MiniPrinterController extends Controller{
                         $printer->setTextSize(1,1);
                         $printer->text(" x: ");
                         $printer->setTextSize(2,2);
-                        $printer->text("[   ]\n");
-                        $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                        $printer->text("[   ]");
                         $pieces = $product->pieces;
+                    }else{
+                        $printer->text("CAJAS SOLICITADAS: ");
+                        $printer->setTextSize(2,1);
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                        $printer->text(rount(product->pivot->units/$pieces));
+                        $printer->setTextSize(1,1);
+                        $printer->text(" x: ");
+                        $printer->setTextSize(2,2);
+                        $printer->text("[   ]");
                     }
+                    $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                    $printer->setTextSize(2,2);
+                    $pinter->text("{   }\n")
                     $printer->setTextSize(1,1);
                     $printer->text("UF: ");
                     $printer->setTextSize(2,1);

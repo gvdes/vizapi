@@ -77,6 +77,20 @@ class ProductController extends Controller{
         }
     }
 
+    public function saveStocks(){
+        $products = Product::whereHas('stocks')->with('stocks')->get();
+        $stocks = $products->map(function($product){
+            return $product->stocks->unique('id')->values()->map(function($stock){
+                return $stock->pivot;
+            });
+        })->toArray();
+        $insert = array_merge(...$stocks);
+        foreach(array_chunk($insert, 1000) as $toInsert){
+            DB::table('stock_history')->insert($toInsert);
+        }
+        return response()->json(["Filas insertadas" => count($insert)]);
+    }
+
     public function restorePrices(){
         try{
             $start = microtime(true);
@@ -118,9 +132,10 @@ class ProductController extends Controller{
 
     public function updateTable(Request $request){
         $start = microtime(true);
-        $fac = new FactusolController();
         $date = isset($request->date) ? $request->date : null;
-        $products = $fac->productosActualizados($date);
+        $workpoint = \App\WorkPoint::find(1);
+        $access = new AccessController($workpoint->dominio);
+        $products = $access->getUpdatedProducts($date);
         try{
             DB::transaction(function() use ($products){
                 foreach($products as $product){
@@ -397,32 +412,6 @@ class ProductController extends Controller{
         return response()->json(["status" => $status]);
     }
 
-    public function getProductsWithCodes(Request $request){
-        $products = Product::with(['variants', 'category'])->has('variants', '>', 0)->get();
-        $categories = \App\ProductCategory::all();
-        $arr_categories = array_column($categories->toArray(), "id");
-        $map = $products->map(function($product) use($categories, $arr_categories){
-            if($product->category->deep == 0){
-                $familia = $product->category->name;
-            }else{
-                $key = array_search($product->category->root, $arr_categories, true);
-                $familia = $categories[$key]->name;
-            }
-            return [
-                "Modelo" => $product->code,
-                "Código" => $product->name,
-                "Descripción" => $product->description,
-                "Familia" => $familia,
-                "Categoría" => $product->category->name,
-                "Variantes" => $product->variants->reduce(function($res, $variant){
-                    array_push($res, $variant->barcode);
-                    return $res; 
-                }, []),
-            ];
-        });
-        return response()->json(["products" => $map]);
-    }
-
     public function getProducts(Request $request){
         $query = Product::query();
 
@@ -434,6 +423,14 @@ class ProductController extends Controller{
             ->orWhere('code', $request->autocomplete)
             ->orWhere('name', 'like','%'.$request->autocomplete.'%')
             ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+        }
+
+        if(isset($request->products) && $request->products){
+            $query = $query->whereHas('variants', function(Builder $query) use ($request){
+                $query->whereIn('barcode', $request->products);
+            })
+            ->orWhereIn('name', $request->products)
+            ->orWhereIn('code', $request->product);
         }
 
         if(isset($request->_category)){
@@ -494,7 +491,7 @@ class ProductController extends Controller{
         }
 
         if(isset($request->with_prices) && $request->with_prices){
-            $query->with(['stocks' => function($query){
+            $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1, 2, 3, 4]);
             }]);
         }
@@ -504,20 +501,7 @@ class ProductController extends Controller{
         }else{
             $products = $query->orderBy('_status', 'asc')->get();
         }
-        /* return response()->json($products); */
         return response()->json(ProductResource::collection($products));
-    }
-
-    public function getPrices(Request $request){
-        $products = Product::with('prices')->whereIn('code', array_column($request->products, "modelo"))->get();
-        $res = $products->map(function($product){
-            $prices = $product->prices->map(function($price){
-                return [$price->alias => $price->pivot->price];
-            })->toArray();
-            $res = ["code" => $product->code, "descripcion" => $product->description];
-            return array_merge($res, $prices);
-        });
-        return response()->json($res);
     }
 
     public function getSectionsChildren($id){
@@ -559,69 +543,72 @@ class ProductController extends Controller{
 
     public function addProductsLastYears(){
         $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, "localhost/access/public/product");
+        curl_setopt($client, CURLOPT_URL, "localhost/access/public/product/all");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT,10);
         $products = json_decode(curl_exec($client), true);
+        $providers = \App\Provider::all();
+        $ids_providers = array_column($providers->toArray(), "id");
         curl_close($client);
         if($products){
-            DB::transaction(function() use ($products){
+            DB::transaction(function() use ($products, $ids_providers){
                 foreach($products as $product){
-                    Product::firstOrCreate([
+                    $key = array_search($product['_provider'], $ids_providers);
+                    $_provider = ($key === 0 || $key > 0) ? $product['_provider'] : 404;
+                    $instance = Product::firstOrCreate([
                         'code'=> $product['code']
                     ], [
                         'name' => $product['name'],
+                        'barcode' => $product['barcode'],
                         'description' => $product['description'],
                         'dimensions' => $product['dimensions'],
                         'pieces' => $product['pieces'],
                         '_category' => $product['_category'],
-                        '_status' => 4,
-                        '_provider' => $product['_provider'],
+                        '_status' => $product['_status'],
+                        '_provider' => $_provider,
                         '_unit' => $product['_unit'],
                         'created_at' => $product['created_at'],
                         'updated_at' => new \DateTime(),
                         'cost' => $product['cost']
                     ]);
+                    $instance->name = $product['name'];
+                    $instance->barcode = $product['barcode'];
+                    $instance->cost = $product['cost'];
+                    $instance->dimensions = $product['dimensions'];
+                    $instance->_category = $product['_category'];
+                    $instance->description = $product['description'];
+                    $instance->pieces = $product['pieces'];
+                    $instance->_provider = $_provider;
+                    $instance->_status = $product['_status'];
+                    $instance->created_at = $product['created_at'];
+                    $instance->updated_at = new \DateTime();
+                    $instance->save();
+
+                }
+                DB::table('product_variants')->delete();
+
+                $client = curl_init();
+                curl_setopt($client, CURLOPT_URL, "localhost/access/public/product/related");
+                curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+                curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($client,CURLOPT_TIMEOUT,10);
+                $codes = json_decode(curl_exec($client), true);
+                curl_close($client);
+                $products2 = Product::all();
+                
+                $array_codes = array_column($products2->toArray(), 'code');
+                if($codes){
+                    foreach($codes as $code){
+                        $key = array_search($code["ARTEAN"], $array_codes);
+                        if($key>0 || $key === 0){
+                            $insert[] = ["_product" => $products2[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0];
+                        }
+                    }
+                    DB::table('product_variants')->insert($insert);
                 }
             });
         }
-    }
-
-    public function getPriceAAA(){
-        $categories = \App\ProductCategory::where('deep', 0)->get();
-        $ids_categories = array_column($categories->toArray(), 'id');
-        $products = Product::whereHas('prices',)->with(['prices' => function($query){
-            $query->where('_type', 7);
-        }])->get()->map(function($product) use($categories, $ids_categories){
-            if($product->category->deep == 0){
-                $familia = $product->category->name;
-                $category = "";
-            }else{
-                $key = array_search($product->category->root, $ids_categories, true);
-                if($product->category === 2){
-                    $key = array_search($categories[$key]->root, $ids_categories, true);
-                    $familia = $categories[$key]->name;
-                    $category = $product->category->name;
-                }
-                $familia = $categories[$key]->name;
-                $category = $product->category->name;
-            }
-            return [
-                "Codigo" => $product->code,
-                "Modelo" => $product->name,
-                "Descripción" => $product->description,
-                "Unidad de medida" => $product->pieces,
-                "Familia" => $familia,
-                "Categoría" => $category,
-                "Costo" => $product->cost,
-                "Precio AAA" => count($product->prices)>0 ? $product->prices[0]->pivot->price : 0
-            ];
-        });
-        /* return $products; */
-        $export = new ArrayExport($products->toArray());
-        $date = new \DateTime();
-        return Excel::download($export, "2018_precios.xlsx");
     }
 
     public function depure(Request $request){
@@ -657,123 +644,153 @@ class ProductController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $products = Product::with(['sales' => function($query) use($date_from, $date_to){
+        $categories = \App\ProductCategory::where('deep', 0)->get();
+        $ids_categories = array_column($categories->toArray(), 'id');
+        $products = Product::/* whereHas('sales', function($query) use($date_from, $date_to){
+            $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+        })-> */with(['provider','category','sales' => function($query) use($date_from, $date_to){
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
-            $query->where('_type', 6);
-        }])->where([['_status', '!=', 4]])/* ->whereIn('_category', range(130,172)) */->get()->map(function($product){
+            $query->where('_type', 7);
+        }])->where([['_provider', 74], ['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%']])->get()->map(function($product) use($categories, $ids_categories){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;
             });
-            /* $costo_total = $product->sales->sum(function($sale){
-                return $sale->pivot->costo * $sale->pivot->amount;
-            }); */
             $costo_total = $unidades_vendidas * $product->cost;
             $venta_total = $product->sales->sum(function($sale){
                 return $sale->pivot->total;
             });
             $rentabilidad = 0;
+            $stock = $product->stocks->sum(function($stock){
+                return $stock->pivot->stock;
+            });
+            $valor_inventario = $product->cost * $stock;
             $price = count($product->prices) > 0 ? $product->prices[0]->pivot->price : 0;
             if($unidades_vendidas > 0 && $venta_total > 0){
-                if($costo_total <= 0 || /* $venta_total<=0 || */ $costo_total/$venta_total>2){
+                if($costo_total <= 0 || $costo_total/$venta_total>2){
                     $costo_total = $product->cost * $unidades_vendidas;
+                    if($costo_total<=0){
+                        $costo_total = $price * $unidades_vendidas;
+                    }
                 }
-                if($costo_total>0){
-                    $rentabilidad = ($venta_total - $costo_total) / $costo_total;
+                if($venta_total>0){
+                    $rentabilidad = ($venta_total - $costo_total) / $venta_total;
                 }else{
                     $rentabilidad = $price;
                 }
             }else{
-                if($product->cost>0){
-                    $rentabilidad = ($price - $product->cost) / $product->cost;
+                if($price>0){
+                    $rentabilidad = ($price - $product->cost) / $price;
                 }else{
                     $rentabilidad = $price;
                 }
+            }
+            if($product->category->deep == 0){
+                $family = $product->category->name;
+                $category = "";
+            }else{
+                $key = array_search($product->category->root, $ids_categories, true);
+                if($product->category === 2){
+                    $key = array_search($categories[$key]->root, $ids_categories, true);
+                    $family = $categories[$key]->name;
+                    $category = $product->category->name;
+                }
+                $family = $categories[$key]->name;
+                $category = $product->category->name;
             }
             return [
                 "Modelo" => $product->code,
                 "Código" => $product->name,
                 "Descripción" => $product->description,
+                "Proveedor" => $product->provider->name,
+                "Familia" => $family,
+                "Categoria" => $category,
                 "Costo" => $product->cost,
-                "Precio Centro" => $price,
+                "Precio AAA" => $price,
+                "stock" => $stock,
+                "Valor del inventario" => $valor_inventario,
                 "Unidades vendidas" => $unidades_vendidas,
                 "Venta total" => $venta_total,
                 "Costo total" => $costo_total,
                 "Rentabilidad" => $rentabilidad,
-                "Ganancia bruta" => $venta_total - $costo_total,
-                "stock" => $product->stocks->sum(function($stock){
-                    return $stock->pivot->stock;
-                })
+                "Ganancia bruta" => $venta_total - $costo_total
             ];
-        });
-        $min_stock = $products->min('stock');
-        $min_stock = $min_stock < 0 ? 0 : $min_stock;
-        $max_stock = $products->max('stock');
-        $median_stock = ($max_stock + $min_stock) /2;
-        /* $median_stock = $products->median('stock'); */
-        $limites_inventario = [$min_stock, ($min_stock + $median_stock)/2, $median_stock , ($max_stock + $median_stock)/2 , $max_stock];
-        
-        /* $min_ventas = $products->min('Venta total');
-        $max_ventas = $products->max('Venta total'); */
-        $min_ventas = $products->min('Unidades vendidas');
-        $max_ventas = $products->max('Unidades vendidas');
-        $median_ventas = ($max_ventas + $min_ventas) /2;
-        /* $median_ventas = $products->median('Venta total'); */
-        $limites_ventas = [$min_ventas, ($median_ventas + $min_ventas)/2, $median_ventas, ($median_ventas + $max_ventas)/2 , $max_ventas];
-        
-        $min_rentabilidad = $products->min('Rentabilidad');
-        $min_rentabilidad = $min_rentabilidad >= 0 ? $min_rentabilidad : 0;
-        $max_rentabilidad = $products->max('Rentabilidad');
-        $max_rentabilidad = $max_rentabilidad > 1 ? 1 : $max_rentabilidad;
-        $median_rentabilidad = ($max_rentabilidad + $min_rentabilidad) /2;
-        /* $median_rentabilidad = $products->median('Rentabilidad'); */
-        $limites_rentabilidad = [$min_rentabilidad, ($median_rentabilidad + $min_rentabilidad)/2 , $median_rentabilidad, ($median_rentabilidad + $max_rentabilidad)/2, $max_rentabilidad];
+        })->sortByDesc('Valor del inventario');
 
-        $result = $products->map(function($product) use($limites_rentabilidad, $limites_ventas, $limites_inventario){
-            if(/* $product['stock'] >= $limites_inventario[0] &&  */$product['stock'] <= $limites_inventario[1]/*  || $product['stock'] <= 0 */){
-                $stock = "D";
-            }else if($product['stock'] >= $limites_inventario[1] && $product['stock'] <= $limites_inventario[2]){
-                $stock = "C";
-            }else if($product['stock'] >= $limites_inventario[2] && $product['stock'] <= $limites_inventario[3]){
-                $stock = "B";
+        $venta_total = $products->sum('Venta total');
+        $valor_inventario = $products->sum('Valor del inventario');
+        $ganancia_total = $products->sum('Ganancia bruta');
+        $valor_absoluto_inventario = 0;
+        $valor_absoluto_venta = 0;
+        $valor_absoluto_ganancia = 0;
+        $result = $products->map(function($product) use($valor_inventario, &$valor_absoluto_inventario){
+            $valor_relativo = $product['Valor del inventario'] / $valor_inventario;
+            $valor_absoluto_inventario = $valor_absoluto_inventario + $valor_relativo;
+            if($valor_absoluto_inventario>=0 && $valor_absoluto_inventario<=.80){
+                $product["Clasificación valor del inventario"] = "A";
+            }else if($valor_absoluto_inventario>.80 && $valor_absoluto_inventario<=.95){
+                $product["Clasificación valor del inventario"] = "B";
             }else{
-                $stock = "A";
+                $product["Clasificación valor del inventario"] = "C";
             }
-
-            if(/* $product['Rentabilidad'] >= $limites_rentabilidad[0] &&  */$product['Rentabilidad'] <= $limites_rentabilidad[1]/*  || $product['Rentabilidad'] <= 0 */){
-                $rentabilidad = "D";
-            }else if($product['Rentabilidad'] >= $limites_rentabilidad[1] && $product['Rentabilidad'] <= $limites_rentabilidad[2]){
-                $rentabilidad = "C";
-            }else if($product['Rentabilidad'] >= $limites_rentabilidad[2] && $product['Rentabilidad'] <= $limites_rentabilidad[3]){
-                $rentabilidad = "B";
+            return $product;
+        })->sortByDesc("Venta total")->map(function($product) use($venta_total, &$valor_absoluto_venta){
+            $valor_relativo = $product['Venta total'] / $venta_total;
+            $valor_absoluto_venta = $valor_absoluto_venta + $valor_relativo;
+            if($valor_absoluto_venta>=0 && $valor_absoluto_venta<=.80){
+                $product["Clasificación venta"] = "A";
+            }else if($valor_absoluto_venta>.80 && $valor_absoluto_venta<=.95){
+                $product["Clasificación venta"] = "B";
             }else{
-                $rentabilidad = "A";
+                $product["Clasificación venta"] = "C";
             }
-
-            if(/* $product['Venta total'] >= $limites_ventas[0] &&  */$product['Unidades vendidas'] <= $limites_ventas[1]){
-                $venta = "D";
-            }else if($product['Unidades vendidas'] >= $limites_ventas[1] && $product['Unidades vendidas'] <= $limites_ventas[2]){
-                $venta = "C";
-            }else if($product['Unidades vendidas'] >= $limites_ventas[2] && $product['Unidades vendidas'] <= $limites_ventas[3]){
-                $venta = "B";
+            return $product;
+        })->sortByDesc("Ganancia bruta")->map(function($product) use($ganancia_total, &$valor_absoluto_ganancia){
+            $valor_relativo = $product['Ganancia bruta'] / $ganancia_total;
+            $valor_absoluto_ganancia = $valor_absoluto_ganancia + $valor_relativo;
+            if($valor_absoluto_ganancia>=0 && $valor_absoluto_ganancia<=.80){
+                $product["Clasificación ganancia"] = "A";
+            }else if($valor_absoluto_ganancia>.80 && $valor_absoluto_ganancia<=.95){
+                $product["Clasificación ganancia"] = "B";
             }else{
-                $venta = "A";
+                $product["Clasificación ganancia"] = "C";
             }
-            $product['Clasificacion rentabilidad'] = $rentabilidad;
-            $product['Clasificación stock'] = $stock;
-            $product['Clasificación venta'] = $venta;
             return $product;
         });
-        /* return response()->json($products); */
-        /* return response()->json(["limites_inventario" => $limites_inventario, "limites_ventas" => $limites_ventas, "limites_rentabilidad" => $limites_rentabilidad]); */
         $export = new ArrayExport($result->toArray());
         $date = new \DateTime();
         return Excel::download($export, "ABCD_PRODUCTOS.xlsx");
-        /* return response()->json([
-            "products" => $products,
-            "limites_inventario" => $limites_inventario,
-            "limites_ventas" => $limites_ventas,
-            "limites_rentabilidad" => $limites_rentabilidad,
-        ]); */
+    }
+
+    public function getDiferenceBetweenStores(){
+        $clouster = \App\WorkPoint::find(1);
+        $access_clouster = new AccessController($clouster->dominio);
+        $products = $access_clouster->getAllProducts(["CODART"]);
+        $store = \App\WorkPoint::find(8);
+        $access_store = new AccessController($store->dominio);
+        $differences = $access_store->getDifferencesBetweenCatalog($products);
+        return response()->json($differences);
+    }
+
+    public function syncProducts(Request $required){
+        $clouster = \App\WorkPoint::find(1);
+        $access_clouster = new AccessController($clouster->dominio);
+        if(strtoupper($request->type) == "COMPLETA"){
+            $data = $access_clouster->getAllProducts();
+        }else{
+            $data = $access_clouster->getAllProducts($request->date);
+        }
+        
+        if(strtoupper($request->stores) == "ALL"){
+            $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13])->get();
+        }else{
+            $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
+        }
+        $result = [];
+        foreach($stores as $store){
+            $access_store = new AccessController($store->dominio);
+            $result[$store->name] = $access_store->syncProducts($data);
+        }
+        return response()->json($result);
     }
 }

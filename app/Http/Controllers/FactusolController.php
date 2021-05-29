@@ -91,7 +91,7 @@ class FactusolController extends Controller{
       return [
         "code" => $group[0]['CODART']/* mb_convert_encoding($group[0]['CODART'], "UTF-8", "Windows-1252") */,
         "name" => $group[0]['CCOART'],
-        "barcode" => $product['EANART'],
+        "barcode" => $group[0]['EANART'],
         "description" => $group[0]['DESART']/* mb_convert_encoding($group[0]['DESART'], "UTF-8", "Windows-1252") */,
         "cost" => $group[0]['PCOART'],
         "dimensions" =>json_encode([
@@ -288,7 +288,7 @@ class FactusolController extends Controller{
       "LAP"=>5,
       "MPR"=>null,//Materias primas
       "NAV"=>null,//Navidad
-      "20"=>131,
+      "20"=>119,
       "2"=>131,
       "19"=>141,
       "18"=>138,
