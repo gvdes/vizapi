@@ -225,7 +225,7 @@ class MiniPrinterController extends Controller{
                     $printer->setTextSize(1,1);
                     $printer->text("UF: ");
                     $printer->setTextSize(2,1);
-                    $printer->text(round($product->pivot->units*$pieces));
+                    $printer->text(round($product->pivot->units));
                     $printer->setTextSize(1,1);
                     $printer->text(" - UD: ");
                     $printer->setTextSize(2,1);
