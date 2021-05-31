@@ -87,7 +87,8 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyFiveMinutes()->between('9:00', '19:00');
+        }
+    })->everyFiveMinutes()->between('9:00', '19:00');
 
         $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13])->get();
