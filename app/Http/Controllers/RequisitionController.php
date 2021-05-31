@@ -591,7 +591,7 @@ class RequisitionController extends Controller{
                     $required = .5;
                 }
                 if($required > 0){
-                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
+                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                 }
             }
             return ["notes" => " Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
