@@ -202,7 +202,7 @@ class RequisitionController extends Controller{
             break;
             case 2:
                 // RECARGAR STOCKS DE LA REQUISISION
-                $this->refreshStocks($requisition);
+                //$this->refreshStocks($requisition);
                 //RECARGAR LA REQUISIÓN
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -599,7 +599,7 @@ class RequisitionController extends Controller{
         return ["msg" => "No se tenido conexión con la tienda"];
     }
 
-    public function refreshStocks(Requisition $requisition){
+    /* public function refreshStocks(Requisition $requisition){
         $_workpoint_to = $requisition->_workpoint_to;
         $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['stocks' => function($query) use($_workpoint_to){
@@ -616,5 +616,5 @@ class RequisitionController extends Controller{
             ]);
         }
         return true;
-    }
+    } */
 }
