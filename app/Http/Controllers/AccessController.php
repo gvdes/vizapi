@@ -256,9 +256,9 @@ class AccessController extends Controller{
 
     }
 
-    /***************
+    /***********
      * Agentes *
-     ***************/
+     ***********/
     public function getSeller(){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/user');
@@ -293,6 +293,53 @@ class AccessController extends Controller{
         curl_setopt($client,CURLOPT_TIMEOUT, 10);
         curl_setopt($client, CURLOPT_POST, 1);
         $data = json_encode(["users" => $users]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    /**********
+     * VENTAS *
+     **********/
+
+    public function getSaleStore($folio, $caja){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/sale/folio");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        $data = json_encode(["folio" => $folio, "caja" => $caja]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getLastSales($caja_x_ticket){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/sale/new");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 40);
+        $data = json_encode(["cash" => $caja_x_ticket]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    /************
+     * PREVENTA *
+     ************/
+
+    public function getOrderStore($folio){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/preventa/folio");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        $data = json_encode(["folio" => $folio]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);

@@ -631,8 +631,8 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    /* $workpoints = WorkPoint::whereIn('id', range(4,13))->get(); */
-    $workpoints = WorkPoint::where('id', 5)->get();
+    $workpoints = WorkPoint::whereIn('id', range(4,13))->get();
+    /* $workpoints = WorkPoint::where('id', 5)->get(); */
     $resumen = [];
     $start = microtime(true);
     $a = 0;
@@ -648,22 +648,10 @@ class VentasController extends Controller{
           $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket];
         }
         if(count($caja_x_ticket)>0){
-          $client = curl_init();
-          curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/sale/new");
-          curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-          curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-          curl_setopt($client, CURLOPT_POST, 1);
-          curl_setopt($client,CURLOPT_TIMEOUT,20);
-          $data = json_encode(["cash" => $caja_x_ticket]);
-          curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-          curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-          $ventas = json_decode(curl_exec($client), true);
-          curl_close($client);
-          $resumen[$workpoint->alias] = $caja_x_ticket;
-          $resumen[$workpoint->alias."VENTAS"] = $ventas;
-          /* return response()->json($resumen); */
+          $access = new AccessController($workpoint->dominio);
+          $ventas = $access->getLastSales($caja_x_ticket);
+          $resumen[$workpoint->alias] = [$caja_x_ticket, $ventas];
           if($ventas){
-            $a++;
             $products = Product::all()->toArray();
             $codes = array_column($products, 'code');
             $cajas = array_column($cash_registers->toArray(), 'num_cash');
@@ -701,7 +689,6 @@ class VentasController extends Controller{
     return response()->json([
       "success" => true,
       "time" => microtime(true) - $start,
-      "a" => $a,
       "resumen" => $resumen
     ]);
   }

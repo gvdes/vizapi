@@ -28,6 +28,7 @@ class RequisitionController extends Controller{
         try{
             $requisition = DB::transaction(function() use ($request){
                 $_workpoint_from = $this->account->_workpoint;
+                $_workpoint_to = $request->_workpoint_to;
                 switch ($request->_type){
                     case 2:
                         $data = $this->getToSupplyFromStore($this->account->_workpoint);
@@ -37,12 +38,12 @@ class RequisitionController extends Controller{
                         $cadena = explode('-', $request->folio);
                         $folio = count($cadena)>1 ? $cadena[1] : '0';
                         $caja = count($cadena)>0 ? $cadena[0] : '0';
-                        $data = $this->getVentaFromStore($folio, $_workpoint_from, $caja);
+                        $data = $this->getVentaFromStore($folio, $_workpoint_from, $caja, $_workpoint_to);
                         $request->notes = $request->notes ? $request->notes : $data['notes'];
                     break;
                     case 4:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
-                        $data = $this->getPedidoFromStore($request->folio, $_workpoint_from);
+                        $data = $this->getPedidoFromStore($request->folio, $_workpoint_from, $_workpoint_to);
                         $request->notes = $request->notes ? $request->notes : $data['notes'];
                     break;
                 }
@@ -53,7 +54,7 @@ class RequisitionController extends Controller{
                     ]);
                 }
                 $now = new \DateTime();
-                $num_ticket = Requisition::where('_workpoint_to', $request->_workpoint_to)
+                $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
                                             ->whereDate('created_at', $now)
                                             ->count()+1;
                 $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
@@ -65,7 +66,7 @@ class RequisitionController extends Controller{
                     "num_ticket_store" => $num_ticket_store,
                     "_created_by" => $this->account->_account,
                     "_workpoint_from" => $_workpoint_from,
-                    "_workpoint_to" => $request->_workpoint_to,
+                    "_workpoint_to" => $_workpoint_to,
                     "_type" => $request->_type,
                     "printed" => 0,
                     "time_life" => "00:15:00",
@@ -97,9 +98,6 @@ class RequisitionController extends Controller{
                     $query->where('_workpoint', $to);
                 }])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
-                /* if($product->units->id == 3){
-                    $amount = $amount * $product->pieces;
-                } */
                 $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
                 return response()->json([
                     "id" => $product->id,
@@ -384,9 +382,7 @@ class RequisitionController extends Controller{
 
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
-            $query->with([/* 'prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-            }, */ 'units', 'variants']);
+            $query->with(['units', 'variants']);
         }, 'to', 'from', 'created_by', 'log'])->find($id);
         return response()->json(new RequisitionResource($requisition));
     }
@@ -460,7 +456,7 @@ class RequisitionController extends Controller{
                 }
                 break;
             case 2:
-                return ["domain" => "192.168.1.36", "port" => 9100];
+                return ["domain" => "189.191.14.19", "port" => 4065];
                 break;
             case 3:
                 return ["domain" => "192.168.1.79", "port" => 9100];
@@ -469,16 +465,16 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 6789];
                 break;
             case 5:
-                return ["domain" => $dominio, "port" => 9333];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 6:
                 return ["domain" => $dominio, "port" => 9309];
                 break;
             case 7:
-                return ["domain" => $dominio, "port" => 9302];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 8:
-                return ["domain" => $dominio, "port" => 9301];
+                return ["domain" => $dominio, "port" => 4066];
                 break;
             case 9:
                 return ["domain" => $dominio, "port" => 9304];
@@ -487,13 +483,13 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 9334];
                 break;
             case 11:
-                return ["domain" => $dominio, "port" => 9300];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 12:
-                return ["domain" => $dominio, "port" => 9100];
+                return ["domain" => $dominio, "port" => 4066];
                 break;
             case 13:
-                return ["domain" => $dominio, "port" => 9601];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 14:
                 return ["domain" => $dominio, "port" => 9100];
@@ -504,24 +500,19 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function getVentaFromStore($folio, $workpoint_id, $caja){
-        $client = curl_init();
+    public function getVentaFromStore($folio, $workpoint_id, $caja, $to){
         $workpoint = WorkPoint::find($workpoint_id);
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/ventas/folio");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,40);
-        $data = http_build_query(["folio" => $folio, "caja" => $caja]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        $venta = json_decode(curl_exec($client), true);
+        $access = new AccessController($workpoint->dominio);
+        $venta = $access->getSaleStore($folio, $caja);
         if($venta){
             if(isset($venta['msg'])){
                 return ["msg" => $venta['msg']];
             }
             $toSupply = [];
             foreach($venta['products'] as $row){
-                $product = Product::where('code', $row['code'])->first();
+                $product = Product::with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])->where('code', $row['code'])->first();
                 if($product){
                     $required = $row['req'];
                     if($product->_unit == 3){
@@ -529,11 +520,11 @@ class RequisitionController extends Controller{
                         $required = round($required/$pieces, 2);
                     }
                     if($required > 0){
-                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                     }
                 }
             }
-            return ["notes" => "Pedido tienda #".$folio, "products" => $toSupply];
+            return ["notes" => "Pedido preventa tienda #".$folio, "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }
@@ -579,29 +570,20 @@ class RequisitionController extends Controller{
         return ["products" => $toSupply];
     }
 
-    public function getPedidoFromStore($folio, $workpoint_id){
-        $client = curl_init();
+    public function getPedidoFromStore($folio, $workpoint_id, $to){
         $workpoint = WorkPoint::find($workpoint_id);
-        curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/preventa/folio");
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,40);
-        $data = http_build_query(["folio" => $folio]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        $venta = json_decode(curl_exec($client), true);
+        $access = new AccessController($workpoint->dominio);
+        $venta = $access->getOrderStore($folio);
         if($venta){
             if(isset($venta['msg'])){
                 return ["msg" => $venta['msg']];
             }
             $toSupply = [];
             foreach($venta['products'] as $row){
-                $product = Product::where('code', $row['code'])->first();
+                $product = Product::with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])->where('code', $row['code'])->first();
                 $required = $row['req'];
-                /* if($product->_unit == 3){
-                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                    $required = floor($required/$pieces);
-                } */
                 if(($row['units'] == 1 || $row['units'] == 2) && $product->_unit == 3){
                     $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                     $required = round($required/$pieces, 2);
@@ -609,7 +591,7 @@ class RequisitionController extends Controller{
                     $required = .5;
                 }
                 if($required > 0){
-                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                 }
             }
             return ["notes" => " Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];

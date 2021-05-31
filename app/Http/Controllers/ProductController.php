@@ -646,13 +646,11 @@ class ProductController extends Controller{
         }
         $categories = \App\ProductCategory::where('deep', 0)->get();
         $ids_categories = array_column($categories->toArray(), 'id');
-        $products = Product::/* whereHas('sales', function($query) use($date_from, $date_to){
-            $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
-        })-> */with(['provider','category','sales' => function($query) use($date_from, $date_to){
+        $products = Product::with(['provider','category','sales' => function($query) use($date_from, $date_to){
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 7);
-        }])->where([['_provider', 74], ['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%']])->get()->map(function($product) use($categories, $ids_categories){
+        }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])->get()->map(function($product) use($categories, $ids_categories){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;
             });
@@ -661,7 +659,7 @@ class ProductController extends Controller{
                 return $sale->pivot->total;
             });
             $rentabilidad = 0;
-            $stock = $product->stocks->sum(function($stock){
+            $stock = $product->stocks->unique('id')->values()->sum(function($stock){
                 return $stock->pivot->stock;
             });
             $valor_inventario = $product->cost * $stock;
@@ -792,5 +790,72 @@ class ProductController extends Controller{
             $result[$store->name] = $access_store->syncProducts($data);
         }
         return response()->json($result);
+    }
+
+    public function getABCStock(Request $request){
+        $categories = \App\ProductCategory::where('deep', 0)->get();
+        $ids_categories = array_column($categories->toArray(), 'id');
+        $workpoints = \App\WorkPoint::whereIn('id', range(1,13))->get();
+        $response = [];
+        foreach($workpoints as $workpoint){
+            $products = Product::with(['provider','category', 'stocks' => function($query) use($workpoint){
+                $query->where('_workpoint', $workpoint->id);
+            }, 'prices' => function($query){
+                $query->where('_type', 7);
+            }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])->get()->map(function($product) use($categories, $ids_categories, $workpoint){
+                $stock = count($product->stocks)> 0 ? $product->stocks[0]->pivot->stock : 0;
+                $valor_inventario = $product->cost * $stock;
+                $price = count($product->prices) > 0 ? $product->prices[0]->pivot->price : 0;
+                if($product->category->deep == 0){
+                    $family = $product->category->name;
+                    $category = "";
+                }else{
+                    $key = array_search($product->category->root, $ids_categories, true);
+                    if($product->category === 2){
+                        $key = array_search($categories[$key]->root, $ids_categories, true);
+                        $family = $categories[$key]->name;
+                        $category = $product->category->name;
+                    }
+                    $family = $categories[$key]->name;
+                    $category = $product->category->name;
+                }
+                return [
+                    "Sucursal" => $workpoint->name,
+                    "Modelo" => $product->code,
+                    "Código" => $product->name,
+                    "Descripción" => $product->description,
+                    "Proveedor" => $product->provider->name,
+                    "Familia" => $family,
+                    "Categoria" => $category,
+                    "Costo" => $product->cost,
+                    "Precio AAA" => $price,
+                    "stock" => $stock,
+                    "Valor del inventario" => $valor_inventario
+                ];
+            })->sortByDesc('Valor del inventario');
+    
+            $valor_inventario = $products->sum(function($product){
+                return $product['Valor del inventario'] > 0 ? $product['Valor del inventario'] : 0;
+            });
+            $valor_absoluto_inventario = 0;
+            $result = $products->map(function($product) use($valor_inventario, &$valor_absoluto_inventario){
+                $valor_relativo = $product['Valor del inventario'] / $valor_inventario;
+                $valor_absoluto_inventario = $valor_absoluto_inventario + $valor_relativo;
+                if($product['Valor del inventario'] <= 0){
+                    $product["Clasificación valor del inventario"] = "No aplica";
+                }else if($valor_absoluto_inventario>=0 && $valor_absoluto_inventario<=.80){
+                    $product["Clasificación valor del inventario"] = "A";
+                }else if($valor_absoluto_inventario>.80 && $valor_absoluto_inventario<=.95){
+                    $product["Clasificación valor del inventario"] = "B";
+                }else{
+                    $product["Clasificación valor del inventario"] = "C";
+                }
+                return $product;
+            });
+            $response[] = $result->toArray();
+        }
+        $export = new ArrayExport(array_merge(...$response));
+        $date = new \DateTime();
+        return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx");
     }
 }
