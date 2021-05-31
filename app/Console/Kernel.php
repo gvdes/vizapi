@@ -51,7 +51,6 @@ class Kernel extends ConsoleKernel
                 if(count($caja_x_ticket)>0){
                     $access = new AccessController($workpoint->dominio);
                     $ventas = $access->getLastSales($caja_x_ticket);
-                    curl_close($client);
                     if($ventas){
                         $a++;
                         $products = Product::all()->toArray();
