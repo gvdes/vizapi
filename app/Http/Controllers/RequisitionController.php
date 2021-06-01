@@ -92,31 +92,23 @@ class RequisitionController extends Controller{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by){
                 $to = $requisition->_workpoint_to;
-                $product = Product::with(['prices' => function($query){
-                    $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                }, 'units', 'stocks' => function($query) use ($to){
+                $product = Product::with(['units', 'stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
                 }])->find($request->_product);
                 $amount = isset($request->amount) ? $request->amount : 1;
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
+                $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => $stock]]);
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
                     "name" => $product->name,
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
-                    "prices" => $product->prices->map(function($price){
-                        return [
-                            "id" => $price->id,
-                            "name" => $price->name,
-                            "price" => $price->pivot->price,
-                        ];
-                    }),
                     "pieces" => $product->pieces,
                     "ordered" => [
                         "amount" => $amount,
                         "comments" => $request->comments,
-                        "stock" => $product->stocks[0]->pivot->stock
+                        "stock" => $stock
                     ],
                     "units" => $product->units
                 ]);

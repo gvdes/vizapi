@@ -811,20 +811,38 @@ class VentasController extends Controller{
 
     if(isset($request->products)){
       $p = array_column($request->products,"code");
-      $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
-      ->whereHas('variants', function($query) use ($p){
-        $query->whereIn('barcode', $p);
-      })
-      ->with(['sales' => function($query) use($date_from, $date_to){
-        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-      }])->get();
+      $products = [];
+      $notFound = [];
+      if($request->validate){
+        foreach($p as $code){
+          $product = Product::where('code', $code)->orWhere('name', $code)
+          ->whereHas('variants', function($query) use ($code){
+            $query->where('barcode', $code);
+          })
+          ->with(['sales' => function($query) use($date_from, $date_to){
+            $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+          }])->first();
+          if(!$product){
+            $notFound[] = $code;
+          }
+        }
+        return $notFound;
+      }else{
+        $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
+        ->whereHas('variants', function($query) use ($p){
+          $query->whereIn('barcode', $p);
+        })
+        ->with(['sales' => function($query) use($date_from, $date_to){
+          $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+        }])->get();
+      }
     }else{
       $cash = CashRegister::all()->toArray();
-      $products = Product::whereIn('_category', range(1,17))->where('_status', '!=', 4)->whereHas('sales', function($query) use($date_from, $date_to, $cash){
-        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)/* ->whereIn('_cash', array_column($cash, 'id')) */;
+      $products = Product::where('_status', '!=', 4)->whereHas('sales', function($query) use($date_from, $date_to, $cash){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       })->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
-        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash')/* ->whereIn('_cash', array_column($cash, 'id')) */;
-      }, 'stocks'])->limit(10)->get();
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
+      }, 'stocks'])->get();
     }
     
     $categories = \App\ProductCategory::all();
