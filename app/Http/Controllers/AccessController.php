@@ -192,7 +192,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_TIMEOUT, 20);
         curl_setopt($client, CURLOPT_POST, 1);
         $data = json_encode(["date" => $date]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
@@ -205,7 +205,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider/raw');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client, CURLOPT_TIMEOUT, 20);
         curl_setopt($client, CURLOPT_POST, 1);
         $data = json_encode(["date" => $date]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
@@ -218,7 +218,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/provider/sync');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client,CURLOPT_TIMEOUT, 50);
         curl_setopt($client, CURLOPT_POST, 1);
         $data = json_encode(["providers" => $providers]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);

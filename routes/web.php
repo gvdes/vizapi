@@ -110,7 +110,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'provider'], function () use ($router){
-        $router->get('/seeder', 'ProviderController@seeder');
+        $router->get('/update', 'ProviderController@updateProviders');
     });
     
     $router->group(['prefix' => 'requisition'], function () use ($router){
