@@ -37,11 +37,7 @@ class OrderController extends Controller{
                     '_status' => 1
                 ]);
                 $this->log(1, $order);
-                return $order->fresh(['products' => function($query){
-                    $query->with(['prices' => function($query){
-                        $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                    },'variants']);
-                }]);
+                $order->products = [];
             });
             return response()->json(new OrderResource($order));
         }catch(\Exception $e){
@@ -50,45 +46,51 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order){
-        $account = Account::with('user')->find($this->account->id);
         $process = OrderProcess::all();
-        $responsable = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
         switch($case){
             case 1:
-                $order->history()->attach(1, ["details" => json_encode([
-                    "responsable" => $responsable
-                ])]);
+                $order->history()->attach(1, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
             break;
             case 2:
-                $order->history()->attach(2, ["details" => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                $validate = OrderProcess::find(3); //Verificar si la validación es necesaria
+                $validate = OrderProcess::find(2); //Verificar si la validación es necesaria
                 if($validate->active){
-                    $order->history()->attach(3, ["details" => json_encode([
-                        "responsable" => $responsable
-                    ])]);
+                    $order->history()->attach(2, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
                 }else{
-                    $end_to_supply = OrderProcess::find(7);
+                    $end_to_supply = OrderProcess::find(3);
                     if($end_to_supply->active){
                         $bodegueros = 4;
                         $tickets = 3;
                         $in_suppling = Order::where([
                             ['_workpoint_from', $this->_account->_workpoint],
-                            ['_status', 6]
-                        ])->count();
+                            ['_status', 4] //status Surtiendo
+                        ])->count(); //Para saber cuantos pedidos se estan surtiendo
                         if($in_suppling>=($bodegueros*$tickets)){
-                            //poner en status 4 (el pedido ha llegado en bodega)
+                            //poner en status 4 (El pedido se esta surtiendo)
                         }else{
-                            //poner en status 5 (el pedido se esta surtiendo)
+                            //poner en status 3 (el pedido esta por surtir)
                         }
                     }else{
-                        //DETERMINAR CAJA
+                        //poner en status 3 (el pedido esta por surtir)
                     }
                 }
             break;
             case 3:
-                
+                $end_to_supply = OrderProcess::find(3);
+                if($end_to_supply->active){
+                    $bodegueros = 4;
+                    $tickets = 3;
+                    $in_suppling = Order::where([
+                        ['_workpoint_from', $this->_account->_workpoint],
+                        ['_status', 4] //status Surtiendo
+                    ])->count(); //Para saber cuantos pedidos se estan surtiendo
+                    if($in_suppling>=($bodegueros*$tickets)){
+                        //poner en status 4 (El pedido se esta surtiendo)
+                    }else{
+                        //poner en status 3 (el pedido esta por surtir)
+                    }
+                }else{
+                    //poner en status 3 (el pedido esta por surtir)
+                }
             break;
         }
     }
@@ -100,9 +102,9 @@ class OrderController extends Controller{
             if($status>0 && $status<12){
                 $result = $this->log($status, $requisition);
                 if($result){
-                    return response()->json(['success' => false, 'status' => $result, "data" => $result]);
+                    return response()->json(['success' => true, 'status' => $result]);
                 }
-                return response()->json(['success' => $result, 'order' => new RequisitionResource($requisition)]);
+                return response()->json(['success' => false, 'status' => null, 'msg' => "No se ha podido cambiar el status"]);
             }
             return response()->json(['success' => false, 'msg' => "Status no válido"]);
         }
@@ -112,7 +114,7 @@ class OrderController extends Controller{
     public function addProduct(Request $request){
         try{
             $order = Order::find($request->_order);
-            if($this->account->_account == $order->_created_by){
+            if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $product = Product::with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
                 }, 'units'])->find($request->_product);
@@ -173,7 +175,7 @@ class OrderController extends Controller{
     }
 
     public function calculatePriceList($product, $units){
-        if($units>=$product->pieces){
+        if($units >= $product->pieces){
             return 5;
         }elseif($units>=round($product->pieces/2)){
             return 3;
