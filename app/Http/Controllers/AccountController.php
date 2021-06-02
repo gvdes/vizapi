@@ -362,11 +362,11 @@ class AccountController extends Controller{
 
     public function getUsers(Request $request){
         if(isset($request->_rol)){
-            $users = User::whereIn("_rol", $request->_rol)->whereHas('workpoints', function($query){
+            $users = User::with('rol')->whereIn("_rol", $request->_rol)->whereHas('workpoints', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             })->orderBy('names', 'asc')->get();
         }else{
-            $users = User::orderBy('names', 'asc')->get();
+            $users = User::with('rol')orderBy('names', 'asc')->get();
         }
         return response()->json($users);
     }

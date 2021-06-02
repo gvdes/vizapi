@@ -986,7 +986,7 @@ class PdfController extends Controller{
           PDF::SetMargins(0, 0, 0);
           PDF::SetAutoPageBreak(FALSE, 0);
           PDF::setCellPaddings(0,0,0,0);
-          PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+          PDF::MultiCell($w=240, $h=10, '<span style="font-size:1em;">Hoja verde #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
         }
         $pz = '';
         if($isInnerPack){
@@ -1044,7 +1044,7 @@ class PdfController extends Controller{
           PDF::SetMargins(0, 0, 0);
           PDF::SetAutoPageBreak(FALSE, 0);
           PDF::setCellPaddings(0,0,0,0);
-          PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+          PDF::MultiCell($w=240, $h=10, '<span style="font-size:1em;">Hoja naraja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
         }
         $pz = '';
         if($isInnerPack){
@@ -1128,7 +1128,7 @@ class PdfController extends Controller{
                 PDF::SetMargins(0, 0, 0);
                 PDF::SetAutoPageBreak(FALSE, 0);
                 PDF::setCellPaddings(0,0,0,0);
-                PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+                PDF::MultiCell($w=240, $h=10, '<span style="font-size:1em;">Hoja verde #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
             }
             $pz = '';
             if($isInnerPack){
@@ -1187,7 +1187,7 @@ class PdfController extends Controller{
               PDF::SetMargins(0, 0, 0);
               PDF::SetAutoPageBreak(FALSE, 0);
               PDF::setCellPaddings(0,0,0,0);
-              PDF::MultiCell($w=240, $h=10, '<span style="font-size:2em;">Hoja #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+              PDF::MultiCell($w=240, $h=10, '<span style="font-size:1em;">Hoja verde #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
           }
           $pz = '';
           if($isInnerPack){
