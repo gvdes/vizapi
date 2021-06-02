@@ -420,6 +420,7 @@ class ProductController extends Controller{
                 $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
             })
             ->orWhere('name', $request->autocomplete)
+            ->orWhere('barcode', $request->autocomplete)
             ->orWhere('code', $request->autocomplete)
             ->orWhere('name', 'like','%'.$request->autocomplete.'%')
             ->orWhere('code', 'like','%'.$request->autocomplete.'%');
