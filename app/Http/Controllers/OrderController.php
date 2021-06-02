@@ -209,7 +209,7 @@ class OrderController extends Controller{
         }
         $orders = Order::with(['products' => function($query){
             $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
+                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
             }, 'units', 'variants']);
         }, 'status', 'created_by', 'workpoint', "history"])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->get();
 

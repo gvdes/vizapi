@@ -366,7 +366,7 @@ class AccountController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             })->orderBy('names', 'asc')->get();
         }else{
-            $users = User::with('rol')orderBy('names', 'asc')->get();
+            $users = User::with('rol')->orderBy('names', 'asc')->get();
         }
         return response()->json($users);
     }
