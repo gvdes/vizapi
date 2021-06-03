@@ -17,6 +17,10 @@ class Celler extends Model{
         return $this->belongsTo('App\CellerType', '_type');
     }
 
+    public function workpoint(){
+        return $this->belongsTo('App\WorkPoint', '_workpoint');
+    }
+
     public function log(){
         return $this->hasMany('App\CellerLog', '_celler', 'id');
     }

@@ -1313,4 +1313,39 @@ class LocationController extends Controller{
         }
         return $children;
     }
+
+    public function setMassiveLocations(Request $request){
+        $_workpoint = $request->_workpoint;
+        $locations = CellerSection::whereHas('celler', function($query) use($_workpoint){
+            $query->whereHas('workpoint', function($query) use($_workpoint){
+                $query->where('_workpoint', $_workpoint);
+            });
+        })->get()->toArray();
+        $locations_path = array_column($locations, 'path');
+        $rows = $request->rows;
+        $result = [];
+        foreach($rows as $row){
+            $product = Product::where('code', $row['code'])->first();
+            if($product){
+                $paths = [];
+                $notFound = [];
+                $found = [];
+                $elements = explode(",",$row["paths"]);
+                foreach($elements as $path){
+                    $key = array_search(implode('-T',explode("-",$path)),$locations_path);
+                    if($key === 0 || $key>0){
+                        $paths[] = $locations[$key]['id'];
+                        $found[] = $path;
+                    }else{
+                        $notFound[] = $path;
+                    }
+                }
+                $product->locations()->syncWithoutDetaching($paths);
+                $result[] = ["Modelo" => $product->code,"found" => implode(", ", $found), "notFound" => implode(", ", $notFound)];
+            }else{
+                $result[$row["code"]] = ["found" => "", "notFound" => $row["paths"], "status" => "Codigo no encontrado"];
+            }
+        }
+        return response()->json($result);
+    }
 }
