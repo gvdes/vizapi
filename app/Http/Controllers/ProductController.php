@@ -761,11 +761,11 @@ class ProductController extends Controller{
         return Excel::download($export, "ABCD_PRODUCTOS.xlsx");
     }
 
-    public function getDiferenceBetweenStores(){
+    public function getDiferenceBetweenStores(Request $request){
         $clouster = \App\WorkPoint::find(1);
         $access_clouster = new AccessController($clouster->dominio);
-        $products = $access_clouster->getAllProducts(["CODART"]);
-        $store = \App\WorkPoint::find(8);
+        $products = $access_clouster->getAllProducts(["CODART"])['products'];
+        $store = \App\WorkPoint::find($request->_workpoint);
         $access_store = new AccessController($store->dominio);
         $differences = $access_store->getDifferencesBetweenCatalog($products);
         return response()->json($differences);
@@ -796,6 +796,56 @@ class ProductController extends Controller{
     public function getABCStock(Request $request){
         $categories = \App\ProductCategory::where('deep', 0)->get();
         $ids_categories = array_column($categories->toArray(), 'id');
+        /* $codes = array_column($request->products, 'Modelo');
+        $products = Product::with(['stocks' => function($query) use($request){
+            $query->where('_workpoint', $request->_workpoint);
+        }, 'category', 'prices', 'locations' => function($query) use($request){
+            $query->whereHas('celler',function($query) use($request){
+                $query->where('_workpoint', $request->_workpoint);
+            });
+        }])->whereIn('code', $codes)->where('_status', '!=', 4)->get()->map(function($product) use($categories, $ids_categories, $request){
+            if($product->category->deep == 0){
+                $family = $product->category->name;
+                $category = "";
+            }else{
+                $key = array_search($product->category->root, $ids_categories, true);
+                if($product->category === 2){
+                    $key = array_search($categories[$key]->root, $ids_categories, true);
+                    $family = $categories[$key]->name;
+                    $category = $product->category->name;
+                }
+                $family = $categories[$key]->name;
+                $category = $product->category->name;
+            }
+            $prices = $product->prices->reduce(function($res, $price){
+                $res[$price->name] = $price->pivot->price;
+                return $res;
+            }, []);
+        
+            $stocks = $product->stocks->unique('id')->values()->reduce(function($res, $stock){
+            $res["stock_".$stock->name] = $stock->pivot->stock;
+            return $res;
+            }, []);
+            $total_stocks = array_reduce($stocks, function($total, $store){
+                return $store['pivot']['stock'] + $total;
+            }, 0);
+
+            $a = [
+                "Modelo" => $product->code,
+                "Código" => $product->name,
+                "Descripción" => $product->description,
+                "Piezas por caja" => $product->pieces,
+                "Costo" => $product->cost,
+                "Familia" => $family,
+                "Categoría" => $category,
+                "stock" => $total_stocks,
+                "Ubicaciones" => implode(',', array_column($product->locations->toArray(), 'path'))
+            ];
+            $x = array_merge($a, $prices);
+            return array_merge($x, $stocks);
+        });
+        $export = new ArrayExport($products->toArray());
+        return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx"); */
         $workpoints = \App\WorkPoint::whereIn('id', range(1,13))->get();
         $response = [];
         foreach($workpoints as $workpoint){
@@ -855,6 +905,7 @@ class ProductController extends Controller{
             });
             $response[] = $result->toArray();
         }
+        /* $export = new ArrayExport($products->toArray()); */
         $export = new ArrayExport(array_merge(...$response));
         $date = new \DateTime();
         return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx");

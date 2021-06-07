@@ -128,15 +128,10 @@ class RequisitionController extends Controller{
             $products = $request->products;
             $to = $requisition->_workpoint_to;
             foreach($products as $row){
-                $code = $row['modelo'];
+                $code = $row['code'];
                 $product = Product::with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
-                }])
-                ->whereHas('variants', function($query) use ($code){
-                    $query->where('barcode', 'like', '%'.$code.'%');
-                })
-                ->orWhere('name', 'like','%'.$code.'%')
-                ->orWhere('code', 'like','%'.$code.'%')->first();
+                }])->where('name', $code)->where('_status', '!=', 4)->first();
                 if($product){
                     if(isset($row['piezas'])){
                         $required = $row['piezas'];
@@ -454,13 +449,13 @@ class RequisitionController extends Controller{
                 return ["domain" => "192.168.1.79", "port" => 9100];
                 break;
             case 4:
-                return ["domain" => $dominio, "port" => 6789];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 5:
                 return ["domain" => $dominio, "port" => 4065];
                 break;
             case 6:
-                return ["domain" => $dominio, "port" => 9309];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 7:
                 return ["domain" => $dominio, "port" => 4065];
@@ -469,10 +464,10 @@ class RequisitionController extends Controller{
                 return ["domain" => $dominio, "port" => 4066];
                 break;
             case 9:
-                return ["domain" => $dominio, "port" => 9304];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 10:
-                return ["domain" => $dominio, "port" => 9334];
+                return ["domain" => $dominio, "port" => 4065];
                 break;
             case 11:
                 return ["domain" => $dominio, "port" => 4065];

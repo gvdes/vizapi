@@ -28,9 +28,12 @@ class OrderController extends Controller{
             $order = DB::transaction( function () use ($request){
                 $now = new \DateTime();
                 $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
+                $client = isset($request->_client) ? \App\Client::find($request->_client) : \App\Client::find(0);
                 $order = Order::create([
                     'num_ticket' => $num_ticket,
-                    'name' => isset($request->name) ? $request->name : "Pedido ".$num_ticket,
+                    'name' => isset($request->_client) ? $client->name : $request->name,
+                    '_client' => $client->id,
+                    '_price_list' => $client->_price_list,
                     '_created_by' => $this->account->_account,
                     '_workpoint_from' => $this->account->_workpoint,
                     'time_life' => '00:30:00',
@@ -55,25 +58,8 @@ class OrderController extends Controller{
                 $validate = OrderProcess::find(2); //Verificar si la validación es necesaria
                 if($validate->active){
                     $order->history()->attach(2, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
-                }else{
-                    $end_to_supply = OrderProcess::find(3);
-                    if($end_to_supply->active){
-                        $bodegueros = 4;
-                        $tickets = 3;
-                        $in_suppling = Order::where([
-                            ['_workpoint_from', $this->_account->_workpoint],
-                            ['_status', 4] //status Surtiendo
-                        ])->count(); //Para saber cuantos pedidos se estan surtiendo
-                        if($in_suppling>=($bodegueros*$tickets)){
-                            //poner en status 4 (El pedido se esta surtiendo)
-                        }else{
-                            //poner en status 3 (el pedido esta por surtir)
-                        }
-                    }else{
-                        //poner en status 3 (el pedido esta por surtir)
-                    }
+                    break;
                 }
-            break;
             case 3:
                 $end_to_supply = OrderProcess::find(3);
                 if($end_to_supply->active){
@@ -83,15 +69,44 @@ class OrderController extends Controller{
                         ['_workpoint_from', $this->_account->_workpoint],
                         ['_status', 4] //status Surtiendo
                     ])->count(); //Para saber cuantos pedidos se estan surtiendo
-                    if($in_suppling>=($bodegueros*$tickets)){
-                        //poner en status 4 (El pedido se esta surtiendo)
-                    }else{
+                    if($in_suppling>($bodegueros*$tickets)){
                         //poner en status 3 (el pedido esta por surtir)
+                        break;
                     }
-                }else{
-                    //poner en status 3 (el pedido esta por surtir)
                 }
-            break;
+            case 4:
+                $order->history()->attach(4, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                break;
+            case 5:
+                $validate = OrderProcess::find(5); //Verificar si la validación es necesaria
+                if($validate->active){
+                    $order->history()->attach(5, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                    break;
+                }
+            case 6:
+                $order->history()->attach(6, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                break;
+            case 7:
+                $end_to_sold = OrderProcess::find(8);
+                if($end_to_sold->active){
+                    $cajeros = 4;
+                    $in_cash_register = Order::where([
+                        ['_workpoint_from', $this->_account->_workpoint],
+                        ['_status', 8] //status Cobrando
+                    ])->count(); //Para saber cuantos pedidos se estan surtiendo
+                    if($in_cash_register = 0){
+                        //poner en status 7 (el pedido esta en caja)
+                        break;
+                    }
+                }
+            case 8:
+                $order->history()->attach(8, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                break;
+            case 9:
+                $order->history()->attach(9, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                break;
+        }
+
         }
     }
 
