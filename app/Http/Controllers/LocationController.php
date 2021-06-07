@@ -1208,13 +1208,13 @@ class LocationController extends Controller{
     }
 
     public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13])->get();
+        $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13])->get();
         $success = 0;
         $_success = [];
         $res = [];
         foreach($workpoints as $workpoint){
             $access = new AccessController($workpoint->dominio);
-            $stocks = $access->getStocks();
+            $stocks = $access->getStocks($workpoint->id);
             if($stocks){
                 $success++;
                 array_push($_success, $workpoint->alias);

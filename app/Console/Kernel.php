@@ -90,10 +90,10 @@ class Kernel extends ConsoleKernel
     })->everyFiveMinutes()->between('9:00', '19:00');
 
         $schedule->call(function(){
-            $workpoints = WorkPoint::whereIn('id', [1,3,4,5,6,7,8,9,10,11,12,13])->get();
+            $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13])->get();
             foreach($workpoints as $workpoint){
                 $access = new AccessController($workpoint->dominio);
-                $stocks = $access->getStocks();
+                $stocks = $access->getStocks($workpoint->id);
                 if($stocks){
                     $products = Product::with(["stocks" => function($query) use($workpoint){
                         $query->where('_workpoint', $workpoint->id);
@@ -113,6 +113,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyFourMinutes()->between('9:00', '19:00');
+        })->everyThreeMinutes()->between('9:00', '19:00');
     }
 }

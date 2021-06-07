@@ -15,13 +15,17 @@ class AccessController extends Controller{
         $this->url = $url;
     }
     
-    public function getStocks(){
+    public function getStocks($_workpoint){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/warehouse/stocks');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client, CURLOPT_POST, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["_workpoint" => $_workpoint]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);
     }
 
