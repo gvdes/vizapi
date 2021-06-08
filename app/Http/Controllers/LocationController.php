@@ -383,6 +383,22 @@ class LocationController extends Controller{
         return response()->json(["success" => false]);
     }
 
+    public function setMassiveMax(Request $request){
+        $workpoint = WorkPoint::find($request->_workpoint);
+        $found = [];
+        $notFound = [];
+        foreach($request->products as $row){
+            $product = Product::where('code', $row['Modelo'])->first();
+            if($product){
+                $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $row['min'], 'max' => $row['max']]);
+                $found[] = ["Modelo" => $product["code"], "Min" => $row['min'], "Max" => $row['max']];
+            }else{
+                $notFound[] = ["Modelo" => $row["Modelo"], "Min" => $row['min'], "Max" => $row['max']];
+            }
+        }
+        return response()->json(["found" => $found, "notFound" => $notFound]);
+    }
+
     public function index(){
         /**
          * INDICAR ALMACEN DONDE SE DESEA TRABAJAR
