@@ -701,7 +701,7 @@ class LocationController extends Controller{
                 "Familia" => $familia,
                 "Categoría" => $category,
                 "piezas x caja" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->gen,
+                "stock" => $producto->stocks[0]->pivot->stock,
                 "máximo" => $producto->stocks[0]->pivot->max,
                 "minimo" => $producto->stocks[0]->pivot->min,
                 "locations" => $locations,

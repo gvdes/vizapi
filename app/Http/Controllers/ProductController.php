@@ -135,9 +135,15 @@ class ProductController extends Controller{
         $date = isset($request->date) ? $request->date : null;
         $workpoint = \App\WorkPoint::find(1);
         $access = new AccessController($workpoint->dominio);
-        $products = $access->getUpdatedProducts($date);
-        try{
-            DB::transaction(function() use ($products){
+        $required_products = $request->products ? : false;
+        $required_prices = $request->prices ? : false;
+        $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
+        $store_success = [];
+        $store_fail = [];
+        if($request->stores == "all"){
+            $products = $access->getUpdatedProducts($date);
+            $prices_required = $request->prices;
+            DB::transaction(function() use ($products, $required_prices){
                 foreach($products as $product){
                     $instance = Product::firstOrCreate([
                         'code'=> $product['code']
@@ -166,20 +172,41 @@ class ProductController extends Controller{
                     $instance->updated_at = new \DateTime();
                     $instance->save();
                     $prices = [];
-                    foreach($product['prices'] as $price){
-                        $prices[$price['_type']] = ['price' => $price['price']];
+                    if($required_prices && count($products)<100){
+                        foreach($product['prices'] as $price){
+                            $prices[$price['_type']] = ['price' => $price['price']];
+                        }
+                        $instance->prices()->sync($prices);
                     }
-                    $instance->prices()->sync($prices);
                 }
             });
-            return response()->json([
-                "success" => true,
-                "products" => count($products),
-                "time" => microtime(true) - $start
-            ]);
+            if($required_prices && count($products) >= 100){
+                $this->restorePrices();
+            }
+            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13])->get();
+        }else{
+            $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
+        }
+        foreach($stores as $store){
+            $access_store = new AccessController($store->dominio);
+            $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
+            if($result){
+                $store_success[] = $store->alias;
+            }else{
+                $store_fail[] = $store->alias;
+            }
+        }
+        return response()->json([
+            "success" => true,
+            "products" => count($products),
+            "time" => microtime(true) - $start,
+            "tiendas actualizadas" => $store_success,
+            "tiendas que no se pudieron actualizar" => $store_fail
+        ]);
+        /* try{
         }catch(\Exception $e){
             return response()->json(["message" => "No se ha podido actualizar la tabla de productos"]);
-        }
+        } */
     }
 
     public function addAtributes(Request $request){

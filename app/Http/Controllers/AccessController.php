@@ -54,18 +54,6 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
-    public function getUpdatedProducts($date){
-        $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/update');
-        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 30);
-        curl_setopt($client, CURLOPT_POST, 1);
-        $data = http_build_query(["date" => $date]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
-        return json_decode(curl_exec($client), true);
-    }
-
     public function getSalidas(){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/salidas/all');
@@ -237,12 +225,43 @@ class AccessController extends Controller{
         
     }
 
-    public function getRawProducts(){
-
+    public function getRawProducts($date, $prices, $products){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/info');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 60);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["date" => $date, "prices" => $prices, "products" => $products]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
     }
 
-    public function syncProducts(){
+    public function syncProducts($prices, $products){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/sync');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 60);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["prices" => $prices, "products" => $products]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
 
+    public function getUpdatedProducts($date){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/update');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["date" => $date]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
     }
 
     /************
