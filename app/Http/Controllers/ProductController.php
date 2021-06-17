@@ -449,14 +449,16 @@ class ProductController extends Controller{
             if(count($codes)>1){
                 $query = $query->where('id', $codes[1]);
             }else{
-                $query = $query->whereHas('variants', function(Builder $query) use ($request){
-                    $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
-                })
-                ->orWhere('name', $request->autocomplete)
-                ->orWhere('barcode', $request->autocomplete)
-                ->orWhere('code', $request->autocomplete)
-                ->orWhere('name', 'like','%'.$request->autocomplete.'%')
-                ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+                if(strlen($request->autocomplete)>1){
+                    $query = $query->whereHas('variants', function(Builder $query) use ($request){
+                        $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
+                    })
+                    ->orWhere('name', $request->autocomplete)
+                    ->orWhere('barcode', $request->autocomplete)
+                    ->orWhere('code', $request->autocomplete)
+                    ->orWhere('name', 'like','%'.$request->autocomplete.'%')
+                    ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+                }
             }
         }
 
