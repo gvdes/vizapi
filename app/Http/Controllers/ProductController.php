@@ -537,11 +537,11 @@ class ProductController extends Controller{
             $query = $query->limit(20/* $request->limit */);
         }
 
-        /* if(isset($request->paginate)){
+        if(isset($request->paginate) && $request->paginate){
             $products = $query->orderBy('_status', 'asc')->paginate($request->paginate);
         }else{
             $products = $query->orderBy('_status', 'asc')->get();
-        } */
+        }
         return response()->json(ProductResource::collection($products));
     }
 
