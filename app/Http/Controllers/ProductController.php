@@ -486,7 +486,7 @@ class ProductController extends Controller{
             });
         }
 
-        /* if(isset($request->_celler)){
+        if(isset($request->_celler) && $request->_celler){
             $locations = \App\CellerSection::where([['_celler', $request->_celler],['deep', 0]])->get();
             $ids = $locations->map(function($location){
                 return $this->getSectionsChildren($location->id);
@@ -495,7 +495,7 @@ class ProductController extends Controller{
             $query = $query->whereHas('locations', function( Builder $query) use($_locations){
                 $query->whereIn('_location', $_locations);
             });
-        } */
+        }
 
         if(isset($request->check_sales)){
             //OBTENER FUNCIÓN DE CHECAR STOCKS
@@ -515,7 +515,7 @@ class ProductController extends Controller{
             }]);
         }
         
-        /* if(isset($request->check_stock)){
+        if(isset($request->check_stock) && $request->check_stock){
             if($request->with_stock){
                 $query = $query->whereHas('stocks', function(Builder $query){
                     $query->where('_workpoint', $this->account->_workpoint)->where('stock', '>', 0);
@@ -525,13 +525,13 @@ class ProductController extends Controller{
                     $query->where('_workpoint', $this->account->_workpoint)->where('stock', '<=', 0);
                 });
             }
-        } */
+        }
 
-        /* if(isset($request->with_prices) && $request->with_prices){
+        if(isset($request->with_prices) && $request->with_prices){
             $query = $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1, 2, 3, 4]);
             }]);
-        } */
+        }
 
         if(isset($request->limit) && $request->limit){
             $query = $query->limit(20/* $request->limit */);
