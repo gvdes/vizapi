@@ -31,7 +31,7 @@ class RequisitionController extends Controller{
                 $_workpoint_to = $request->_workpoint_to;
                 switch ($request->_type){
                     case 2:
-                        $data = $this->getToSupplyFromStore($this->account->_workpoint);
+                        $data = $this->getToSupplyFromStore($this->account->_workpoint, $_workpoint_to);
                     break;
                     case 3:
                         $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
@@ -443,7 +443,7 @@ class RequisitionController extends Controller{
                 }
                 break;
             case 2:
-                return ["domain" => "189.191.14.19", "port" => 4065];
+                return ["domain" => "187.202.55.154", "port" => 4065];
                 break;
             case 3:
                 return ["domain" => "192.168.1.79", "port" => 9100];
@@ -516,21 +516,27 @@ class RequisitionController extends Controller{
         return ["msg" => "No se tenido conexión con la tienda"];
     }
 
-    public function getToSupplyFromStore($workpoint_id){
+    public function getToSupplyFromStore($workpoint_id, $workpoint_to){
         $workpoint = WorkPoint::find($workpoint_id);
         $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0],
+            ])->orWhere([
+                ['_workpoint', $workpoint_to],
+                ['stock', '>', 0]
             ]);
-        }])->whereHas('stocks', function($query) use($workpoint_id){
+        }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0]
+            ])->orWhere([
+                ['_workpoint', $workpoint_to],
+                ['stock', '>', 0]
             ]);
-        }, '>', 0)->where('_status', 1)->whereNotBetween('_category', [119,172])->get();
+        }, '>', 1)->where('_status', 1)->whereNotBetween('_category', [119,172])->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];

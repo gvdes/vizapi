@@ -1346,20 +1346,22 @@ class LocationController extends Controller{
                 $paths = [];
                 $notFound = [];
                 $found = [];
-                $elements = explode(",",$row["paths"]);
-                foreach($elements as $path){
-                    $key = array_search(implode('-T',explode("-",$path)),$locations_path);
-                    if($key === 0 || $key>0){
-                        $paths[] = $locations[$key]['id'];
-                        $found[] = $path;
-                    }else{
-                        $notFound[] = $path;
-                    }
+                /* $elements = explode(",",$row["paths"]); */
+                $path = $row["path"];
+                $key = array_search($path,$locations_path);
+                if($key === 0 || $key>0){
+                    $paths[] = $locations[$key]['id'];
+                    $found[] = $path;
+                }else{
+                    $notFound[] = $path;
                 }
+                /* foreach($elements as $path){
+                    $key = array_search(implode('-T',explode("-",$path)),$locations_path);
+                } */
                 $product->locations()->syncWithoutDetaching($paths);
                 $result[] = ["Modelo" => $product->code,"found" => implode(", ", $found), "notFound" => implode(", ", $notFound)];
             }else{
-                $result[$row["code"]] = ["found" => "", "notFound" => $row["paths"], "status" => "Codigo no encontrado"];
+                $result[$row["code"]] = ["found" => "", "notFound" => $row["path"], "status" => "Codigo no encontrado"];
             }
         }
         return response()->json($result);

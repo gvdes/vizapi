@@ -132,4 +132,8 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         }
         return ["workpoint" => null];
     }
+
+    public function order_log(){
+        return $this->morphMany('App\OrderLog', 'responsable', '_type', '_responsable', 'id');
+    }
 }

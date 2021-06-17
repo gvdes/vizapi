@@ -38,7 +38,6 @@ $router->group(['prefix' => 'account'], function () use ($router){
     });
 });
 
-
 $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'workpoint'], function () use ($router){
         $router->post('/join', 'AuthController@joinWorkpoint');
@@ -114,7 +113,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'provider'], function () use ($router){
         $router->get('/update', 'ProviderController@updateProviders');
     });
-    
+
     $router->group(['prefix' => 'requisition'], function () use ($router){
         $router->get('/', 'RequisitionController@index');
         $router->get('/dashboard', 'RequisitionController@dashboard');
@@ -128,7 +127,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'order'], function () use ($router){
-        $router->get('/', 'OrderController@index');
+        $router->post('/index', 'OrderController@index');
+        $router->get('/config', 'OrderController@config');
         $router->get('/{id}', 'OrderController@find');
         $router->post('/', 'OrderController@create');
         $router->post('/add', 'OrderController@addProduct');
@@ -149,6 +149,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/productABC', 'ProductController@getABC');
         $router->get('/productABCStock', 'ProductController@getABCStock');
         $router->get('/delete', 'AccessController2@next');
+        $router->get('/demo', 'OrderController@getCash');
     });
 });
 

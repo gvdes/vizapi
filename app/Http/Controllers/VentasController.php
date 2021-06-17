@@ -631,8 +631,8 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    $workpoints = WorkPoint::whereIn('id', range(4,13))->get();
-    /* $workpoints = WorkPoint::where('id', 5)->get(); */
+    $workpoints = WorkPoint::whereIn('id', range(3,13))->get();
+    /* $workpoints = WorkPoint::where('id', 3)->get(); */
     $resumen = [];
     $start = microtime(true);
     $a = 0;
@@ -643,9 +643,15 @@ class VentasController extends Controller{
       $caja_x_ticket = [];
       if(count($cash_registers)>0){
         foreach($cash_registers as $cash){
-          $sale = Sales::where('_cash', $cash->id)->whereDate('created_at', '>' ,'2021-01-27')->max('num_ticket');
-          $ticket = $sale ? : 0;
-          $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket];
+          $sale = Sales::where('_cash', $cash->id)/* ->whereDate('created_at', '<' ,'2021-01-27') */->max('created_at');
+          if($sale){
+            $ticket = $sale ? : 0;
+            $date = explode(' ', $sale);
+            $hour = explode(':', $date[1]);
+            $seconds = intval($hour[2])+1;
+            $hour_format = "1900-01-01 ".$hour[0].":".$hour[1].":".substr("0".$seconds,-2,2);
+            $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], "hour" => $hour_format];
+          }
         }
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
@@ -689,7 +695,8 @@ class VentasController extends Controller{
     return response()->json([
       "success" => true,
       "time" => microtime(true) - $start,
-      "resumen" => $resumen
+      "resumen" => $resumen,
+      "cash_registers" => $caja_x_ticket
     ]);
   }
 
@@ -792,6 +799,19 @@ class VentasController extends Controller{
   }
 
   public function VentasxArticulos(Request $request){
+    /* $products = $request->products;
+    $result = array_map(function($row){
+      $product = Product::with("provider")->where([["code",$row["code"]], ["_status", "!=", 4]])->first();
+      if($product){
+        $row["Proveedor"] = $product->provider->name;
+      }else{
+        $row["Proveedor"] = "---";
+      }
+      return $row;
+    }, $products);
+    $export = new ArrayExport($result);
+    return Excel::download($export, $request->name.".xlsx"); */
+
     if(isset($request->date_from) && isset($request->date_to)){
       $date_from = new \DateTime($request->date_from);
       $date_to = new \DateTime($request->date_to);
@@ -838,11 +858,11 @@ class VentasController extends Controller{
       }
     }else{
       $cash = CashRegister::all()->toArray();
-      $products = Product::where('_status', '!=', 4)->whereHas('sales', function($query) use($date_from, $date_to, $cash){
+      $products = Product::where('_status', '!=', 4)/* ->whereHas('sales', function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-      })->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
+      }) */->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
-      }, 'stocks'])->get();
+      }, 'stocks'])->whereIn('_category', range(37,57))->get();
     }
     
     $categories = \App\ProductCategory::all();
@@ -892,15 +912,15 @@ class VentasController extends Controller{
         "Categoría" => $category,
         "Total" => $vendidos,
         "tickets" => $tickets,
-        "stock" => $product->stocks->reduce(function($total, $store){
+        "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
           return $store->pivot->stock + $total;
         }, 0),
         "venta total" => $product->sales->unique('id')->values()->reduce(function($total, $sale){
           return $total + $sale->pivot->total;
         }, 0)
       ];
-      $x = array_merge($a, $prices);
-      $x = array_merge($x, $desgloce);
+      /* $x = array_merge($a, $prices); */
+      $x = array_merge($a, $desgloce);
       return array_merge($x, $stocks);
     });
     $export = new ArrayExport($result->toArray());

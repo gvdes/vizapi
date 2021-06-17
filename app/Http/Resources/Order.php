@@ -21,16 +21,25 @@ class Order extends JsonResource{
             'time_life' => $this->time_life,
             'created_at' => $this->created_at->format('Y-m-d H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i'),
+            'client' => $this->whenLoaded('client', function(){
+                return [
+                    "id" => $this->client->id,
+                    "name" => $this->client->name,
+                    "phone" => $this->client->phone,
+                    "_price_list" => $this->client->_price_list
+                ];
+            }),
+            'price_list' => $this->whenLoaded('price_list'),
             'status' => $this->whenLoaded('status'),
-            '_status' => $this->when($this->status, function(){
+            '_status' => $this->when(!$this->status, function(){
                 return $this->_status;
             }),
             'created_by' => $this->whenLoaded('created_by'),
-            '_created_by' => $this->when($this->created_by, function(){
+            '_created_by' => $this->when(!$this->created_by, function(){
                 return $this->_created_by;
             }),
             'from' => $this->whenLoaded('workpoint'),
-            '_workpoint_from' => $this->when($this->workpoint, function(){
+            '_workpoint_from' => $this->when(!$this->workpoint, function(){
                 return $this->_workpoint_from;
             }),
             'log' => $this->whenLoaded('history', function(){

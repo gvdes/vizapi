@@ -95,8 +95,9 @@ class ProductController extends Controller{
         try{
             $start = microtime(true);
             $products = Product::all()->toArray();
-            $fac = new FactusolController();
-            $prices = $fac->getPrices();
+            $workpoint = \App\WorkPoint::find(1);
+            $access = new AccessController($workpoint->dominio);
+            $prices = $access->getPrices(); /* AGREGAR METODO */
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
                     DB::table('product_prices')->delete();
@@ -172,7 +173,7 @@ class ProductController extends Controller{
                     $instance->updated_at = new \DateTime();
                     $instance->save();
                     $prices = [];
-                    if($required_prices && count($products)<100){
+                    if($required_prices /* && count($products)<1000 */){
                         foreach($product['prices'] as $price){
                             $prices[$price['_type']] = ['price' => $price['price']];
                         }
@@ -180,9 +181,9 @@ class ProductController extends Controller{
                     }
                 }
             });
-            if($required_prices && count($products) >= 100){
+            /* if($required_prices && count($products) >= 1000){
                 $this->restorePrices();
-            }
+            } */
             $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
@@ -199,6 +200,7 @@ class ProductController extends Controller{
         return response()->json([
             "success" => true,
             "products" => count($products),
+            "raw_products" => count($raw_data["products"]),
             "time" => microtime(true) - $start,
             "tiendas actualizadas" => $store_success,
             "tiendas que no se pudieron actualizar" => $store_fail
@@ -443,14 +445,19 @@ class ProductController extends Controller{
         $query = Product::query();
 
         if(isset($request->autocomplete) && $request->autocomplete){
-            $query = $query->whereHas('variants', function(Builder $query) use ($request){
-                $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
-            })
-            ->orWhere('name', $request->autocomplete)
-            ->orWhere('barcode', $request->autocomplete)
-            ->orWhere('code', $request->autocomplete)
-            ->orWhere('name', 'like','%'.$request->autocomplete.'%')
-            ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+            $codes = explode('ID-', $request->autocomplete);
+            if(count($codes)>1){
+                $query = $query->where('id', $codes[1]);
+            }else{
+                $query = $query->whereHas('variants', function(Builder $query) use ($request){
+                    $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
+                })
+                ->orWhere('name', $request->autocomplete)
+                ->orWhere('barcode', $request->autocomplete)
+                ->orWhere('code', $request->autocomplete)
+                ->orWhere('name', 'like','%'.$request->autocomplete.'%')
+                ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+            }
         }
 
         if(isset($request->products) && $request->products){
@@ -493,13 +500,13 @@ class ProductController extends Controller{
         }
 
         if(isset($request->with_stock) && $request->with_stock){
-            $query->with(['stocks' => function($query){
+            $query = $query->with(['stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }
 
         if(isset($request->with_locations) && $request->with_locations){
-            $query->with(['locations' => function($query){
+            $query = $query->with(['locations' => function($query){
                 $query->whereHas('celler', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 });
@@ -519,9 +526,13 @@ class ProductController extends Controller{
         }
 
         if(isset($request->with_prices) && $request->with_prices){
-            $query->with(['prices' => function($query){
+            $query = $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1, 2, 3, 4]);
             }]);
+        }
+
+        if(isset($request->limit) && $request->limit){
+            $query = $query->limit($request->limit);
         }
 
         if(isset($request->paginate)){
