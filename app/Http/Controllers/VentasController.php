@@ -647,16 +647,13 @@ class VentasController extends Controller{
           if($sale){
             $ticket = $sale ? : 0;
             $date = explode(' ', $sale);
-            $hour = explode(':', $date[1]);
-            $seconds = intval($hour[2])+1;
-            $hour_format = "1900-01-01 ".$hour[0].":".$hour[1].":".substr("0".$seconds,-2,2);
-            $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], "hour" => $hour_format];
+            $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
           }
         }
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
           $ventas = $access->getLastSales($caja_x_ticket);
-          $resumen[$workpoint->alias] = [$caja_x_ticket, $ventas];
+          $resumen[$workpoint->alias] = [$caja_x_ticket];
           if($ventas){
             $products = Product::all()->toArray();
             $codes = array_column($products, 'code');
@@ -695,8 +692,7 @@ class VentasController extends Controller{
     return response()->json([
       "success" => true,
       "time" => microtime(true) - $start,
-      "resumen" => $resumen,
-      "cash_registers" => $caja_x_ticket
+      "resumen" => $resumen
     ]);
   }
 

@@ -19,10 +19,12 @@ class RelatesCodeController extends Controller{
 
     public function seeder(){
         try{
-            $fac = new FactusolController();
-            $codes = $fac->getRelatedCodes();
+            $workpoint = \App\WorkPoint::find(1);
+            $access = new AccessController($workpoint->dominio);
+            $codes = $access->getRelatedCodes();
             if($codes){
                 DB::transaction(function() use($codes){
+                    DB::table('product_variants')->delete();
                     foreach($codes as $code){
                         $product = Product::where('code', $code['ARTEAN'])->first();
                         if($product){

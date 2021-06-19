@@ -131,7 +131,7 @@ class RequisitionController extends Controller{
                 $code = $row['code'];
                 $product = Product::with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
-                }])->where('name', $code)->where('_status', '!=', 4)->first();
+                }])->where('code', $code)->where('_status', '!=', 4)->first();
                 if($product){
                     if(isset($row['piezas'])){
                         $required = $row['piezas'];
@@ -145,7 +145,7 @@ class RequisitionController extends Controller{
                     $added++;
                     $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
                 }else{
-                    array_push($fail, $row['modelo']);
+                    array_push($fail, $row['code']);
                 }
             }
 
@@ -189,7 +189,7 @@ class RequisitionController extends Controller{
             break;
             case 2:
                 // RECARGAR STOCKS DE LA REQUISISION
-                //$this->refreshStocks($requisition);
+                $this->refreshStocks($requisition);
                 //RECARGAR LA REQUISIÓN
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -523,10 +523,10 @@ class RequisitionController extends Controller{
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0],
-            ])->orWhere([
+            ])/* ->orWhere([
                 ['_workpoint', $workpoint_to],
                 ['stock', '>', 0]
-            ]);
+            ]) */;
         }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to){
             $query->where([
                 ['_workpoint', $workpoint_id],
@@ -592,7 +592,7 @@ class RequisitionController extends Controller{
         return ["msg" => "No se tenido conexión con la tienda"];
     }
 
-    /* public function refreshStocks(Requisition $requisition){
+    public function refreshStocks(Requisition $requisition){
         $_workpoint_to = $requisition->_workpoint_to;
         $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['stocks' => function($query) use($_workpoint_to){
@@ -609,5 +609,5 @@ class RequisitionController extends Controller{
             ]);
         }
         return true;
-    } */
+    }
 }

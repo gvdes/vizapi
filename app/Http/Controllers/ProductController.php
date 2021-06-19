@@ -199,8 +199,9 @@ class ProductController extends Controller{
         }
         return response()->json([
             "success" => true,
-            "products" => count($products),
-            "raw_products" => count($raw_data["products"]),
+            "products_count" => count($products),
+            "products" => $products,
+            /* "raw_products" => count($raw_data["products"]), */
             "time" => microtime(true) - $start,
             "tiendas actualizadas" => $store_success,
             "tiendas que no se pudieron actualizar" => $store_fail
@@ -529,7 +530,7 @@ class ProductController extends Controller{
 
         if(isset($request->with_prices) && $request->with_prices){
             $query = $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1, 2, 3, 4]);
+                $query->whereIn('_type', [1, 2, 3, 4])->orderBy('id');
             }]);
         }
 

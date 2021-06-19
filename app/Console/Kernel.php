@@ -33,7 +33,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule){
         $schedule->call(function(){
-            $workpoints = WorkPoint::whereIn('id', range(4,13))->get();
+            $workpoints = WorkPoint::whereIn('id', range(3,13))->get();
             $resumen = [];
             $start = microtime(true);
             $a = 0;
@@ -44,13 +44,17 @@ class Kernel extends ConsoleKernel
             $caja_x_ticket = [];
             if(count($cash_registers)>0){
                 foreach($cash_registers as $cash){
-                    $sale = Sales::where('_cash', $cash->id)->whereDate('created_at', '>' ,'2021-01-27')->max('num_ticket');
-                    $ticket = $sale ? : 0;
-                    $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket];
+                    $sale = Sales::where('_cash', $cash->id)->max('created_at');
+                    if($sale){
+                        $ticket = $sale ? : 0;
+                        $date = explode(' ', $sale);
+                        $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
+                    }
                 }
                 if(count($caja_x_ticket)>0){
                     $access = new AccessController($workpoint->dominio);
                     $ventas = $access->getLastSales($caja_x_ticket);
+                    $resumen[$workpoint->alias] = [$caja_x_ticket];
                     if($ventas){
                         $a++;
                         $products = Product::all()->toArray();
@@ -113,6 +117,6 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyThreeMinutes()->between('9:00', '19:00');
+        })->everyThreeMinutes()->between('9:00', '22:00');
     }
 }
