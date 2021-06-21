@@ -709,7 +709,6 @@ class VentasController extends Controller{
     curl_setopt($client,CURLOPT_TIMEOUT,10);
     $ventas = json_decode(curl_exec($client), true);
     curl_close($client);
-    /* $ventas = $request->ventas; */
     if($ventas){
       $products = Product::all()->toArray();
       $variants = \App\ProductVariant::all()->toArray();
@@ -760,9 +759,6 @@ class VentasController extends Controller{
                 $costo = ($row['costo'] == 0 || $row['costo'] > $products[$key]['cost']) ? $products[$key]['cost'] : $row['costo'];
                 if(array_key_exists($variants[$index]['_product'], $insert)){
                   $insert[$variants[$index]['_product']] = [
-                    /* $amount = $row['amount'] + $insert[$variants[$index]['_product']]['amount'];
-                    $total = $row['total'] + $insert[$variants[$index]['_product']]['total'];
-                    $price = $total / $amount; */
                     "amount" => $amount,
                     "price" => $price,
                     "total" => $total,
@@ -795,19 +791,6 @@ class VentasController extends Controller{
   }
 
   public function VentasxArticulos(Request $request){
-    /* $products = $request->products;
-    $result = array_map(function($row){
-      $product = Product::with("provider")->where([["code",$row["code"]], ["_status", "!=", 4]])->first();
-      if($product){
-        $row["Proveedor"] = $product->provider->name;
-      }else{
-        $row["Proveedor"] = "---";
-      }
-      return $row;
-    }, $products);
-    $export = new ArrayExport($result);
-    return Excel::download($export, $request->name.".xlsx"); */
-
     if(isset($request->date_from) && isset($request->date_to)){
       $date_from = new \DateTime($request->date_from);
       $date_to = new \DateTime($request->date_to);
@@ -893,7 +876,7 @@ class VentasController extends Controller{
         return $res;
       }, []);
 
-      $stocks = $product->stocks->unique('id')->values()->reduce(function($res, $stock){
+      $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
         $res["stock_".$stock->name] = $stock->pivot->stock;
         return $res;
       }, []);
