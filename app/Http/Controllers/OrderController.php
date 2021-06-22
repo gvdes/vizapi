@@ -160,7 +160,7 @@ class OrderController extends Controller{
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $product = Product::with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                }, 'units', 'stock' => function($query){
+                }, 'units', 'stocks' => function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 }])->find($request->_product);
                 if($product){
