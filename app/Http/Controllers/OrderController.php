@@ -308,7 +308,6 @@ class OrderController extends Controller{
             }
             return '';
         }) */->sortKeys();
-        return $groupBy;
         return response()->json(new OrderResource($order));
     }
 
