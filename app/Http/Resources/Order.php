@@ -71,8 +71,9 @@ class Order extends JsonResource{
                         "ordered" => [
                             "comments" => $product->pivot->comments,
                             "amount" => $product->pivot->amount,
-                            "_supply_by" => $product->pivot->_supply_by,
                             "units" => $product->pivot->units,
+                            "stock" => $product->pivot->stock,
+                            "_supply_by" => $product->pivot->_supply_by,
                             "_price_list" => $product->pivot->_price_list,
                             "price" => $product->pivot->price,
                             "total" => $product->pivot->total,

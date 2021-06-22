@@ -144,43 +144,45 @@ class ProductController extends Controller{
         if($request->stores == "all"){
             $products = $access->getUpdatedProducts($date);
             $prices_required = $request->prices;
-            DB::transaction(function() use ($products, $required_prices){
-                foreach($products as $product){
-                    $instance = Product::firstOrCreate([
-                        'code'=> $product['code']
-                    ], [
-                        'name' => $product['name'],
-                        'barcode' => $product['barcode'],
-                        'description' => $product['description'],
-                        'dimensions' => $product['dimensions'],
-                        'pieces' => $product['pieces'],
-                        '_category' => $product['_category'],
-                        '_status' => $product['_status'],
-                        '_provider' => $product['_provider'],
-                        '_unit' => $product['_unit'],
-                        'created_at' => new \DateTime(),
-                        'updated_at' => new \DateTime(),
-                        'cost' => $product['cost']
-                    ]);
-                    $instance->barcode = $product['barcode'];
-                    $instance->name = $product['name'];
-                    $instance->cost = $product['cost'];
-                    $instance->_status = $product['_status'];
-                    $instance->_category = $product['_category'];
-                    $instance->description = $product['description'];
-                    $instance->pieces = $product['pieces'];
-                    $instance->_provider = $product['_provider'];
-                    $instance->updated_at = new \DateTime();
-                    $instance->save();
-                    $prices = [];
-                    if($required_prices /* && count($products)<1000 */){
-                        foreach($product['prices'] as $price){
-                            $prices[$price['_type']] = ['price' => $price['price']];
+            if($products){
+                DB::transaction(function() use ($products, $required_prices){
+                    foreach($products as $product){
+                        $instance = Product::firstOrCreate([
+                            'code'=> $product['code']
+                        ], [
+                            'name' => $product['name'],
+                            'barcode' => $product['barcode'],
+                            'description' => $product['description'],
+                            'dimensions' => $product['dimensions'],
+                            'pieces' => $product['pieces'],
+                            '_category' => $product['_category'],
+                            '_status' => $product['_status'],
+                            '_provider' => $product['_provider'],
+                            '_unit' => $product['_unit'],
+                            'created_at' => new \DateTime(),
+                            'updated_at' => new \DateTime(),
+                            'cost' => $product['cost']
+                        ]);
+                        $instance->barcode = $product['barcode'];
+                        $instance->name = $product['name'];
+                        $instance->cost = $product['cost'];
+                        $instance->_status = $product['_status'];
+                        $instance->_category = $product['_category'];
+                        $instance->description = $product['description'];
+                        $instance->pieces = $product['pieces'];
+                        $instance->_provider = $product['_provider'];
+                        $instance->updated_at = new \DateTime();
+                        $instance->save();
+                        $prices = [];
+                        if($required_prices /* && count($products)<1000 */){
+                            foreach($product['prices'] as $price){
+                                $prices[$price['_type']] = ['price' => $price['price']];
+                            }
+                            $instance->prices()->sync($prices);
                         }
-                        $instance->prices()->sync($prices);
                     }
-                }
-            });
+                });
+            }
             /* if($required_prices && count($products) >= 1000){
                 $this->restorePrices();
             } */

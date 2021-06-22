@@ -153,8 +153,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 });
 
-        $router->group(['prefix' => 'clients'], function () use ($router){
+        $router->group(['prefix' => 'client'], function () use ($router){
             $router->get('/seeder', 'ClientController@Seeder');
+            $router->get('/search', 'ClientController@autocomplete');
         });
 
         $router->group(['prefix' => 'ventas'], function () use ($router){

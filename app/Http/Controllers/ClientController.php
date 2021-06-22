@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use App\Client;
 
 class ClientController extends Controller{
     /**
@@ -37,5 +39,10 @@ class ClientController extends Controller{
     }catch(Exception $e){
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
+  }
+
+  public function autocomplete(Request $request){
+    $clientes = Client::where('name', 'LIKE', '%'.$request->name.'%')->orWhere('id', $request->name)->limit(20)->get();
+    return response()->json($clientes);
   }
 }

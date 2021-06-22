@@ -160,7 +160,9 @@ class OrderController extends Controller{
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $product = Product::with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                }, 'units'])->find($request->_product);
+                }, 'units', 'stock' => function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                }])->find($request->_product);
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
@@ -191,8 +193,9 @@ class OrderController extends Controller{
                                 "ordered" => [
                                     "comments" => $request->comments,
                                     "amount" => $amount,
-                                    "_supply_by" => $_supply_by,
                                     "units" => $units,
+                                    "stock" => 0,
+                                    "_supply_by" => $_supply_by,
                                     "_price_list" => $price_list,
                                     "price" => $price,
                                     "total" => $units * $price,
@@ -246,14 +249,6 @@ class OrderController extends Controller{
     }
     
     public function index(Request $request){
-        /* $status = OrderProcess::get();
-        $workpoints = \App\WorkPoint::whereIn('id', [1,15])->get();
-        foreach($workpoints as $workpoint){
-            foreach($status as $row){
-                $row->config()->attach($workpoint->id, ["active" => $row->active, "details" => json_encode([])]);
-            }
-        }
-        return response()->json($status); */
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -269,8 +264,9 @@ class OrderController extends Controller{
         }
 
         $status = $this->getProcess();
-
-        $printers = Printer::with('type')->where('_workpoint', $this->account->_workpoint)->get();
+        $printers_types = $this->getPrintersTypes();
+        $status_by_rol = $this->getStatusByRol();
+        $printers = Printer::where('_workpoint', $this->account->_workpoint)->whereIn('_type', $printers_types)->get();
 
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]
@@ -280,12 +276,12 @@ class OrderController extends Controller{
             array_push($clause, ['_created_by', $this->account->_account]);
         }
         
-        /* $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->get(); */
+        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
 
         return response()->json([
             'status' => $status,
-            'printers' => $printers/* ,
-            'orders' => $orders *//* OrderResource::collection($orders) */
+            'printers' => $printers,
+            'orders' => OrderResource::collection($orders)
         ]);
     }
 
@@ -293,9 +289,11 @@ class OrderController extends Controller{
         $order = Order::with(['products' => function($query){
             $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-            },'variants']);
+            },'variants', 'stocks' => function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        $groupBy = /* $product */$order->products->map(function($product){
+        $groupBy = $order->products->map(function($product){
             $product->locations->sortBy('path');
             return $product;
         })->groupBy(function($product){
@@ -409,8 +407,7 @@ class OrderController extends Controller{
         return response()->json(["success" => $res]);
     }
 
-    public function getCash(/* $order, $mood */){
-        return $bodegueros;
+    public function getCash($order, $mood){
         switch($mood){
             case "Secuencial":
                 // 1.- Obtener cajas
@@ -420,5 +417,52 @@ class OrderController extends Controller{
                 return response()->json($_cash);
         }
 
+    }
+
+    public function initConfiguration(){
+        $status = OrderProcess::get();
+        $workpoints = \App\WorkPoint::whereIn('id', range(1,15))->get();
+        foreach($workpoints as $workpoint){
+            foreach($status as $row){
+                $row->config()->attach($workpoint->id, ["active" => $row->active, "details" => json_encode([])]);
+            }
+        }
+        return response()->json($status);
+    }
+
+    public function getPrintersTypes(){
+        switch($this->account->_rol){
+            case 1:
+            case 2:
+            case 3:
+                return [1,2,3,4];
+            case 4: //vendedor
+                return [1];
+            case 5: //Cajero
+                return [2];
+            case 6: //Administrador de almacenes
+            case 7: //Bodeguero
+                return [3,4];
+            case 9:
+                return [2];
+        }
+    }
+
+    public function getStatusByRol(){
+        switch($this->account->_rol){
+            case 1:
+            case 2:
+            case 3:
+                return range(1,10);
+            case 4: //vendedor
+                return range(1,10);
+            case 5: //Cajero
+                return range(6,9);
+            case 6: //Administrador de almacenes
+            case 7: //Bodeguero
+                return range(3,5);
+            case 9:
+                return [6,7];
+        }
     }
 }
