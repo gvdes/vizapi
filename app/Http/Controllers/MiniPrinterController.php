@@ -604,7 +604,7 @@ class MiniPrinterController extends Controller{
                 }, '');
                 $printer->setJustification(Printer::JUSTIFY_LEFT);
                 $printer->setTextSize(2,1);
-                $printer->text($y."█ ".trim($locations)."█ ".$product->code." █\n");
+                $printer->text($y."█ ".trim($locations)."\n█ ".$product->code." █\n");
                 $printer->setTextSize(1,1);
                 $printer->text($product->description." \n");
                 /* $printer->text("CAJAS SOLICITADAS: ");

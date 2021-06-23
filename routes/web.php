@@ -129,9 +129,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
     $router->group(['prefix' => 'order'], function () use ($router){
         $router->post('/index', 'OrderController@index');
         $router->get('/config', 'OrderController@config');
+        $router->post('/next', 'OrderController@nextStep');
         $router->get('/{id}', 'OrderController@find');
         $router->post('/', 'OrderController@create');
         $router->post('/add', 'OrderController@addProduct');
+        $router->post('/remove', 'OrderController@removeProduct');
         $router->post('/reimpresion', 'OrderController@reimpresion');
     });
 
