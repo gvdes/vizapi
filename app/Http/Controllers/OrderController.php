@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Order;
 use App\OrderProcess;
 use App\Printer;
+use App\PrinterType;
 use App\Account;
 use App\Product;
 use App\OrderLog;
@@ -14,6 +15,7 @@ use App\User;
 use App\CashRegister;
 
 use App\Http\Resources\Order as OrderResource;
+use App\Http\Resources\OrderStatus as OrderStatusResource;
 
 class OrderController extends Controller{
     /**
@@ -56,7 +58,7 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order, $_printer = null){
-        $process = OrderProcess::all();
+        /* $process = OrderProcess::all(); */
         $status = [];
         // Instance or OrderLog to save data
         $log = new OrderLog;
@@ -78,7 +80,6 @@ class OrderController extends Controller{
                 $assign_cash_register = $this->getProcess($case);
                 $_cash = $this->getCash($order, "Secuencial"/* json_decode($assign_cash_register->details)->mood */);
                 $cashRegister = CashRegister::find($_cash);
-                /* return $cashRegister->order_log; */
                 // The system assigned casg register
                 $order->_status = 2;
                 $order->save();
@@ -109,7 +110,7 @@ class OrderController extends Controller{
                 $to_supply = $this->getProcess(4);
                 if($to_supply[0]['active']){
                     $bodegueros = Account::with('user')->whereIn('_rol', [6,7])->whereNotIn('_status', [4,5])->count();
-                    $tickets = 3;
+                    $tickets = 10;
                     $in_suppling = Order::where([
                         ['_workpoint_from', $this->account->_workpoint],
                         ['_status', $case] // Status Surtiendo
@@ -313,7 +314,7 @@ class OrderController extends Controller{
         $status = $this->getProcess();
         /* $printers_types = $this->getPrintersTypes(); */
         $status_by_rol = $this->getStatusByRol();
-        $printers = Printer::with('type')->where('_workpoint', $this->account->_workpoint)/* ->whereIn('_type', $printers_types) */->get()->groupBy('type.name');
+        $printers = PrinterType::with('printers')->orderBy('id')->get();
 
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]
@@ -322,13 +323,20 @@ class OrderController extends Controller{
         if($this->account->_rol == 4 || $this->account->_rol == 5 || $this->account->_rol == 7){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
-        
-        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
+
+        $status_with_orders = OrderProcess::with(['config' => function($query){
+            $query->where('_workpoint', $this->account->_workpoint);
+        },'orders' => function($query) use($clause, $date_from, $date_to){
+            $query->withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['orders.created_at', '>=', $date_from], ['orders.created_at', '<=', $date_to]]);
+        }])->whereIn('id', $status_by_rol)->orderBy('id')->get();
+
+        /* $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get()->groupBy('status.name'); */
 
         return response()->json([
-            'status' => $status,
+            'status' => OrderStatusResource::collection($status_with_orders),
             'printers' => $printers,
-            'orders' => OrderResource::collection($orders)
+            /* 'orders' => $orders */
+            /* 'orders' => OrderResource::collection($orders) */
         ]);
     }
 
