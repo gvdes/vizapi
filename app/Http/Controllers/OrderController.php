@@ -110,7 +110,7 @@ class OrderController extends Controller{
                 $to_supply = $this->getProcess(4);
                 if($to_supply[0]['active']){
                     $bodegueros = Account::with('user')->whereIn('_rol', [6,7])->whereNotIn('_status', [4,5])->count();
-                    $tickets = 10;
+                    $tickets = 1000;
                     $in_suppling = Order::where([
                         ['_workpoint_from', $this->account->_workpoint],
                         ['_status', $case] // Status Surtiendo
@@ -188,6 +188,25 @@ class OrderController extends Controller{
                 return response()->json(['success' => false, 'status' => null, 'msg' => "No se ha podido cambiar el status"]);
             }
             return response()->json(['success' => false, 'msg' => "Status no válido"]);
+        }
+        return response()->json(['success' => false, 'msg' => "Orden desconocida"]);
+    }
+
+    public function cancelled(Request $request){
+        $order = Order::with('history','products')->find($request->_order);
+        if($order){
+            
+            $log = new OrderLog;
+            $log->_order = $order->id;
+            $log->_status = 100;
+            $log->details = json_encode([]);
+            $user = User::find($this->account->_account);
+
+            $order->_status = 100;
+            $order->save();
+            // Order was created by
+            $user->order_log()->save($log);
+            return response()->json(["success" => true, "status" => []]);
         }
         return response()->json(['success' => false, 'msg' => "Orden desconocida"]);
     }
