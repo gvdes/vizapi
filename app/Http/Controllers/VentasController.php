@@ -841,7 +841,7 @@ class VentasController extends Controller{
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
       }) */->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
-      }, 'stocks'])->whereIn('_category', range(37,57))->get();
+      }, 'stocks'])->where('_provider', 74)/* ->whereIn('_category', range(37,57)) */->get();
     }
     
     $categories = \App\ProductCategory::all();

@@ -314,7 +314,9 @@ class OrderController extends Controller{
         $status = $this->getProcess();
         /* $printers_types = $this->getPrintersTypes(); */
         $status_by_rol = $this->getStatusByRol();
-        $printers = PrinterType::with('printers')->orderBy('id')->get();
+        $printers = PrinterType::with(['printers' => function($query){
+            $query->where('_workpoint', $this->account->_workpoint);
+        }])->orderBy('id')->get();
 
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]
