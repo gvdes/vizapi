@@ -320,7 +320,7 @@ class OrderController extends Controller{
             ['_workpoint_from', $this->account->_workpoint]
         ];
 
-        if($this->account->_rol == 4 || $this->account->_rol == 5 || $this->account->_rol == 7){
+        if($this->account->_rol == 4 || $this->account->_rol == 5 /* || $this->account->_rol == 7 */){
             array_push($clause, ['_created_by', $this->account->_account]);
         }
 
