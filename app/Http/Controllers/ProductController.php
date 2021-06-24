@@ -30,11 +30,15 @@ class ProductController extends Controller{
     public function restoreProducts(){
         try{
             $start = microtime(true);
-            $fac = new FactusolController();
-            $products = $fac->todosProductos();
+            $CEDIS = \App\WorkPoint::find(1);
+            $access = new AccessController($CEDIS->dominio);
+            $products = $access->getAllProducts();
+            $categories = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
+            $array_families = array_column($categories->toArray(), 'alias');
             if($products){
-                DB::transaction(function() use ($products){
+                DB::transaction(function() use ($products, $categories, $array_families){
                     foreach($products as $product){
+                        $date = $product['created_at'] > "2000-01-01 00:00:00" ? $product['created_at'] : "2020-01-02 00:00:00";
                         $instance = Product::firstOrCreate([
                             'code'=> $product['code']
                         ], [
@@ -43,11 +47,11 @@ class ProductController extends Controller{
                             'description' => $product['description'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
-                            '_category' => $product['_category'],
+                            '_category' => $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families),
                             '_status' => $product['_status'],
-                            '_provider' => $product['_provider'],
+                            /* '_provider' => $product['_provider'], */
                             '_unit' => $product['_unit'],
-                            'created_at' => $product['created_at'],
+                            'created_at' => $date,
                             'updated_at' => new \DateTime(),
                             'cost' => $product['cost']
                         ]);
@@ -55,12 +59,12 @@ class ProductController extends Controller{
                         $instance->barcode = $product['barcode'];
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
-                        $instance->_category = $product['_category'];
+                        $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families/* , $array_categories */);/* $product['_category'] */
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
-                        $instance->_provider = $product['_provider'];
+                        /* $instance->_provider = $product['_provider']; */
                         $instance->_status = $product['_status'];
-                        $instance->created_at = $product['created_at'];
+                        $instance->created_at = $date;
                         $instance->updated_at = new \DateTime();
                         $instance->save();
                     }
@@ -71,9 +75,24 @@ class ProductController extends Controller{
                     "time" => microtime(true) - $start
                 ]);
             }
-            return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
+            return response()->json(["message" => "No se obtuvo respuesta del servidor de access"]);
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido poblar la base de datos"]);
+        }
+    }
+
+    public function getCategoryId($family, $category, $categories, $array_families/* , $array_categories */){
+        $keyFamily = array_search($family, $array_families, true);
+        if($keyFamily>0 || $keyFamily === 0){
+            return $categories[$keyFamily]->id;
+            /* $keyCategory = array_search($category, $array_families[$keyFamily], true);
+            if($keyCategory>0 || $keyCategory === 0){
+                return $categories[$keyFamily][$keyCategory]->id;
+            }else{
+                return 404;
+            } */
+        }else{
+            return 404;
         }
     }
 

@@ -28,10 +28,11 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);
     }
+    /* 
 
-    public function getAllProducts($cols){
+    public function todosLosProducts($cols){
         $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/info');
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/all');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 30);
@@ -39,7 +40,7 @@ class AccessController extends Controller{
         $data = http_build_query(["required" => $cols, "products" => true]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         return json_decode(curl_exec($client), true);
-    }
+    } */
 
     public function getDifferencesBetweenCatalog($products){
         $client = curl_init();
@@ -70,93 +71,6 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 30);
         return json_decode(curl_exec($client), true);
-    }
-
-    public function getCategory($family){
-        $categories = [
-            "ACC"=>94, //Accesorios
-            "BOC"=>113,
-            "HOG"=>98,
-            "HIG"=>97,
-            "HER"=>96,
-            "JUE"=>99,
-            "PIL"=>114,
-            "BEL"=>95,
-            "BAR"=>94,
-            "ROP"=>100,
-            "TAZ"=>101,
-            "PER"=>94,
-            "TER"=>94,
-            "RET"=>107,
-            "AUD"=>112,
-            "BEC"=>129,
-            "CAL"=>102,//Calculadoras
-            "CCI"=>104,
-            "REL"=>102,
-            "CAC"=>102,
-            "MEM"=>106,
-            "CRE"=>null,//Creditos
-            "ELE"=>111,//Electronica
-            "EQU"=>null,//Equipo de computo
-            "MOU"=>null,
-            "PAN"=>null,
-            "TEC"=>null,
-            "FIN"=>null,//Financieros
-            "FLE"=>110,//Fletes
-            "JUG"=>37,//Juguetes
-            "DEP"=>44,
-            "MON"=>38,
-            "MOC"=>1,//Mochila
-            "POR"=>1,
-            "LON"=>4,
-            "BOL"=>8,
-            "PMO"=>13,
-            "CAN"=>11,
-            "CAR"=>12,
-            "COS"=>16,
-            "MRO"=>15,
-            "LLA"=>1,
-            "CRT"=>15,
-            "MAR"=>9,
-            "MAL"=>10,
-            "LAP"=>5,
-            "MPR"=>null,//Materias primas
-            "NAV"=>null,//Navidad
-            "20"=>131,
-            "2"=>131,
-            "19"=>141,
-            "18"=>138,
-            "17"=>138,
-            "3"=>132,
-            "15"=>160,
-            "8"=>131,
-            "14"=>130,
-            "13"=>130,
-            "12"=>null,
-            "11"=>131,
-            "10"=>134,
-            "16"=>140,
-            "4"=>132,
-            "5"=>131,
-            "PRO"=>null,
-            "7"=>131,
-            "9"=>134,
-            "POF"=>130,
-            "1"=>131,
-            "6"=>131,
-            "PAP"=>58,//Papeleria
-            "PAR"=>66,//Paraguas
-            "SAL"=>null,
-            "IMP"=>89,
-            "PEL"=>108,//Peluche
-            "SAN"=>null//Sanitario
-        ];
-        $exist = array_key_exists(strtoupper($family), $categories);
-        if($exist){
-            return $categories[strtoupper($family)];
-        }else{
-            return 404;
-        }
     }
 
     /***************
@@ -245,6 +159,18 @@ class AccessController extends Controller{
         $data = json_encode(["date" => $date]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getAllProducts(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/all');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        /* $data = http_build_query(["required" => $cols, "products" => true]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data); */
         return json_decode(curl_exec($client), true);
     }
 
