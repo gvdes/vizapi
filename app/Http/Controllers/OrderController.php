@@ -464,7 +464,8 @@ class OrderController extends Controller{
                 });
             }]);
         }, 'history']);
-        $cellerPrinter = new MiniPrinterController("192.168.1.96", 9100);
+        $printer = Printer::find($request->_printer);
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
         /* $res = $cellerPrinter->orderReceipt($order); */
         $res = $cellerPrinter->orderTicket($order);
         if($res){
