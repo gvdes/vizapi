@@ -239,6 +239,17 @@ class OrderController extends Controller{
                                     "total" => $units * $price,
                                     "kit" => "",
                                 ],
+                                "stocks" => [
+                                    [
+                                        "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
+                                        "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
+                                        "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                                        "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                                        "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
+                                        "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                        "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                    ]
+                                ]
                             ]);
                         }else{
                             return response()->json(["msg" => "El producto tiene el precio en 0", "success" => false]);

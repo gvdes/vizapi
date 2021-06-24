@@ -79,7 +79,20 @@ class Order extends JsonResource{
                             "total" => $product->pivot->total,
                             "kit" => $product->pivot->kit,
                         ],
-                        "units" => $product->units
+                        "units" => $product->units,
+                        'stocks' => $this->whenLoaded('stocks', function(){
+                            return $this->stocks->map(function($stock){
+                                return [
+                                    "alias" => $stock->alias,
+                                    "name" => $stock->name,
+                                    "stock" => $stock->pivot->stock,
+                                    "gen" => $stock->pivot->gen,
+                                    "exh" => $stock->pivot->exh,
+                                    "min" => $stock->pivot->min,
+                                    "max" => $stock->pivot->max,
+                                ];
+                            });
+                        })
                     ];
                 });
             })
