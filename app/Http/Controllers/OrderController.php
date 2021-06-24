@@ -466,11 +466,10 @@ class OrderController extends Controller{
         }, 'history']);
         $printer = Printer::find($request->_printer);
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-        /* $res = $cellerPrinter->orderReceipt($order); */
         $res = $cellerPrinter->orderTicket($order);
         if($res){
             $order->printed = $order->printed +1;
-            /* $order->save(); */
+            $order->save();
         }
         return response()->json(["success" => $res]);
     }
