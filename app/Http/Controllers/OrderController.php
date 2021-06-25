@@ -88,7 +88,7 @@ class OrderController extends Controller{
                 $log->_status = 3;
                 $log->details = json_encode([]);
                 if(!$_printer){
-                    $printer = Printer::where('_type', 1)->first();
+                    $printer = Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
                 }else{
                     $printer = Printer::find($_printer);
                 }
@@ -128,7 +128,7 @@ class OrderController extends Controller{
                 }
             case 5:
                 if(!$_printer){
-                    $printer = Printer::where('_type', 3)->first();
+                    $printer = Printer::where([['_type', 3], ['_workpoint', $this->account->_workpoint]])->first();
                 }else{
                     $printer = Printer::find($_printer);
                 }
