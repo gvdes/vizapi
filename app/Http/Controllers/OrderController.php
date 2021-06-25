@@ -183,8 +183,8 @@ class OrderController extends Controller{
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
                     $query->where('_workpoint', $_workpoint_to);
                 });
-            }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-        }, 'history']);
+            }]);
+        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
         /* $order = Order::with(['products' => function($query){
             $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
