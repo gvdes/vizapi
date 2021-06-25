@@ -181,7 +181,7 @@ class OrderController extends Controller{
         $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
             $query->with(['locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
-                    $query->where('_workpoint', $_workpoint_to);
+                    $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                 });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
@@ -499,7 +499,7 @@ class OrderController extends Controller{
         $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
             $query->with(['locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
-                    $query->where('_workpoint', $_workpoint_to);
+                    $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                 });
             }]);
         }, 'history']);
