@@ -176,7 +176,16 @@ class OrderController extends Controller{
 
     public function nextStep(Request $request){
         /* $order = Order::with('history','products', 'l')->find($request->_order); */
-        $order = Order::with(['products' => function($query){
+        $order = Order::find($request->_order);
+        $_workpoint_to = $order->_workpoint_from;
+        $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where('_workpoint', $_workpoint_to);
+                });
+            }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+        }, 'history']);
+        /* $order = Order::with(['products' => function($query){
             $query->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
             },'variants', 'stocks' => function($query){
@@ -186,7 +195,7 @@ class OrderController extends Controller{
                     $query->where('_workpoint', $_workpoint_to);
                 });
             }]);
-        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($request->_order);
+        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($request->_order); */
         if($order){
             $_status = $order->_status+1;
             $_printer = isset($request->_printer) ? $request->_printer : null;
