@@ -128,7 +128,7 @@ class OrderController extends Controller{
                 }
             case 5:
                 if(!$_printer){
-                    $printer = Printer::where([['_type', 3], ['_workpoint', $this->account->_workpoint]])->first();
+                    $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 }else{
                     $printer = Printer::find($_printer);
                 }
@@ -175,7 +175,14 @@ class OrderController extends Controller{
     }
 
     public function nextStep(Request $request){
-        $order = Order::with('history','products')->find($request->_order);
+        /* $order = Order::with('history','products', 'l')->find($request->_order); */
+        $order = Order::with(['products' => function($query){
+            $query->with(['prices' => function($query){
+                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+            },'variants', 'stocks' => function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            }]);
+        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($request->_order);
         if($order){
             $_status = $order->_status+1;
             $_printer = isset($request->_printer) ? $request->_printer : null;
