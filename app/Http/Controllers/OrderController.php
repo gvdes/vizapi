@@ -181,6 +181,10 @@ class OrderController extends Controller{
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
             },'variants', 'stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
+            }, 'locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where('_workpoint', $_workpoint_to);
+                });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($request->_order);
         if($order){
