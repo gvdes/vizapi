@@ -127,11 +127,11 @@ class OrderController extends Controller{
                     }
                 }
             case 5:
-                if(!$_printer){
-                    $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                /* if(!$_printer){
                 }else{
                     $printer = Printer::find($_printer);
-                }
+                } */
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
                 $cellerPrinter->orderTicket($order);
                 $log->details = json_encode([]);
