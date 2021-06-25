@@ -553,6 +553,10 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(2,1);
         $printer->text(round($summary['articles'])."\n");
         $printer->setTextSize(1,1);
+        if($product->pivot->comments){
+            $printer->setTextSize(1,1);
+            $printer->text("Notas: ".$product->pivot->comments."\n");
+        }
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("----------------------------------------\n");
         $y = 1;
