@@ -616,10 +616,6 @@ class MiniPrinterController extends Controller{
                 $printer->setJustification(Printer::JUSTIFY_RIGHT);
                 $printer->setTextSize(2,1);
                 $printer->text("{   }\n");
-                if($product->pivot->comments){
-                    $printer->setTextSize(1,1);
-                    $printer->text("Notas: ".$product->pivot->comments."\n");
-                }
                 /* $printer->setTextSize(1,1);
                 $printer->text("UF: ");
                 $printer->setTextSize(2,1);
@@ -630,7 +626,9 @@ class MiniPrinterController extends Controller{
                 $printer->text($product->pivot->stock."\n"); */
                 if($product->pivot->comments){
                     $printer->setTextSize(1,1);
+                    $printer->setReverseColors(true);
                     $printer->text("Notas: ".$product->pivot->comments."\n");
+                    $printer->setReverseColors(false);
                 }
                 $printer->feed(1);
                 $y++;
