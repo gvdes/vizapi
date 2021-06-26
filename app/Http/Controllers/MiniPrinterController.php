@@ -537,6 +537,8 @@ class MiniPrinterController extends Controller{
         $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
         $printer->setReverseColors(false);
         $printer->text("Pedido para ".$order->name." \n");
+        $printer->setTextSize(1,1);
+        $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
         /* if($order->notes){
             $printer->setTextSize(2,1);
             $printer->text("$order->notes \n");
