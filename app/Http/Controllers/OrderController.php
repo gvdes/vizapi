@@ -376,19 +376,19 @@ class OrderController extends Controller{
             array_push($clause, ['_created_by', $this->account->_account]);
         }
 
-        $status_with_orders = OrderProcess::with(['config' => function($query){
+        /* $status_with_orders = OrderProcess::with(['config' => function($query){
             $query->where('_workpoint', $this->account->_workpoint);
         },'orders' => function($query) use($clause, $date_from, $date_to){
             $query->withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['orders.created_at', '>=', $date_from], ['orders.created_at', '<=', $date_to]]);
-        }])->whereIn('id', $status_by_rol)->orderBy('id')->get();
+        }])->whereIn('id', $status_by_rol)->orderBy('id')->get(); */
 
-        /* $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get()->groupBy('status.name'); */
+        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
 
         return response()->json([
-            'status' => OrderStatusResource::collection($status_with_orders),
+            /* 'status' => OrderStatusResource::collection($status_with_orders), */
+            'status' => $status,
             'printers' => $printers,
-            /* 'orders' => $orders */
-            /* 'orders' => OrderResource::collection($orders) */
+            'orders' => OrderResource::collection($orders)
         ]);
     }
 
