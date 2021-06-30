@@ -409,9 +409,8 @@ class RequisitionController extends Controller{
     }
 
     public function demoImpresion(Request $request){
-        $workpoint_to_print = Workpoint::find($request->_workpoint);
-        $printer = $this->getPrinter($workpoint_to_print, $workpoint_to_print->id);
-        $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+        $printer = \App\Printer::find($request->_printer);
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
         $res = $cellerPrinter->demo();
         return response()->json(["success" => $res]);
     }
