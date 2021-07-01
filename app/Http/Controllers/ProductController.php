@@ -38,6 +38,7 @@ class ProductController extends Controller{
             if($products){
                 DB::transaction(function() use ($products, $categories, $array_families){
                     foreach($products as $product){
+                        $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                         $date = $product['created_at'] > "2000-01-01 00:00:00" ? $product['created_at'] : "2020-01-02 00:00:00";
                         $instance = Product::firstOrCreate([
                             'code'=> $product['code']
@@ -49,7 +50,7 @@ class ProductController extends Controller{
                             'pieces' => $product['pieces'],
                             '_category' => $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families),
                             '_status' => $product['_status'],
-                            /* '_provider' => $product['_provider'], */
+                            '_provider' => $_provider,
                             '_unit' => $product['_unit'],
                             'created_at' => $date,
                             'updated_at' => new \DateTime(),
@@ -62,7 +63,7 @@ class ProductController extends Controller{
                         $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families/* , $array_categories */);/* $product['_category'] */
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
-                        /* $instance->_provider = $product['_provider']; */
+                        $instance->_provider = $_provider;
                         $instance->_status = $product['_status'];
                         $instance->created_at = $date;
                         $instance->updated_at = new \DateTime();

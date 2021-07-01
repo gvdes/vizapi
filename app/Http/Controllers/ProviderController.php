@@ -44,6 +44,7 @@ class ProviderController extends Controller{
                         'adress' => $provider['adress'],
                         'phone' => $provider['phone']
                     ]);
+                    $instance->id = $provider['id'];
                     $instance->rfc = $provider['rfc'];
                     $instance->name = $provider['name'];
                     $instance->alias = $provider['alias'];
@@ -53,7 +54,7 @@ class ProviderController extends Controller{
                     $instance->save();
                 }
             });
-            $workpoints = \App\WorkPoint::whereIn('id', $stores)->get();
+            /* $workpoints = \App\WorkPoint::whereIn('id', $stores)->get();
             foreach($workpoints as $workpoint){
                 $access_store = new AccessController($workpoint->dominio);
                 $sync[$workpoint->alias] = $access_store->syncProviders($rawProviders);
@@ -64,7 +65,8 @@ class ProviderController extends Controller{
                 'C' => "TEXT"
             ];
             $export = new WithMultipleSheetsExport($sync, $format);
-            return Excel::download($export, "sincronizar_proveedores_".$date.".xlsx");
+            return Excel::download($export, "sincronizar_proveedores_".$date.".xlsx"); */
+            return response()->json(["msg" => "Successful"]);
             /* return response()->json($sync); */
         }
         return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);

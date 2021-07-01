@@ -169,8 +169,6 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 30);
         curl_setopt($client, CURLOPT_POST, 1);
-        /* $data = http_build_query(["required" => $cols, "products" => true]);
-        curl_setopt($client, CURLOPT_POSTFIELDS, $data); */
         return json_decode(curl_exec($client), true);
     }
 

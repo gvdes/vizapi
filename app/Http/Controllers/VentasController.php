@@ -631,8 +631,8 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    $workpoints = WorkPoint::whereIn('id', range(3,13))->get();
-    /* $workpoints = WorkPoint::where('id', 3)->get(); */
+    /* $workpoints = WorkPoint::whereIn('id', range(3,13))->get(); */
+    $workpoints = WorkPoint::where('id', 1)->get();
     $resumen = [];
     $start = microtime(true);
     $a = 0;
@@ -900,6 +900,81 @@ class VentasController extends Controller{
       ];
       /* $x = array_merge($a, $prices); */
       $x = array_merge($a, $desgloce);
+      return array_merge($x, $stocks);
+    });
+    $export = new ArrayExport($result->toArray());
+    $date = new \DateTime();
+    return Excel::download($export, $request->name.".xlsx");
+    return response()->json($result);
+  }
+
+  public function getStocks(Request $request){
+    
+    $workpoint = WorkPoint::find($request->_workpoint);
+    $workpoints = Workpoint::all();
+
+    if(isset($request->products)){
+      $p = array_column($request->products,"code");
+      $products = [];
+      $notFound = [];
+      if($request->validate){
+        foreach($p as $code){
+          $product = Product::where('code', $code)->orWhere('name', $code)
+          ->whereHas('variants', function($query) use ($code){
+            $query->where('barcode', $code);
+          })->with(['stocks', 'prices'])->first();
+          if(!$product){
+            $notFound[] = $code;
+          }
+        }
+        return $notFound;
+      }else{
+        $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
+        ->whereHas('variants', function($query) use ($p){
+          $query->whereIn('barcode', $p);
+        })
+        ->with(['stocks', 'prices'])->get();
+      }
+    }else{
+      $cash = CashRegister::all()->toArray();
+      $products = Product::where('_status', '!=', 4)->with(['prices', 'stocks'])->get();
+    }
+    
+    $categories = \App\ProductCategory::all();
+    $arr_categories = array_column($categories->toArray(), "id");
+    
+    $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
+      if($product->category->deep == 0){
+          $familia = $product->category->name;
+          $category = "";
+      }else{
+          $key = array_search($product->category->root, $arr_categories, true);
+          $familia = $categories[$key]->name;
+          $category = $product->category->name;
+      }
+      $prices = $product->prices->reduce(function($res, $price){
+        $res[$price->name] = $price->pivot->price;
+        return $res;
+      }, []);
+
+      $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
+        $res["stock_".$stock->name] = $stock->pivot->stock;
+        return $res;
+      }, []);
+
+      $a = [
+        "Modelo" => $product->code,
+        "Código" => $product->name,
+        "Descripción" => $product->description,
+        "Piezas por caja" => $product->pieces,
+        "Costo" => $product->cost,
+        "Familia" => $familia,
+        "Categoría" => $category,
+        "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
+          return $store->pivot->stock + $total;
+        }, 0)
+      ];
+      $x = array_merge($a, $prices);
       return array_merge($x, $stocks);
     });
     $export = new ArrayExport($result->toArray());
