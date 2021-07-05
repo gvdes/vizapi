@@ -631,8 +631,11 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    /* $workpoints = WorkPoint::whereIn('id', range(3,13))->get(); */
-    $workpoints = WorkPoint::where('id', 1)->get();
+    $_workpoints = range(3,13);
+    $_workpoints[] = 1;
+    $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
+    /* $workpoints = WorkPoint::where('id', 1)->get(); */
+    return $workpoints;
     $resumen = [];
     $start = microtime(true);
     $a = 0;

@@ -166,6 +166,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
             $router->post('/articulos', 'VentasController@VentasxArticulos');
+            /* $router->post('/articulos', 'VentasController@getStocks'); */
             $router->get('/tiendaAgente', 'VentasController@tiendaXSeller');
             $router->get('/seeder', 'VentasController@getVentas');
             $router->get('/seeder2', 'VentasController@getVentas2019');
