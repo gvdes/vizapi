@@ -764,7 +764,7 @@ class ProductController extends Controller{
                 "Modelo" => $product->code,
                 "Código" => $product->name,
                 "Descripción" => $product->description,
-                "Proveedor" => $product->provider->name,
+                /* "Proveedor" => $product->provider->name, */
                 "Familia" => $family,
                 "Categoria" => $category,
                 "Costo" => $product->cost,
