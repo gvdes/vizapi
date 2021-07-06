@@ -445,7 +445,7 @@ class RequisitionController extends Controller{
                 return ["domain" => "187.202.55.154", "port" => 4065];
                 break;
             case 3:
-                return ["domain" => "192.168.1.79", "port" => 9100];
+                return ["domain" => "192.168.10.181", "port" => 9100];
                 break;
             case 4:
                 return ["domain" => $dominio, "port" => 4065];
