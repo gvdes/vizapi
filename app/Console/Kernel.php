@@ -11,6 +11,7 @@ use App\CashRegister;
 use App\Sales;
 use App\PaidMethod;
 use App\Client;
+use App\OrderSupply;
 use App\Http\Controllers\FactusolController;
 use App\Http\Controllers\AccessController;
 
