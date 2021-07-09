@@ -634,18 +634,18 @@ class RequisitionController extends Controller{
             case 10:
             case 12:
                 $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669)];
-                return array_merge_recursive($_categories);
+                return array_merge_recursive(...$_categories);
                 break;
             case 11:
                 return range(448, 514);
                 break;
             case 8:
                 $_categories = [range(515,552), range(588, 628), range(448, 514)];
-                return array_merge_recursive($_categories);
+                return array_merge_recursive(...$_categories);
                 break;
             case 3:
                 $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669), range(448, 514), range(553, 587), range(780, 786)];
-                return array_merge_recursive($_categories);
+                return array_merge_recursive(...$_categories);
                 break;
         }
     }
