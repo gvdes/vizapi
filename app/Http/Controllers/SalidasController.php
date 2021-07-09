@@ -110,7 +110,6 @@ class SalidasController extends Controller{
               $caja_x_ticket[] = ["_cash" => $cash, "num_ticket" => $sale];
             }
         }
-        /* return $caja_x_ticket; */
         $salidas = $access->getLastSalidas($caja_x_ticket);
         if($salidas){
             $products = Product::all()->toArray();
