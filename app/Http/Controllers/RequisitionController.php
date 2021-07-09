@@ -536,7 +536,7 @@ class RequisitionController extends Controller{
                 ['_workpoint', $workpoint_to],
                 ['stock', '>', 0]
             ]);
-        }, '>', 1)->where('_status', '!=', 4)->whereBetween('_category', $_categories)->get();
+        }, '>', 1)->where('_status', '!=', 4)->whereIn('_category', $_categories)->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
