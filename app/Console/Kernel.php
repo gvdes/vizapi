@@ -33,7 +33,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule){
         $schedule->call(function(){
-            $workpoints = WorkPoint::whereIn('id', range(3,13))->get();
+            $_workpoints = range(3,13);
+            $_workpoints[] = 1;
+            $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
             $resumen = [];
             $start = microtime(true);
             $a = 0;

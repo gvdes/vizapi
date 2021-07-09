@@ -189,4 +189,5 @@ $router->group(['middleware' => 'auth'], function() use($router){
 
         $router->group(['prefix' => 'salidas'], function () use ($router){
             $router->get('/', 'SalidasController@seederSalidas');
+            $router->get('/new', 'SalidasController@LastSalidas');
         });

@@ -62,4 +62,8 @@ class WorkPoint extends Model{
     public function cash(){
         return $this->hasMany('App\CashRegister', '_workpoint');
     }
+
+    public function wildrawals(){
+        return $this->hasMany('App\Wildrawals', '_workpoint');
+    }
 }

@@ -517,6 +517,7 @@ class RequisitionController extends Controller{
 
     public function getToSupplyFromStore($workpoint_id, $workpoint_to){
         $workpoint = WorkPoint::find($workpoint_id);
+        $_categories = $this->categoriesByStore($workpoint_id);
         $products = Product::with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
@@ -526,7 +527,7 @@ class RequisitionController extends Controller{
                 ['_workpoint', $workpoint_to],
                 ['stock', '>', 0]
             ]) */;
-        }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to){
+        }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to, $_categories){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
@@ -535,12 +536,12 @@ class RequisitionController extends Controller{
                 ['_workpoint', $workpoint_to],
                 ['stock', '>', 0]
             ]);
-        }, '>', 1)->where('_status', 1)->whereNotBetween('_category', [670,751])->get();
+        }, '>', 1)->where('_status', '!=', 4)->whereBetween('_category', $_categories)->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
         foreach($products as $key => $product){
-            $stock = $product->stocks[0]->pivot->gen;
+            $stock = $product->stocks[0]->pivot->stock;
             $min = $product->stocks[0]->pivot->min;
             $max = $product->stocks[0]->pivot->max;
             if($max>$stock){
@@ -608,5 +609,44 @@ class RequisitionController extends Controller{
             ]);
         }
         return true;
+    }
+
+    public function categoriesByStore($_workpoint){
+        /**
+         * MOC => 405 - 447
+         * PAP => 515 - 552
+         * CAL => 588 - 628
+         * HOG => 752 - 779
+         * ELE => 629 - 669
+         * JUG => 448 - 514
+         * PAR => 553 - 587 AND 780 - 786
+         * */
+        switch($_workpoint){
+            case 1:
+            case 4:
+            case 5:
+            case 7:
+            case 13:
+            case 9:
+                return range(405, 447);
+                break;
+            case 6:
+            case 10:
+            case 12:
+                $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669)];
+                return array_merge_recursive($_categories);
+                break;
+            case 11:
+                return range(448, 514);
+                break;
+            case 8:
+                $_categories = [range(515,552), range(588, 628), range(448, 514)];
+                return array_merge_recursive($_categories);
+                break;
+            case 3:
+                $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669), range(448, 514), range(553, 587), range(780, 786)];
+                return array_merge_recursive($_categories);
+                break;
+        }
     }
 }

@@ -55,12 +55,29 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    /***************
+     *** SALIDAS ***
+     ***************/
+
     public function getSalidas(){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/salidas/all');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getLastSalidas($caja_x_ticket){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/salidas/new');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_TIMEOUT, 20);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["cash" => $caja_x_ticket]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);
     }
 
@@ -271,6 +288,32 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_POST, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 10);
         $data = json_encode(["folio" => $folio]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
+    /************
+     * RETIRADAS *
+     ************/
+
+    public function getAllWithdrawals(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/withdrawals");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getLatestWithdrawals($lastCode){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/withdrawals/latest");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        $data = json_encode(["code" => $lastCode]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);

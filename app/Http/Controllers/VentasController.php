@@ -635,7 +635,7 @@ class VentasController extends Controller{
     $_workpoints[] = 1;
     $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
     /* $workpoints = WorkPoint::where('id', 1)->get(); */
-    return $workpoints;
+    /* return $workpoints; */
     $resumen = [];
     $start = microtime(true);
     $a = 0;
