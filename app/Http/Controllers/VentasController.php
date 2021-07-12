@@ -632,7 +632,7 @@ class VentasController extends Controller{
 
   public function getLastVentas(){
     $_workpoints = range(3,13);
-    $_workpoints[] = 1;
+    /* $_workpoints[] = 1; */
     $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
     /* $workpoints = WorkPoint::where('id', 1)->get(); */
     /* return $workpoints; */
@@ -648,6 +648,11 @@ class VentasController extends Controller{
         foreach($cash_registers as $cash){
           $sale = Sales::where('_cash', $cash->id)/* ->whereDate('created_at', '<' ,'2021-01-27') */->max('created_at');
           if($sale){
+            $ticket = $sale ? : 0;
+            $date = explode(' ', $sale);
+            $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
+          }else{
+            $sale = "2021-01-27 00:00:00";
             $ticket = $sale ? : 0;
             $date = explode(' ', $sale);
             $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
@@ -807,9 +812,6 @@ class VentasController extends Controller{
       $date_to = new \DateTime();
       $date_to->setTime(23,59,59);
     }
-    
-    $workpoint = WorkPoint::find($request->_workpoint);
-    $workpoints = Workpoint::all();
 
     if(isset($request->products)){
       $p = array_column($request->products,"code");
@@ -830,28 +832,23 @@ class VentasController extends Controller{
         }
         return $notFound;
       }else{
-        $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
-        ->whereHas('variants', function($query) use ($p){
-          $query->whereIn('barcode', $p);
-        })
+        $products = Product::whereIn('code', $p)
         ->with(['sales' => function($query) use($date_from, $date_to){
           $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-        }])->get();
+        }, 'category'])->get();
       }
     }else{
-      $cash = CashRegister::all()->toArray();
-      $products = Product::where('_status', '!=', 4)/* ->whereHas('sales', function($query) use($date_from, $date_to, $cash){
-        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
-      }) */->with(['prices','sales' => function($query) use($date_from, $date_to, $cash){
+      $products = Product::where('_status', '!=', 4)->with(['prices','sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
-      }, 'stocks'])->where('_provider', 74)/* ->whereIn('_category', range(37,57)) */->get();
+      }, 'stocks'])->where('_provider', 74)->get();
     }
     
+    $workpoints = Workpoint::all();
     $categories = \App\ProductCategory::all();
     $arr_categories = array_column($categories->toArray(), "id");
     
     $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
-      $desgloce = $workpoints->reduce(function($res, $workpoint) use($product){
+      /* $desgloce = $workpoints->reduce(function($res, $workpoint) use($product){
         $vendidos = $product->sales->reduce(function($total, $sale) use($workpoint){
           if($sale->cash->_workpoint == $workpoint->id){
             return $total + $sale->pivot->amount;
@@ -861,7 +858,7 @@ class VentasController extends Controller{
         }, 0);
         $res["Unidades vendidas ".$workpoint->alias] = $vendidos;
         return $res;
-      }, []);
+      }, []); */
       $vendidos = $product->sales->reduce(function($total, $sale){
         return $total + $sale->pivot->amount;
       }, 0);
@@ -873,16 +870,6 @@ class VentasController extends Controller{
           $familia = $categories[$key]->name;
           $category = $product->category->name;
       }
-      $tickets = count($product->sales->toArray());
-      $prices = $product->prices->reduce(function($res, $price){
-        $res[$price->name] = $price->pivot->price;
-        return $res;
-      }, []);
-
-      $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
-        $res["stock_".$stock->name] = $stock->pivot->stock;
-        return $res;
-      }, []);
 
       $a = [
         "Modelo" => $product->code,
@@ -893,17 +880,13 @@ class VentasController extends Controller{
         "Familia" => $familia,
         "Categoría" => $category,
         "Total" => $vendidos,
-        "tickets" => $tickets,
-        "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
-          return $store->pivot->stock + $total;
-        }, 0),
         "venta total" => $product->sales->unique('id')->values()->reduce(function($total, $sale){
           return $total + $sale->pivot->total;
         }, 0)
       ];
-      /* $x = array_merge($a, $prices); */
-      $x = array_merge($a, $desgloce);
-      return array_merge($x, $stocks);
+      /* $x = array_merge($a, $desgloce);
+      return $x; */
+      return $a;
     });
     $export = new ArrayExport($result->toArray());
     $date = new \DateTime();
