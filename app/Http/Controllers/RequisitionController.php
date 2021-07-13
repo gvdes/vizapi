@@ -76,6 +76,9 @@ class RequisitionController extends Controller{
                 if(isset($data['products'])){
                     $requisition->products()->attach($data['products']);
                 }
+                if($request->_type != 1){
+                    $this->refreshStocks($requisition);
+                }
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
             return response()->json([
@@ -189,7 +192,6 @@ class RequisitionController extends Controller{
             break;
             case 2:
                 // RECARGAR STOCKS DE LA REQUISISION
-                $this->refreshStocks($requisition);
                 //RECARGAR LA REQUISIÓN
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -541,7 +543,7 @@ class RequisitionController extends Controller{
         /**OBTENEMOS STOCKS */
         $toSupply = [];
         foreach($products as $key => $product){
-            $stock = $product->stocks[0]->pivot->stock;
+            $stock = $product->stocks[0]->pivot->gen;
             $min = $product->stocks[0]->pivot->min;
             $max = $product->stocks[0]->pivot->max;
             if($max>$stock){
