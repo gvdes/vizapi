@@ -399,6 +399,85 @@ class ProductController extends Controller{
         return $children;
     }
 
+    public function getDescendentsCategory2($category){
+        $children = ProductCategory::where('root', $category->id)->orderBy('name')->get();
+        if(count($children)>0){
+            return $children->map(function($category){
+                $category->children = $this->getDescendentsCategory($category);
+                return $category;
+            });
+        }
+        return $children;
+    }
+
+    public function getProductsByCategory(Request $request){
+        $category = ProductCategory::find($request->_category);
+        $max_stock_cedis = $request->stock;
+        if($category){
+            $category->children = $this->getDescendentsCategory($category);
+            $ids = $this->getIdsTree($category);
+            $products = Product::whereHas('stocks', function($query) use($max_stock_cedis){
+                $query->where([['_workpoint', 1], ['stock', '>', 0], ['stock', '<=', $max_stock_cedis]])
+                ->orWhere([
+                    ['_workpoint', '>', 2],
+                    ['stock', '>', 0]
+                ])->distinct();
+            }, '>', 2)->with(['stocks' => function($query){
+                $query->where([["stock", '>', 0], ['_workpoint', '!=', 2]]);
+            }])->whereIn('_category', $ids)->where('_status', 1)->get();
+            $pedido = [];
+            foreach($products as $product){
+                $stocks = $product->stocks->map(function($stock){
+                    return [
+                        "_workpoint" => $stock->id,
+                        "alias" => $stock->alias,
+                        "stock" => $stock->pivot->stock,
+                        "gen" => $stock->pivot->gen,
+                        "exh" => $stock->pivot->exh,
+                        "min" => $stock->pivot->min,
+                        "max" => $stock->pivot->max,
+                    ];
+                });
+                $ids_stock_workpoints = array_column($stocks->toArray(), '_workpoint');
+                $key = array_search(1, $ids_stock_workpoints);
+                if($key === 0 || $key >0){
+                    $stock_cedis = $product->stocks[$key]['pivot']['stock'];
+                    if($request->up){
+                        $destino = $stocks->filter(function($stock){
+                            return $stock['_workpoint'] != 1;
+                        })->sortByDesc('stock')->values();
+                        if($stock_cedis <= $max_stock_cedis){
+                            $pedido[$destino[0]['alias']][] = [
+                                "id" => $product->id,
+                                "code" => $product->code,
+                                "name" => $product->name,
+                                "description" => $product->description,
+                                "piezas" => $stock_cedis,
+                                "stock actual" => $destino[0]['stock']
+                            ];
+                        }
+                    }else{
+                        $destino = $stocks->filter(function($stock){
+                            return $stock['_workpoint'] != 1;
+                        })->sortBy('stock')->values();
+                        if($stock_cedis <= $max_stock_cedis){
+                            $pedido[$destino[0]['alias']][] = [
+                                "id" => $product->id,
+                                "code" => $product->code,
+                                "name" => $product->name,
+                                "description" => $product->description,
+                                "piezas" => $stock_cedis,
+                                "stock actual" => $destino[0]['stock']
+                            ];
+                        }
+                    }
+                }
+            }
+            return response()->json(["result" => $pedido]);
+        }
+        return response()->json(["msg" => "Categoria no valida"]);
+    }
+
     public function getAscendentsCategory($category){
         if($category->root==0){
             return $category;
@@ -760,6 +839,10 @@ class ProductController extends Controller{
                 $family = $categories[$key]->name;
                 $category = $product->category->name;
             }
+            $prices = $product->prices->reduce(function($res, $price){
+                $res[$price->name] = $price->pivot->price;
+                return $res;
+            }, []);
             return [
                 "Modelo" => $product->code,
                 "Código" => $product->name,

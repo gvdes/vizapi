@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Wildrawals extends Model{
     
-    protected $table = 'wildrawls';
+    protected $table = 'withdrawals';
     protected $fillable = ['code', '_cash', 'description', 'total', 'provider', 'created_at'];
     
     /*****************

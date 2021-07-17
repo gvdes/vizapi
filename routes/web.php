@@ -103,7 +103,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/seederMax', 'ProductController@getMaximum');
         $router->post('/updateDesc', 'ProductController@addAtributes');
         $router->post('/getCategories', 'ProductController@getCategory');
-        $router->get('/demo', 'ProductController@getDiferenceBetweenStores');
+        $router->post('/stocks', 'VentasController@getStocks');
+        /* $router->get('/demo', 'ProductController@getDiferenceBetweenStores'); */
+        $router->get('/lessStock', 'ProductController@getProductsByCategory');
     });
 
     $router->group(['prefix' => 'relatedCodes'], function () use ($router){
@@ -166,7 +168,6 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->post('/tienda', 'VentasController@tienda');
             $router->post('/folio', 'VentasController@venta');
             $router->post('/articulos', 'VentasController@VentasxArticulos');
-            /* $router->post('/articulos', 'VentasController@getStocks'); */
             $router->get('/tiendaAgente', 'VentasController@tiendaXSeller');
             $router->get('/seeder', 'VentasController@getVentas');
             $router->get('/seeder2', 'VentasController@getVentas2019');
@@ -190,4 +191,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->group(['prefix' => 'salidas'], function () use ($router){
             $router->get('/', 'SalidasController@seederSalidas');
             $router->get('/new', 'SalidasController@LastSalidas');
+        });
+
+        $router->group(['prefix' => 'withdrawals'], function () use ($router){
+            $router->get('/', 'WithdrawalsController@seeder');
+            $router->get('/new', 'WithdrawalsController@getLatest');
         });

@@ -299,10 +299,10 @@ class AccessController extends Controller{
 
     public function getAllWithdrawals(){
         $client = curl_init();
-        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/withdrawals");
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/withdrawals/all");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client,CURLOPT_TIMEOUT, 20);
         return json_decode(curl_exec($client), true);
     }
 
