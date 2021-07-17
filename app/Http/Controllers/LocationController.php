@@ -468,7 +468,7 @@ class LocationController extends Controller{
         })->where('_status', '!=', 4)->count();
 
         $negativos = Product::whereHas('stocks', function($query){
-            $query->where([["stock", "<", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         })->where('_status', '!=', 4)   ->count();
 
         return response()->json([
@@ -696,7 +696,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["stock", "<", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         })->where('_status', '!=', 4)->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
