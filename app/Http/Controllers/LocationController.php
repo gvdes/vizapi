@@ -469,7 +469,7 @@ class LocationController extends Controller{
 
         $negativos = Product::whereHas('stocks', function($query){
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
-        })->where('_status', '!=', 4)   ->count();
+        })->where('_status', '!=', 4)->count();
 
         return response()->json([
             ["alias" => "catalogo", "value" => $counterProducts, "description" => "Artículos en catalogo", "_excel" => 12],
@@ -690,7 +690,7 @@ class LocationController extends Controller{
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["stock", "<", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
