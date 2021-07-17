@@ -175,7 +175,6 @@ class OrderController extends Controller{
     }
 
     public function nextStep(Request $request){
-        /* $order = Order::with('history','products', 'l')->find($request->_order); */
         $order = Order::find($request->_order);
         $_workpoint_to = $order->_workpoint_from;
         $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
@@ -185,17 +184,6 @@ class OrderController extends Controller{
                 });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-        /* $order = Order::with(['products' => function($query){
-            $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-            },'variants', 'stocks' => function($query){
-                $query->where('_workpoint', $this->account->_workpoint);
-            }, 'locations' => function($query)  use ($_workpoint_to){
-                $query->whereHas('celler', function($query) use ($_workpoint_to){
-                    $query->where('_workpoint', $_workpoint_to);
-                });
-            }]);
-        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($request->_order); */
         if($order){
             $_status = $order->_status+1;
             $_printer = isset($request->_printer) ? $request->_printer : null;
@@ -392,21 +380,6 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        /* $groupBy = $order->products->map(function($product){
-            $product->locations->sortBy('path');
-            return $product;
-        })->groupBy(function($product){
-            if(count($product->locations)>0){
-                return explode('-',$product->locations[0]->path)[0];
-            }else{
-                return '';
-            }
-        })->sortBy(function($product){
-            if(count($product->locations)>0){
-                return $product->locations[0]->path;
-            }
-            return '';
-        })->sortKeys(); */
         return response()->json(new OrderResource($order));
     }
 

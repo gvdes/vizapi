@@ -121,7 +121,7 @@ class Kernel extends ConsoleKernel
                 }
             }
         })->everyThreeMinutes()->between('9:00', '22:00');
-
+        /* SALIDAS */
         $schedule->call(function(){
             $CEDIS = \App\WorkPoint::find(1);
             $access = new AccessController($CEDIS->dominio);
@@ -205,5 +205,18 @@ class Kernel extends ConsoleKernel
                 });
             }
         })->hourly()->between('9:00', '22:00');
+        /* Historico de stocks */
+        $schedule->call(function(){
+            $products = Product::whereHas('stocks')->with('stocks')->get();
+            $stocks = $products->map(function($product){
+                return $product->stocks->unique('id')->values()->map(function($stock){
+                    return $stock->pivot;
+                });
+            })->toArray();
+            $insert = array_merge(...$stocks);
+            foreach(array_chunk($insert, 1000) as $toInsert){
+                DB::table('stock_history')->insert($toInsert);
+            }
+        })->dailyAt('22:00');;
     }
 }
