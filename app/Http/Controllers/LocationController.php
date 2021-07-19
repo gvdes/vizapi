@@ -1182,6 +1182,7 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Status" => $producto->status->name,
                 "Familia" => $family,
                 "Categoría" => $category,
                 "Piezas x caja" => $producto->pieces,
