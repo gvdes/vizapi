@@ -409,24 +409,26 @@ class LocationController extends Controller{
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
         $withoutStock = Product::whereHas('stocks', function($query){
-            $query->where([["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
         $withLocation = Product::whereHas('stocks', function($query){
-            $query->where([["stock", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->where('_status', '!=', 4)->count();
         $withoutLocation = Product::whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->where('_status', '!=', 4)->count();
         $withLocationWithoutStock = Product::whereHas('stocks', function($query){
-            $query->where([["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0], ["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -741,7 +743,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->get();
         $res = $productos->map(function($producto) use($categories, $arr_categories){
             $locations = $producto->locations->reduce(function($res, $location){
@@ -779,7 +781,8 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -821,7 +824,8 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -863,7 +867,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["gen", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0], ["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
