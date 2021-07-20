@@ -818,7 +818,8 @@ class LocationController extends Controller{
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
