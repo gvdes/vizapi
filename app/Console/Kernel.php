@@ -104,7 +104,7 @@ class Kernel extends ConsoleKernel
                 if($stocks){
                     $products = Product::with(["stocks" => function($query) use($workpoint){
                         $query->where('_workpoint', $workpoint->id);
-                    }])->where('_status', 1)->get();
+                    }])->where('_status', '!=', 4)->get();
                     $codes_stocks = array_column($stocks, 'code');
                     foreach($products as $product){
                         $key = array_search($product->code, $codes_stocks, true);

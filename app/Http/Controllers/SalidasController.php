@@ -25,7 +25,7 @@ class SalidasController extends Controller{
      * * @param array request[].members - null
      */
     public function seederSalidas(){
-        $access = new AccessController("localhost");
+        $access = new AccessController("192.168.10.3:1618");
         $salidas = $access->getSalidas();
         if($salidas){
             $products = Product::all()->toArray();
@@ -110,7 +110,6 @@ class SalidasController extends Controller{
               $caja_x_ticket[] = ["_cash" => $cash, "num_ticket" => $sale];
             }
         }
-        return $caja_x_ticket;
         $salidas = $access->getLastSalidas($caja_x_ticket);
         if($salidas){
             $products = Product::all()->toArray();
