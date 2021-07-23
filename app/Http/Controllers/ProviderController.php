@@ -24,7 +24,7 @@ class ProviderController extends Controller{
     public function updateProviders(Request $request){
         $date = date("d_m_Y H_i_s", time());
         $start = microtime(true);
-        $clouster = \App\Workpoint::find(1);
+        $clouster = \App\WorkPoint::find(1);
         $access_clouster = new AccessController($clouster->dominio);
         $date = $request->date ? $request->date : null;
         $providers = $access_clouster->getProviders($date);

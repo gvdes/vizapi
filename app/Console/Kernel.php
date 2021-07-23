@@ -209,9 +209,11 @@ class Kernel extends ConsoleKernel
         $schedule->call(function(){
             $products = Product::whereHas('stocks')->with('stocks')->get();
             $stocks = $products->map(function($product){
-                return $product->stocks->unique('id')->values()->map(function($stock){
+                $a = $product->stocks->unique('id')->values()->map(function($stock){
                     return $stock->pivot;
                 });
+                $a->created_at = date("Y/m/d h:m");
+                return $a;
             })->toArray();
             $insert = array_merge(...$stocks);
             foreach(array_chunk($insert, 1000) as $toInsert){
