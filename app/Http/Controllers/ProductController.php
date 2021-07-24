@@ -159,7 +159,7 @@ class ProductController extends Controller{
         $required_products = $request->products ? : false;
         $required_prices = $request->prices ? : false;
         $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
-        return response()->json($raw_data);
+        /* return response()->json($raw_data); */
         $store_success = [];
         $store_fail = [];
         if($request->stores == "all"){
