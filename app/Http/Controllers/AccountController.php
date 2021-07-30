@@ -333,7 +333,7 @@ class AccountController extends Controller{
     }
 
     public function addAcceso(Request $request){
-        $users = User::where('_rol', 1)->get();
+        $users = User::where('_rol', $request->_rol)->get();
         $total = 0;
         foreach($users as $user){
             $account = \App\Account::where([

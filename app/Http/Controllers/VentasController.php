@@ -631,7 +631,8 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    $_workpoints = range(3,13);
+    /* $_workpoints = range(3,13); */
+    $_workpoints = [17];
     /* $_workpoints[] = 1; */
     $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
     /* $workpoints = WorkPoint::where('id', 1)->get(); */
@@ -938,15 +939,15 @@ class VentasController extends Controller{
           $familia = $categories[$key]->name;
           $category = $product->category->name;
       }
-      $prices = $product->prices->reduce(function($res, $price){
+      $prices = $product->prices->sortBy('id')->reduce(function($res, $price){
         $res[$price->name] = $price->pivot->price;
         return $res;
       }, []);
 
-      $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
+      /* $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
         $res["stock_".$stock->name] = $stock->pivot->stock;
         return $res;
-      }, []);
+      }, []); */
 
       $a = [
         "Modelo" => $product->code,
@@ -956,11 +957,12 @@ class VentasController extends Controller{
         "Costo" => $product->cost,
         "Familia" => $familia,
         "Categoría" => $category,
-        "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
+        /* "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
           return $store->pivot->stock + $total;
-        }, 0)
+        }, 0) */
       ];
-      $x = array_merge($a, $prices);
+      return array_merge($a, $prices);
+      /* $x = array_merge($a, $prices); */
       return array_merge($x, $stocks);
     });
     $export = new ArrayExport($result->toArray());

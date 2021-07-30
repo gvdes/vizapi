@@ -159,7 +159,6 @@ class ProductController extends Controller{
         $required_products = $request->products ? : false;
         $required_prices = $request->prices ? : false;
         $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
-        /* return response()->json($raw_data); */
         $store_success = [];
         $store_fail = [];
         if($request->stores == "all"){
@@ -207,7 +206,7 @@ class ProductController extends Controller{
             /* if($required_prices && count($products) >= 1000){
                 $this->restorePrices();
             } */
-            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13])->get();
+            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
         }
@@ -919,6 +918,8 @@ class ProductController extends Controller{
     }
 
     public function syncProducts(Request $required){
+        $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
+        return $stores;
         $clouster = \App\WorkPoint::find(1);
         $access_clouster = new AccessController($clouster->dominio);
         if(strtoupper($request->type) == "COMPLETA"){
@@ -928,7 +929,7 @@ class ProductController extends Controller{
         }
         
         if(strtoupper($request->stores) == "ALL"){
-            $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13])->get();
+            $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
         }

@@ -73,6 +73,7 @@ class OrderController extends Controller{
                 $order->save();
                 // Order was created by
                 $user->order_log()->save($log);
+                $status[] = $log;
             break;
             case 2:
                 $log->_status = 2;
@@ -110,7 +111,7 @@ class OrderController extends Controller{
                 $to_supply = $this->getProcess(4);
                 if($to_supply[0]['active']){
                     $bodegueros = Account::with('user')->whereIn('_rol', [6,7])->whereNotIn('_status', [4,5])->count();
-                    $tickets = 1000;
+                    $tickets = 100000;
                     $in_suppling = Order::where([
                         ['_workpoint_from', $this->account->_workpoint],
                         ['_status', $case] // Status Surtiendo
@@ -171,21 +172,25 @@ class OrderController extends Controller{
                 $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
                 break;
         }
-        return $status;
+        $order->refresh('history');
+        return $order->history->filter(function($statu) use($case){
+            return $statu->id >= $case;
+        })->values();
     }
 
     public function nextStep(Request $request){
         $order = Order::find($request->_order);
         $_workpoint_to = $order->_workpoint_from;
-        $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
-            $query->with(['locations' => function($query)  use ($_workpoint_to){
-                $query->whereHas('celler', function($query) use ($_workpoint_to){
-                    $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
-                });
-            }]);
-        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
         if($order){
+            $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+                $query->with(['locations' => function($query)  use ($_workpoint_to){
+                    $query->whereHas('celler', function($query) use ($_workpoint_to){
+                        $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                    });
+                }]);
+            }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
             $_status = $order->_status+1;
+            return $_status;
             $_printer = isset($request->_printer) ? $request->_printer : null;
             if(($_status>0 && $_status<10) || $_status == 100){
                 $result = $this->log($_status, $order, $_printer);
