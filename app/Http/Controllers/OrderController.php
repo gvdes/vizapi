@@ -190,7 +190,6 @@ class OrderController extends Controller{
                 }]);
             }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
             $_status = $order->_status+1;
-            return $_status;
             $_printer = isset($request->_printer) ? $request->_printer : null;
             if(($_status>0 && $_status<10) || $_status == 100){
                 $result = $this->log($_status, $order, $_printer);
