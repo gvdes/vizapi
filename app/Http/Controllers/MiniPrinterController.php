@@ -255,7 +255,6 @@ class MiniPrinterController extends Controller{
                 $printer->feed(1);
             }
             foreach($products as $product){
-                $pieces = 1;
                 if(intval($product->pivot->stock)>0){
                     $locations = $product->locations->reduce(function($res, $location){
                         return $res.$location->path.",";
@@ -268,33 +267,32 @@ class MiniPrinterController extends Controller{
                     if($product->units->id == 3){
                         $printer->text("CAJAS SOLICITADAS: ");
                         $printer->setTextSize(2,1);
-                        if($requisition->_type == 4){
-                            $printer->text($product->pivot->units);
-                        }else{
-                            $printer->text(round($product->pivot->units));
-                        }
+                        $printer->text($product->pivot->units);
                         $printer->setTextSize(1,1);
                         $printer->text(" x: ");
                         $printer->setTextSize(2,2);
-                        $printer->text("[   ]");
-                        $pieces = $product->pieces;
+                        $printer->text("[  ]");
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                        $amount = $pieces * $product->pivot->units;
                     }else{
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                         $printer->text("CAJAS SOLICITADAS: ");
                         $printer->setTextSize(2,1);
-                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                         $printer->text(round($product->pivot->units/$pieces));
                         $printer->setTextSize(1,1);
                         $printer->text(" x: ");
                         $printer->setTextSize(2,2);
-                        $printer->text("[   ]");
+                        $printer->text("[  ]");
+                        $amount = $product->pivot->units;
                     }
                     $printer->setJustification(Printer::JUSTIFY_RIGHT);
                     $printer->setTextSize(2,2);
-                    $printer->text("{   }\n");
+                    $printer->text("{  }\n");
                     $printer->setTextSize(1,1);
                     $printer->text("UF: ");
                     $printer->setTextSize(2,1);
-                    $printer->text(round($product->pivot->units));
+                    $printer->text($amount);
+
                     $printer->setTextSize(1,1);
                     $printer->text(" - UD: ");
                     $printer->setTextSize(2,1);
@@ -376,14 +374,35 @@ class MiniPrinterController extends Controller{
                         if($product->units->id == 3){
                             $printer->text("CAJAS SOLICITADAS: ");
                             $printer->setTextSize(2,1);
-                            $printer->text(round($product->pivot->units)."\r\n");
-                            $printer->setJustification(Printer::JUSTIFY_RIGHT);
-                            $pieces = $product->pieces;
+                            $printer->text($product->pivot->units);
+                            $printer->setTextSize(1,1);
+                            $printer->text(" x: ");
+                            $printer->setTextSize(2,2);
+                            $printer->text("[  ]");
+                            $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                            $amount = $pieces * $product->pivot->units;
+                        }else{
+                            $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                            $printer->text("CAJAS SOLICITADAS: ");
+                            $printer->setTextSize(2,1);
+                            $printer->text(round($product->pivot->units/$pieces));
+                            $printer->setTextSize(1,1);
+                            $printer->text(" x: ");
+                            $printer->setTextSize(2,2);
+                            $printer->text("[  ]");
+                            $amount = $product->pivot->units;
                         }
+                        $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                        $printer->setTextSize(2,2);
+                        $printer->text("{  }\n");
                         $printer->setTextSize(1,1);
                         $printer->text("UF: ");
                         $printer->setTextSize(2,1);
-                        $printer->text(round($product->pivot->units*$pieces));
+                        $printer->text($amount);
+                        $printer->setTextSize(1,1);
+                        $printer->text("UF: ");
+                        $printer->setTextSize(2,1);
+                        $printer->text($pieces);
                         $printer->setTextSize(1,1);
                         $printer->text(" - UD: ");
                         $printer->setTextSize(2,1);
