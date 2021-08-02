@@ -114,6 +114,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
 
     $router->group(['prefix' => 'provider'], function () use ($router){
         $router->get('/update', 'ProviderController@updateProviders');
+        $router->get('/orders', 'ProviderController@getAllOrders');
     });
 
     $router->group(['prefix' => 'requisition'], function () use ($router){

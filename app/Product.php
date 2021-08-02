@@ -62,6 +62,14 @@ class Product extends Model{
                     ->withPivot('amount', 'costo', 'price', 'total');
     }
 
+    /**
+     * RELATIONSHIPS WITH PROVIDER ORDER'S MODELS
+     */
+    public function providerOrders(){
+        return $this->belongsToMany('App\ProviderOrder', 'product_in_coming', '_product', '_order')
+                    ->withPivot('amount', 'price', 'total');
+    }
+
     public function attributes(){
         return $this->belongsToMany('App\CategoryAttribute', 'product_attributes', '_product', '_attribute')
                     ->withPivot('value');
