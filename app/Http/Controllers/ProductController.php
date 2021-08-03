@@ -164,9 +164,14 @@ class ProductController extends Controller{
         if($request->stores == "all"){
             $products = $access->getUpdatedProducts($date);
             $prices_required = $request->prices;
+            
+            $categories = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
+            $array_families = array_column($categories->toArray(), 'alias');
+
             if($products){
-                DB::transaction(function() use ($products, $required_prices){
+                DB::transaction(function() use ($products, $required_prices, $categories, $array_families){
                     foreach($products as $product){
+                        $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families);
                         $instance = Product::firstOrCreate([
                             'code'=> $product['code']
                         ], [
@@ -175,7 +180,7 @@ class ProductController extends Controller{
                             'description' => $product['description'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
-                            '_category' => $product['_category'],
+                            '_category' => $_category,
                             '_status' => $product['_status'],
                             '_provider' => $product['_provider'],
                             '_unit' => $product['_unit'],
@@ -187,7 +192,7 @@ class ProductController extends Controller{
                         $instance->name = $product['name'];
                         $instance->cost = $product['cost'];
                         $instance->_status = $product['_status'];
-                        $instance->_category = $product['_category'];
+                        $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $product['_provider'];
@@ -223,7 +228,6 @@ class ProductController extends Controller{
             "success" => true,
             "products_count" => count($products),
             "products" => $products,
-            /* "raw_products" => count($raw_data["products"]), */
             "time" => microtime(true) - $start,
             "tiendas actualizadas" => $store_success,
             "tiendas que no se pudieron actualizar" => $store_fail
