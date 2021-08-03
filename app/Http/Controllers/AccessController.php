@@ -142,6 +142,18 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    /**********************
+     * FACTURAS RECIBIDAS *
+     **********************/
+    public function getAllInvoicesReceived(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/invoicesReceived/all');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 50);
+        return json_decode(curl_exec($client), true);
+    }
+
     /*************
      * PRODUCTOS *
      *************/

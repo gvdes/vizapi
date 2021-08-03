@@ -117,6 +117,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/orders', 'ProviderController@getAllOrders');
     });
 
+    $router->group(['prefix' => 'invoices'], function () use ($router){
+        $router->get('/seeder', 'InvoicesReceivedController@getAllOrders');
+    });
+
     $router->group(['prefix' => 'requisition'], function () use ($router){
         $router->get('/', 'RequisitionController@index');
         $router->get('/dashboard', 'RequisitionController@dashboard');
