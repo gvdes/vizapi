@@ -876,6 +876,7 @@ class VentasController extends Controller{
         "Modelo" => $product->code,
         "Código" => $product->name,
         "Descripción" => $product->description,
+        "Codigo de barras" => $product->barcode,
         "Piezas por caja" => $product->pieces,
         "Costo" => $product->cost,
         "Familia" => $familia,

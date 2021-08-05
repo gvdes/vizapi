@@ -33,10 +33,12 @@ class ProductController extends Controller{
             $CEDIS = \App\WorkPoint::find(1);
             $access = new AccessController($CEDIS->dominio);
             $products = $access->getAllProducts();
-            $categories = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
-            $array_families = array_column($categories->toArray(), 'alias');
+            $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
+            $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
+            $array_families = array_column($families->toArray(), 'alias');
+            $result = [];
             if($products){
-                DB::transaction(function() use ($products, $categories, $array_families){
+                DB::transaction(function() use ($products, $families, $categories, $array_families){
                     foreach($products as $product){
                         $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                         $date = $product['created_at'] > "2000-01-01 00:00:00" ? $product['created_at'] : "2020-01-02 00:00:00";
@@ -48,7 +50,7 @@ class ProductController extends Controller{
                             'description' => $product['description'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
-                            '_category' => $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families),
+                            '_category' => $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families),
                             '_status' => $product['_status'],
                             '_provider' => $_provider,
                             '_unit' => $product['_unit'],
@@ -60,7 +62,7 @@ class ProductController extends Controller{
                         $instance->barcode = $product['barcode'];
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
-                        $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families/* , $array_categories */);/* $product['_category'] */
+                        $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
@@ -73,6 +75,7 @@ class ProductController extends Controller{
                 return response()->json([
                     "success" => true,
                     "products" => count($products),
+                    "result" => $result,
                     "time" => microtime(true) - $start
                 ]);
             }
@@ -82,16 +85,17 @@ class ProductController extends Controller{
         }
     }
 
-    public function getCategoryId($family, $category, $categories, $array_families/* , $array_categories */){
+    public function getCategoryId($family, $category, $categories, $families, $array_families/* , $array_categories */){
         $keyFamily = array_search($family, $array_families, true);
         if($keyFamily>0 || $keyFamily === 0){
-            return $categories[$keyFamily]->id;
-            /* $keyCategory = array_search($category, $array_families[$keyFamily], true);
+            $array_categories = array_column($categories[$families[$keyFamily]->id]->toArray(),'alias');
+            $keyCategory = array_search($category, $array_categories, true);
+            /* return $keyCategory; */
             if($keyCategory>0 || $keyCategory === 0){
-                return $categories[$keyFamily][$keyCategory]->id;
+                return $categories[$families[$keyFamily]->id][$keyCategory]->id;
             }else{
-                return 404;
-            } */
+                return $families[$keyFamily]->id;
+            }
         }else{
             return 404;
         }
@@ -165,13 +169,14 @@ class ProductController extends Controller{
             $products = $access->getUpdatedProducts($date);
             $prices_required = $request->prices;
             
-            $categories = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
-            $array_families = array_column($categories->toArray(), 'alias');
+            $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
+            $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
+            $array_families = array_column($families->toArray(), 'alias');
 
             if($products){
-                DB::transaction(function() use ($products, $required_prices, $categories, $array_families){
+                DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
                     foreach($products as $product){
-                        $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $array_families);
+                        $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
                         $instance = Product::firstOrCreate([
                             'code'=> $product['code']
                         ], [
