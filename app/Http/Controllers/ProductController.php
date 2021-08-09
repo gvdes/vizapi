@@ -66,7 +66,7 @@ class ProductController extends Controller{
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
-                        $instance->_status = $product['_status'];
+                        /* $instance->_status = $product['_status']; */
                         $instance->created_at = $date;
                         $instance->updated_at = new \DateTime();
                         $instance->save();
@@ -196,7 +196,7 @@ class ProductController extends Controller{
                         $instance->barcode = $product['barcode'];
                         $instance->name = $product['name'];
                         $instance->cost = $product['cost'];
-                        $instance->_status = $product['_status'];
+                        /* $instance->_status = $product['_status']; */
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
