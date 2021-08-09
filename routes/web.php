@@ -142,6 +142,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/add', 'OrderController@addProduct');
         $router->post('/remove', 'OrderController@removeProduct');
         $router->post('/cancell', 'OrderController@cancelled');
+        $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
     });
 

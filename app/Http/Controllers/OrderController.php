@@ -58,8 +58,6 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order, $_printer = null){
-        /* $process = OrderProcess::all(); */
-        $status = [];
         // Instance or OrderLog to save data
         $log = new OrderLog;
         $log->_order = $order->id;
@@ -73,7 +71,6 @@ class OrderController extends Controller{
                 $order->save();
                 // Order was created by
                 $user->order_log()->save($log);
-                $status[] = $log;
             break;
             case 2:
                 $log->_status = 2;
@@ -443,7 +440,7 @@ class OrderController extends Controller{
     }
 
     public function changeConfig(Request $request){
-        $process = OrderProccess::with(['config' => function($query){
+        $process = OrderProcess::with(['config' => function($query){
             $query->where('_workpoint', $this->account->_workpoint);
         }])->find($request->_status);
         if($process){
