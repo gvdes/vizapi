@@ -204,7 +204,7 @@ class ProductController extends Controller{
                         $instance->updated_at = new \DateTime();
                         $instance->save();
                         $prices = [];
-                        if($required_prices /* && count($products)<1000 */){
+                        if($required_prices && count($products)<1000){
                             foreach($product['prices'] as $price){
                                 $prices[$price['_type']] = ['price' => $price['price']];
                             }
@@ -231,7 +231,6 @@ class ProductController extends Controller{
         }
         return response()->json([
             "success" => true,
-            "products_count" => count($products),
             "products" => $products,
             "time" => microtime(true) - $start,
             "tiendas actualizadas" => $store_success,

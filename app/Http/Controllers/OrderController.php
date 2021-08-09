@@ -175,7 +175,16 @@ class OrderController extends Controller{
         $order->refresh('history');
         return $order->history->filter(function($statu) use($case){
             return $statu->id >= $case;
-        })->values();
+        })->values()->map(function($event){
+            return [
+                "id" => $event->id,
+                "name" => $event->name,
+                "active" => $event->active,
+                "allow" => $event->allow,
+                "details" => json_decode($event->pivot->details),
+                "created_at" => $event->pivot->created_at->format('Y-m-d H:i')
+            ];
+        });
     }
 
     public function nextStep(Request $request){

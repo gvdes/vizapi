@@ -945,10 +945,10 @@ class VentasController extends Controller{
         return $res;
       }, []);
 
-      /* $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
+      $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
         $res["stock_".$stock->name] = $stock->pivot->stock;
         return $res;
-      }, []); */
+      }, []);
 
       $a = [
         "Modelo" => $product->code,
@@ -958,13 +958,13 @@ class VentasController extends Controller{
         "Costo" => $product->cost,
         "Familia" => $familia,
         "Categoría" => $category,
-        /* "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
+        "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
           return $store->pivot->stock + $total;
-        }, 0) */
+        }, 0)
       ];
-      return array_merge($a, $prices);
-      /* $x = array_merge($a, $prices); */
-      return array_merge($x, $stocks);
+      /* return array_merge($a, $prices);
+      $x = array_merge($a, $prices); */
+      return array_merge($a, $stocks);
     });
     $export = new ArrayExport($result->toArray());
     $date = new \DateTime();
