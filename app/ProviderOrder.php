@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProviderOrder extends Model{
     
     protected $table = 'provider_order';
-    protected $fillable = ['serie', 'code', 'ref', '_provider', '_status', 'description', 'total', 'created_at'];
+    protected $fillable = ['serie', 'code', 'ref', '_provider', '_status', 'description', 'total', 'created_at', 'received_at'];
     public $timestamps = false;
     
     /*****************

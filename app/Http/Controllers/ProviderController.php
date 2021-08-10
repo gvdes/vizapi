@@ -94,6 +94,7 @@ class ProviderController extends Controller{
                     "_status" => $order["_status"],
                     "description" => $order["description"],
                     "total" => $order["total"],
+                    "received_at" => $order["received_at"],
                     "created_at" => $order["created_at"]
                     
                 ]);

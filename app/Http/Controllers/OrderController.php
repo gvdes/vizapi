@@ -69,8 +69,7 @@ class OrderController extends Controller{
                 $user = User::find($this->account->_account);
                 $order->_status = 1;
                 $order->save();
-                // Order was created by
-                $user->order_log()->save($log);
+                $user->order_log()->save($log); // Order was created by
             break;
             case 2:
                 $log->_status = 2;
@@ -78,10 +77,9 @@ class OrderController extends Controller{
                 $assign_cash_register = $this->getProcess($case);
                 $_cash = $this->getCash($order, "Secuencial"/* json_decode($assign_cash_register->details)->mood */);
                 $cashRegister = CashRegister::find($_cash);
-                // The system assigned casg register
                 $order->_status = 2;
                 $order->save();
-                $cashRegister->order_log()->save($log);
+                $cashRegister->order_log()->save($log);// The system assigned casg register
             case 3:
                 $log->_status = 3;
                 $log->details = json_encode([]);
