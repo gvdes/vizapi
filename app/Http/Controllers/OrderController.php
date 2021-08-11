@@ -48,7 +48,7 @@ class OrderController extends Controller{
                 $query->with(['prices' => function($query){
                     $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
                 },'variants']);
-            }, 'client', 'price_list', 'status', 'created_by', 'workpoint']);
+            }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
         });
         try{
         }catch(\Exception $e){
@@ -59,50 +59,42 @@ class OrderController extends Controller{
 
     public function log($case, Order $order, $_printer = null){
         // Instance or OrderLog to save data
-        $log = new OrderLog;
-        $log->_order = $order->id;
 
         switch($case){
             case 1:
-                $log->_status = 1;
-                $log->details = json_encode([]);
                 $user = User::find($this->account->_account);
                 $order->_status = 1;
                 $order->save();
+                $log = $this->createLog($order->id, 1, []);
                 $user->order_log()->save($log); // Order was created by
             break;
             case 2:
-                $log->_status = 2;
-                $log->details = json_encode([]);
                 $assign_cash_register = $this->getProcess($case);
                 $_cash = $this->getCash($order, "Secuencial"/* json_decode($assign_cash_register->details)->mood */);
                 $cashRegister = CashRegister::find($_cash);
                 $order->_status = 2;
                 $order->save();
-                $cashRegister->order_log()->save($log);// The system assigned casg register
+                $log = $this->createLog($order->id, 2, []);
+                $cashRegister->order_log()->save($log);// The system assigned cash register
             case 3:
-                $log->_status = 3;
-                $log->details = json_encode([]);
                 if(!$_printer){
                     $printer = Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
                 }else{
                     $printer = Printer::find($_printer);
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                $cellerPrinter->orderReceipt($order);
+                $cellerPrinter->orderReceipt($order); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
                 $validate = $this->getProcess(3); // Verificar si la validación es necesaria
                 if($validate[0]['active']){
-                    $log->details = json_encode([]);
                     $user = User::find($this->account->_account);
                     // Order was passed next status by
+                    $log = $this->createLog($order->id, 3, []);
                     $user->order_log()->save($log);
                     $order->_status = 3;
                     $order->save();
                     break;
                 }
             case 4:
-                $log->_status = 4;
-                $log->details = json_encode([]);
                 $to_supply = $this->getProcess(4);
                 if($to_supply[0]['active']){
                     $bodegueros = Account::with('user')->whereIn('_rol', [6,7])->whereNotIn('_status', [4,5])->count();
@@ -113,9 +105,9 @@ class OrderController extends Controller{
                     ])->count(); // Para saber cuantos pedidos se estan surtiendo
                     if($in_suppling>($bodegueros*$tickets)){
                         // Poner en status 4 (el pedido esta por surtir)
-                        $log->details = json_encode([]);
                         $user = User::find($this->account->_account);
                         // Order was passed next status by
+                        $log = $this->createLog($order->id, 4, []);
                         $user->order_log()->save($log);
                         $order->_status = 4;
                         $order->save();
@@ -130,9 +122,9 @@ class OrderController extends Controller{
                 } */
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
                 $cellerPrinter->orderTicket($order);
-                $log->details = json_encode([]);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
+                $log = $this->createLog($order->id, 5, []);
                 $user->order_log()->save($log);
                 $order->_status = 5;
                 $order->save();
@@ -543,5 +535,13 @@ class OrderController extends Controller{
             case 9:
                 return [6,7];
         }
+    }
+
+    public function createLog($_order, $_status, $details){
+        $log = new OrderLog;
+        $log->_order = $_order;
+        $log->_status = $_status;
+        $log->details = json_encode($details);
+        return $log;
     }
 }
