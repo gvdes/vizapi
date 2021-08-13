@@ -128,7 +128,6 @@ class OrderController extends Controller{
                 $user->order_log()->save($log);
                 $order->_status = 5;
                 $order->save();
-                /* $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]); */
                 break;
             case 6:
                 $validate = $this->getProcess($case); //Verificar si la validación es necesaria
@@ -436,6 +435,9 @@ class OrderController extends Controller{
         if($process){
             if($process->allow){
                 $process->config()->updateExistingPivot($this->account->_workpoint, ['active' => !$process->config[0]->active]);
+                return response()->json([
+                    "success" => true
+                ]);
             }else{
                 return response()->json([
                     "success" => false,

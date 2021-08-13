@@ -14,7 +14,7 @@ class OrderProcess extends Model{
         ->withTimestamps();
     } */
     public function orders(){
-        return $this->belongsToMany('App\Order', 'order_log', '_status', '_order')->using('App\OrderLog');
+        return $this->belongsToMany('App\Order', 'order_log', '_status', '_order')->using('App\OrderLog')->withPivot('_responsable', '_type', 'details', 'created_at');
     }
 
     /* public function config(){
