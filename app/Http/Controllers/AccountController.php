@@ -333,7 +333,11 @@ class AccountController extends Controller{
     }
 
     public function addAcceso(Request $request){
-        $users = User::where('_rol', $request->_rol)->get();
+        if(isset($request->_account)){
+            $users = User::where('id', $request->_account)->get();
+        }else{
+            $users = User::where('_rol', $request->_rol)->get();
+        }
         $total = 0;
         foreach($users as $user){
             $account = \App\Account::where([
@@ -344,7 +348,7 @@ class AccountController extends Controller{
                 $account = \App\Account::create([
                     '_account' => $user->id,
                     '_workpoint' => $request->_workpoint,
-                    '_rol' => $request->rol,
+                    '_rol' => $request->_rol,
                     '_status' => 1,
                 ]);
                 $permissions = \App\Roles::with('permissions_default')->find($account->_rol);
