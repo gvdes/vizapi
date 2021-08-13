@@ -19,6 +19,7 @@ class WithdrawalsController extends Controller{
     public function seeder(){
         $_workpoints = range(3,13);
         $_workpoints[] = 1;
+        $_workpoints[] = 17;
         $workpoints = \App\WorkPoint::whereIn("id", $_workpoints)->get();
         $providers = \App\Provider::all();
         $_providers = array_column($providers->toArray(), "id");
