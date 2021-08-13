@@ -435,7 +435,7 @@ class RequisitionController extends Controller{
 
     public function getPrinter($who, $for){
         /* $dominio = explode(':', $who->dominio)[0]; */
-        $printer = \App\Printer::where([['_type', 2], ['_workpoint', $for->id]])->first();
+        $printer = \App\Printer::where([['_type', 2], ['_workpoint', $who->id]])->first();
         return ["domain" => $printer->ip, "port" => 9100];
         /* switch($who->id){
             case 1:
