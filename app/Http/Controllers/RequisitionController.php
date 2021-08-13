@@ -434,8 +434,10 @@ class RequisitionController extends Controller{
     }
 
     public function getPrinter($who, $for){
-        $dominio = explode(':', $who->dominio)[0];
-        switch($who->id){
+        /* $dominio = explode(':', $who->dominio)[0]; */
+        $printer = Printer::where([['_type', 2], ['_workpoint', $for->id]])->first();
+        return ["domain" => $printer->dominio, "port" => 9100];
+        /* switch($who->id){
             case 1:
                 if($for == 8 || $for == 11 || $for == 13 || $for == 14 || $for == 3 || $for == 4 || $for == 7){
                     return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
@@ -485,7 +487,7 @@ class RequisitionController extends Controller{
             case 15:
                 return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
                 break;
-        }
+        } */
     }
 
     public function getVentaFromStore($folio, $workpoint_id, $caja, $to){
