@@ -335,13 +335,10 @@ class RequisitionController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
-                                        $query->with(['prices' => function($query){
-                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                                        }, 'units', 'variants']);
-                                    }, 'to', 'from', 'created_by', 'log'])
+        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
+                                    ->withCount(["products"])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get();
         return response()->json([
@@ -367,12 +364,9 @@ class RequisitionController extends Controller{
             $date_to->setTime(23,59,59);
         }
         $date= new \DateTime();
-        $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
-                                        $query->with(['prices' => function($query){
-                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                                        }, 'units', 'variants']);
-                                    }, 'to', 'from', 'created_by', 'log'])
+        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                                     ->where('_workpoint_to', $this->account->_workpoint)
+                                    ->withCount(["products"])
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get();

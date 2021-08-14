@@ -22,6 +22,7 @@ class Requisition extends JsonResource{
             'time_life' => $this->time_life,
             'created_at' => $this->created_at->format('Y-m-d H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i'),
+            "models" => $this->products_count,
             'type' => $this->whenLoaded('type'),
             '_type' => $this->when($this->type, function(){
                 return $this->_type;
