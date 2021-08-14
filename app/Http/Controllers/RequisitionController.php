@@ -353,8 +353,18 @@ class RequisitionController extends Controller{
     }
 
     public function dashboard(){
-        if(isset($request->date)){
-            $date = $request->date;
+        if(isset($request->date_from) && isset($request->date_to)){
+            $date_from = new \DateTime($request->date_from);
+            $date_to = new \DateTime($request->date_to);
+            if($request->date_from == $request->date_to){
+                $date_from->setTime(0,0,0);
+                $date_to->setTime(23,59,59);
+            }
+        }else{
+            $date_from = new \DateTime();
+            $date_from->setTime(0,0,0);
+            $date_to = new \DateTime();
+            $date_to->setTime(23,59,59);
         }
         $date= new \DateTime();
         $requisitions = Requisition::with(['type', 'status', 'products' => function($query){
@@ -364,7 +374,7 @@ class RequisitionController extends Controller{
                                     }, 'to', 'from', 'created_by', 'log'])
                                     ->where('_workpoint_to', $this->account->_workpoint)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
-                                    ->whereDate('created_at', $date)
+                                    ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get();
         return response()->json(RequisitionResource::collection($requisitions));
     }
