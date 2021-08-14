@@ -352,7 +352,7 @@ class RequisitionController extends Controller{
         ]);
     }
 
-    public function dashboard(){
+    public function dashboard(Request $request){
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
