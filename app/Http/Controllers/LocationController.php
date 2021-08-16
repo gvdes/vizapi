@@ -647,6 +647,30 @@ class LocationController extends Controller{
         return Excel::download($export, $name.".xlsx");
     }
 
+    public function demo(){
+        $sections = \App\ProductCategory::where([['id', '>', 403], ['deep', 0]])->get();
+
+
+        $families = \App\ProductCategory::where([['id', '>', 403], ['deep', 1]])->get()->groupBy('root');
+        $_families = $families->map(function($family, $key){
+            return array_column($family->toArray(), "id");
+        });
+
+        $categories = \App\ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
+        $_categories = $categories->map(function($category, $key){
+            return array_column($category->toArray(), "id");
+        });
+
+        $product = Product::where("_status", "!=", 4)->first();
+
+        $key = $_families->filter(function($_family) use($product){
+            $key = array_search($product->_category, $_family);
+            return $key === 0 || $key > 0;
+        });
+
+        return response()->json($key);;
+    }
+
     public function conStock(){
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");

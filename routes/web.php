@@ -160,7 +160,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/productABC', 'ProductController@getABC');
         $router->get('/productABCStock', 'ProductController@getABCStock');
         $router->get('/delete', 'AccessController2@next');
-        $router->get('/demo', 'OrderController@getCash');
+        $router->get('/demo', 'LocationController@demo');
     });
 });
 
