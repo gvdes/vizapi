@@ -204,3 +204,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/', 'WithdrawalsController@seeder');
             $router->get('/new', 'WithdrawalsController@getLatest');
         });
+
+        $router->group(['prefix' => 'accounting'], function () use ($router){
+            $router->get('/seederConcepts', 'AccountingController@updateConcepts');
+            $router->get('/seederGastos', 'AccountingController@seederGastos');
+        });

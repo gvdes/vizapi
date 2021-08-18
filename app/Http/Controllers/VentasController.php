@@ -910,7 +910,7 @@ class VentasController extends Controller{
           $product = Product::where('code', $code)->orWhere('name', $code)
           ->whereHas('variants', function($query) use ($code){
             $query->where('barcode', $code);
-          })->with(['stocks', 'prices'])->first();
+          })->with(['stocks', 'prices', 'provider'])->first();
           if(!$product){
             $notFound[] = $code;
           }
@@ -921,11 +921,11 @@ class VentasController extends Controller{
         ->whereHas('variants', function($query) use ($p){
           $query->whereIn('barcode', $p);
         })
-        ->with(['stocks', 'prices'])->get();
+        ->with(['stocks', 'prices', 'provider'])->get();
       }
     }else{
       $cash = CashRegister::all()->toArray();
-      $products = Product::where('_status', '!=', 4)->with(['prices', 'stocks'])->get();
+      $products = Product::where('_status', '!=', 4)->with(['prices', 'stocks', 'provider'])->get();
     }
     
     $categories = \App\ProductCategory::all();
@@ -949,7 +949,7 @@ class VentasController extends Controller{
         $res["stock_".$stock->name] = $stock->pivot->stock;
         return $res;
       }, []);
-
+      $provider = $product->provider ? $product->provider->name : "";
       $a = [
         "Modelo" => $product->code,
         "Código" => $product->name,
@@ -958,6 +958,7 @@ class VentasController extends Controller{
         "Costo" => $product->cost,
         "Familia" => $familia,
         "Categoría" => $category,
+        "Proveedor" => $provider,
         "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
           return $store->pivot->stock + $total;
         }, 0)

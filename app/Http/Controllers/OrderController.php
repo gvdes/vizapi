@@ -132,11 +132,17 @@ class OrderController extends Controller{
             case 6:
                 $validate = $this->getProcess($case); //Verificar si la validación es necesaria
                 if($validate->active){
-                    $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                    $log = $this->createLog($order->id, 6, []);
+                    $user->order_log()->save($log);
+                    $order->_status = 6;
+                    $order->save();
                     break;
                 }
             case 7:
-                $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
+                $log = $this->createLog($order->id, 7, []);
+                $user->order_log()->save($log);
+                $order->_status = 7;
+                $order->save();
                 break;
             case 8:
                 $end_to_sold = $this->getProcess($case);

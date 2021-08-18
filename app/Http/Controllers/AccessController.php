@@ -343,4 +343,39 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);
     }
+
+    /************
+     * RETIRADAS *
+     ************/
+
+    public function getAllGastos(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/accounting/all");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 20);
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getConcepts(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/accounting/concept");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 20);
+        return json_decode(curl_exec($client), true);
+    }
+
+    public function getLatestGastos($lastCode){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/accounting/updated");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_POST, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        $data = json_encode(["code" => $lastCode]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
 }
