@@ -644,7 +644,7 @@ class ProductController extends Controller{
         }
 
         if(isset($request->limit) && $request->limit){
-            $query = $query->limit(20/* $request->limit */);
+            $query = $query->limit($request->limit);
         }
 
         if(isset($request->paginate) && $request->paginate){

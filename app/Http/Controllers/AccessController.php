@@ -301,6 +301,15 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    public function getSellers(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/sale/getSellers");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        return json_decode(curl_exec($client), true);
+    }
+
     /************
      * PREVENTA *
      ************/

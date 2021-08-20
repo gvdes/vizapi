@@ -144,6 +144,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/cancell', 'OrderController@cancelled');
         $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
+        $router->post('/setValidationValue', 'OrderController@setValidationValue');
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){

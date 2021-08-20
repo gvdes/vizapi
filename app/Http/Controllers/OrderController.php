@@ -228,8 +228,9 @@ class OrderController extends Controller{
         try{
             $order = Order::find($request->_order);
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
-                $product = Product::with(['prices' => function($query){
-                    $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+                $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
+                $product = Product::with(['prices' => function($query) use($prices){
+                    $query->whereIn('_type', $prices)->orderBy('_type');
                 }, 'units', 'stocks' => function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 }])->find($request->_product);
@@ -240,7 +241,7 @@ class OrderController extends Controller{
                     if($order->_client==0){
                         $price_list = $order->_price_list;
                     }else{
-                        $price_list = 1;
+                        $price_list = 1; /* PRICE LIST */
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     if($index_price === 0 || $index_price>0){
@@ -291,6 +292,28 @@ class OrderController extends Controller{
                     }
                 }else{
                     return response()->json(["msg" => "Producto no encontrado", "success" => false]);
+                }
+            }else{
+                return response()->json(["msg" => "No puedes agregar productos", "success" => false]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false]);
+        }
+    }
+
+    public function setValidationValue(Request $request){
+        try{
+            $order = Order::find($request->_order);
+            if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
+                $product = $order->products()->where('id', $request->_product)->first();
+                if($product){
+                    if($product->pivot->amount != $request->amount){
+                        return response()->json(["Se recalculan datos"]);
+                    }else{
+                        return response()->json(["Se guarda la cantidad"]);
+                    }
+                }else{
+                    return response()->json(["Se añade el producto a la cesta"]);
                 }
             }else{
                 return response()->json(["msg" => "No puedes agregar productos", "success" => false]);
@@ -440,7 +463,7 @@ class OrderController extends Controller{
         }])->find($request->_status);
         if($process){
             if($process->allow){
-                $process->config()->updateExistingPivot($this->account->_workpoint, ['active' => !$process->config[0]->active]);
+                $process->config()->updateExistingPivot($this->account->_workpoint, ['active' => !$process->config[0]->pivot->active]);
                 return response()->json([
                     "success" => true
                 ]);

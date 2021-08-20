@@ -1049,16 +1049,17 @@ class VentasController extends Controller{
 
   public function seederSellers(){
     $start = microtime(true);
-    $fac = new FactusolController();
-    $fac_sellers = $fac->getSellers();
+    $cedis = \App\WorkPoint::find(1);
+    $access = new AccessController($cedis->dominio);
+    $sellers = $access->getSellers();
     try{
-      if($fac_sellers){
-        DB::transaction(function() use ($fac_sellers){
-          $success = DB::table('sellers')->insert($fac_sellers->toArray());
+      if($sellers){
+        DB::transaction(function() use ($sellers){
+          $success = DB::table('sellers')->insert($sellers);
         });
         return response()->json([
           "success" => true,
-          "agentes" => count($fac_sellers),
+          "agentes" => count($sellers),
           "time" => microtime(true) - $start
         ]);
       }

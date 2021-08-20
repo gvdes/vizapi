@@ -13,6 +13,9 @@ class MiniPrinterController extends Controller{
      * @return void
      */
     public $printer = null;
+    const barcode_width = 2;
+    const barcode_height = 50;
+    
     public function __construct($ip_printer, $port){
         try{
             $connector = new NetworkPrintConnector($ip_printer, $port);
@@ -71,8 +74,8 @@ class MiniPrinterController extends Controller{
                 $printer->setTextSize(1,1);
             }
             $printer->text("--------------------------------------------\n");
-            $printer->setBarcodeHeight(50);
-            $printer->setBarcodeWidth(2);
+            $printer->setBarcodeHeight(barcode_height);
+            $printer->setBarcodeWidth(barcode_width);
             $printer->barcode($requisition->id);
             $printer->feed(1);
             $printer->text("GRUPO VIZCARRA\n");
@@ -137,8 +140,8 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(1,1);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("--------------------------------------------\n");
-        $printer->setBarcodeHeight(50);
-        $printer->setBarcodeWidth(2);
+        $printer->setBarcodeHeight(barcode_height);
+        $printer->setBarcodeWidth(barcode_width);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->barcode("ID-".$order->id);
         $printer->feed(1);
@@ -444,8 +447,8 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(1,1);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("--------------------------------------------\n");
-        $printer->setBarcodeHeight(50);
-        $printer->setBarcodeWidth(2);
+        $printer->setBarcodeHeight(barcode_height);
+        $printer->setBarcodeWidth(barcode_width);
         $printer->barcode($requisition->id);
         $printer->feed(1);
         $printer->text("GRUPO VIZCARRA\n");
@@ -513,8 +516,8 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(1,1);
             $printer->text("--------------------------------------------\n");
             $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->setBarcodeHeight(50);
-            $printer->setBarcodeWidth(2);
+            $printer->setBarcodeHeight(barcode_height);
+            $printer->setBarcodeWidth(barcode_width);
             $printer->barcode($order->id);
             $printer->feed(1);
             $printer->setTextSize(2,1);
@@ -657,8 +660,8 @@ class MiniPrinterController extends Controller{
             $piso_num++;
         }
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setBarcodeHeight(50);
-        $printer->setBarcodeWidth(2);
+        $printer->setBarcodeHeight(barcode_height);
+        $printer->setBarcodeWidth(barcode_width);
         $printer->barcode($order->id);
         $printer->feed(1);
         $printer->setTextSize(1,1);
@@ -687,8 +690,8 @@ class MiniPrinterController extends Controller{
         $printer->text("--------------------------------------------\n");
         $printer->setTextSize(2,1);
         $printer->feed(1);
-        $printer->setBarcodeHeight(50);
-        $printer->setBarcodeWidth(2);
+        $printer->setBarcodeHeight(barcode_height);
+        $printer->setBarcodeWidth(barcode_width);
         $printer->barcode("ID-15568");
         $printer->feed(1);
         $printer->setTextSize(2,1);
