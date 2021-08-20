@@ -54,10 +54,10 @@ class Product extends JsonResource{
                     ];
                 });
             }),
-            'status' => $this->when($this->status, function(){
-                return $this->status;
+            'status' => $this->whenLoaded('stocks', function(){
+                return \App\ProductStatus::find($this->stocks[0]->pivot->_status);
             }),
-            'units' => $this->when($this->units, function(){
+            'units' => $this->whenLoaded('units', function(){
                 return $this->units;
             }),
             'locations' => $this->whenLoaded('locations', function(){

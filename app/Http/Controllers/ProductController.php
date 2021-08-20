@@ -612,7 +612,7 @@ class ProductController extends Controller{
         }
 
         if(isset($request->with_stock) && $request->with_stock){
-            $query = $query->with(['stocks' => function($query){
+            $query = $query->with(['status', 'stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }

@@ -307,7 +307,7 @@ class LocationController extends Controller{
                     ['_workpoint', $this->account->_workpoint]
                 ]);
             }
-        },'category', 'status', 'units',
+        },'category', 'units',
         'cyclecounts' => function($query) use($date_to, $date_from){
             $query->where([["_workpoint", $this->account->_workpoint], ['_created_by', $this->account->_account], ['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
             ->whereIn("_status", [1,2])
@@ -321,7 +321,6 @@ class LocationController extends Controller{
             return $stocks->id == $this->account->_workpoint;
         })->values()->all();
 
-
         if(count($product->cyclecounts)>0){
             $product->stock = "Inventario";
             $product->min = $stock[0]->pivot->min;
@@ -330,11 +329,13 @@ class LocationController extends Controller{
             $product->stock = $stock[0]->pivot->stock;
             $product->min = $stock[0]->pivot->min;
             $product->max = $stock[0]->pivot->max;
+
         }else{
             $product->stock = 0;
             $product->min = 0;
             $product->max = 0;
         }
+        $product->status = \App\ProductStatus::find($stock[0]->pivot->_status);
         $product->stocks_stores = $product->stocks->filter(function($stocks){
             return $stocks->id != $this->account->_workpoint;
         })->values()->map(function($stock){

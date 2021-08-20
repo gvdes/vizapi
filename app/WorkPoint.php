@@ -37,11 +37,11 @@ class WorkPoint extends Model{
      * RELATIONSHIPS WITH REQUISITION'S MODELS
      */
     public function supplied(){
-        return $this->hasManY('App\Requisition','_workpoint_to', 'id');
+        return $this->hasMany('App\Requisition','_workpoint_to', 'id');
     }
     
     public function to_supply(){
-        return $this->hasManY('App\Requisition','_workpoint_from', 'id');
+        return $this->hasMany('App\Requisition','_workpoint_from', 'id');
     }
 
     /**
@@ -49,7 +49,7 @@ class WorkPoint extends Model{
      */
     public function products(){
         return $this->belongsToMany('App\Product', 'product_stock', '_workpoint', '_product')
-                    ->withPivot('min', 'max', 'stock');
+                    ->withPivot('min', 'max', 'stock', 'gen', 'exh', '_status');
     }
 
     public function printers(){

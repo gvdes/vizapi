@@ -542,9 +542,10 @@ class RequisitionController extends Controller{
                 ['max', '>', 0]
             ])->orWhere([
                 ['_workpoint', $workpoint_to],
-                ['stock', '>', 0]
+                ['stock', '>', 0],
+                ['_status', '=', 1]
             ]);
-        }, '>', 1)->where('_status', '=', 1)->whereIn('_category', $_categories)->get();
+        }, '>', 1)/* ->where('_status', '=', 1) */->whereIn('_category', $_categories)->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
