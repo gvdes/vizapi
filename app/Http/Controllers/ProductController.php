@@ -611,11 +611,11 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        if(isset($request->with_stock) && $request->with_stock){
-            $query = $query->with(['status', 'stocks' => function($query){
-                $query->where('_workpoint', $this->account->_workpoint);
-            }]);
-        }
+        $query = $query->with(['status', 'stocks' => function($query){
+            $query->where('_workpoint', $this->account->_workpoint);
+        }]);
+        /* if(isset($request->with_stock) && $request->with_stock){
+        } */
 
         if(isset($request->with_locations) && $request->with_locations){
             $query = $query->with(['locations' => function($query){
