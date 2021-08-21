@@ -795,9 +795,9 @@ class ProductController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $categories = \App\ProductCategory::where('deep', 0)->get();
+        $categories = \App\ProductCategory::where('deep', "<=" ,2)->get();
         $ids_categories = array_column($categories->toArray(), 'id');
-        $products = Product::with(['provider','category','sales' => function($query) use($date_from, $date_to){
+        $products = Product::with(['category','sales' => function($query) use($date_from, $date_to){
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 7);
@@ -835,17 +835,37 @@ class ProductController extends Controller{
                 }
             }
             if($product->category->deep == 0){
-                $family = $product->category->name;
+                $section = $product->category->name;
+                $family = "";
                 $category = "";
+            }else if($product->category->deep == 1){
+                $key = array_search($product->category->root, $ids_categories);
+                if($key === 0 || $key > 0){
+                    $section = $categories[$key]->name;
+                    $family = $product->category->name;
+                    $category = "";
+                }else{
+                    $section = $categories->category->root;
+                    $family = $product->category->name;
+                    $category = "";
+                }
             }else{
-                $key = array_search($product->category->root, $ids_categories, true);
-                if($product->category === 2){
-                    $key = array_search($categories[$key]->root, $ids_categories, true);
+                $key = array_search($product->category->root, $ids_categories);
+                if($key === 0 || $key > 0){
                     $family = $categories[$key]->name;
+                    $key2 = array_search($categories[$key]->root, $ids_categories);
+                    if($key2 === 0 || $key2 > 0){
+                        $section = $categories[$key2]->name;
+                        $category = $product->category->name;
+                    }else{
+                        $section = $categories[$key]->root;
+                        $category = $product->category->name;
+                    }
+                }else{
+                    $section = "";
+                    $family = $categories->category->root;
                     $category = $product->category->name;
                 }
-                $family = $categories[$key]->name;
-                $category = $product->category->name;
             }
             $prices = $product->prices->reduce(function($res, $price){
                 $res[$price->name] = $price->pivot->price;
@@ -856,6 +876,7 @@ class ProductController extends Controller{
                 "Código" => $product->name,
                 "Descripción" => $product->description,
                 /* "Proveedor" => $product->provider->name, */
+                "Sección" => $section,
                 "Familia" => $family,
                 "Categoria" => $category,
                 "Costo" => $product->cost,
@@ -869,7 +890,6 @@ class ProductController extends Controller{
                 "Ganancia bruta" => $venta_total - $costo_total
             ];
         })->sortByDesc('Valor del inventario');
-
         $venta_total = $products->sum('Venta total');
         $valor_inventario = $products->sum('Valor del inventario');
         $ganancia_total = $products->sum('Ganancia bruta');

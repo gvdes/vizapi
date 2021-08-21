@@ -235,7 +235,7 @@ class OrderController extends Controller{
                     $query->where('_workpoint', $this->account->_workpoint);
                 }])->find($request->_product);
                 if($product){
-                    if(count($product->stocks)>0 && $product->stocks[0]->pivot->_status != 1){ return response()->json(["msg" => "No puedes agregar ese producto", "success" => false]); }
+                    //if(count($product->stocks)>0 && $product->stocks[0]->pivot->_status != 1){ return response()->json(["msg" => "No puedes agregar ese producto", "success" => false]); }
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */

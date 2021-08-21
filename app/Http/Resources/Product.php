@@ -58,7 +58,7 @@ class Product extends JsonResource{
                 return \App\ProductStatus::find($this->stocks[0]->pivot->_status);
             }), */
             'status' => $this->whenLoaded('status', function(){
-                $this->status;
+                return $this->status;
             }),
             'units' => $this->whenLoaded('units', function(){
                 return $this->units;
