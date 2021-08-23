@@ -39,6 +39,6 @@ class Order extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'product_ordered', '_order', '_product')
-                    ->withPivot('kit', 'units', 'price', '_price_list', "comments", "total", "amount", '_supply_by');
+                    ->withPivot('kit', 'units', 'price', '_price_list', "comments", "total", "amount", '_supply_by', 'toDelivered');
     }
 }

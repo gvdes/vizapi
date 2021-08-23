@@ -130,8 +130,9 @@ class OrderController extends Controller{
                 $order->save();
                 break;
             case 6:
-                $validate = $this->getProcess($case); //Verificar si la validación es necesaria
-                if($validate->active){
+                $validate = $this->getProcess(6); //Verificar si la validación es necesaria
+                if($validate[0]['active']){
+                    $user = User::find($this->account->_account);
                     $log = $this->createLog($order->id, 6, []);
                     $user->order_log()->save($log);
                     $order->_status = 6;
@@ -139,6 +140,7 @@ class OrderController extends Controller{
                     break;
                 }
             case 7:
+                $user = User::find($this->account->_account);
                 $log = $this->createLog($order->id, 7, []);
                 $user->order_log()->save($log);
                 $order->_status = 7;
@@ -302,17 +304,29 @@ class OrderController extends Controller{
         }
     }
 
-    public function setValidationValue(Request $request){
+    public function setDeliveryValue(Request $request){
         try{
             $order = Order::find($request->_order);
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $product = $order->products()->where('id', $request->_product)->first();
                 if($product){
-                    if($product->pivot->amount != $request->amount){
+                    $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                    $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                    $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                    if($order->_client==0){
+                        $price_list = $order->_price_list;
+                    }else{
+                        $price_list = 1; /* PRICE LIST */
+                    }
+                    $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
+
+                    $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
+                    return response()->json(["success" => true]);
+                    /* if($product->pivot->amount != $request->amount){
                         return response()->json(["Se recalculan datos"]);
                     }else{
                         return response()->json(["Se guarda la cantidad"]);
-                    }
+                    } */
                 }else{
                     return response()->json(["Se añade el producto a la cesta"]);
                 }
