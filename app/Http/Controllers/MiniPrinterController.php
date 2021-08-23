@@ -75,8 +75,8 @@ class MiniPrinterController extends Controller{
                 $printer->setTextSize(1,1);
             }
             $printer->text("--------------------------------------------\n");
-            $printer->setBarcodeHeight($barcode_height);
-            $printer->setBarcodeWidth($barcode_width);
+            $printer->setBarcodeHeight($this->barcode_height);
+            $printer->setBarcodeWidth($this->barcode_width);
             $printer->barcode($requisition->id);
             $printer->feed(1);
             $printer->text("GRUPO VIZCARRA\n");
