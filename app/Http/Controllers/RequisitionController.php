@@ -645,7 +645,9 @@ class RequisitionController extends Controller{
             case 7:
             case 13:
             case 9:
-                return range(405, 447);
+                $arr = range(405, 447);
+                $arr[] = 791;
+                return $arr;
                 break;
             case 6:
             case 10:
