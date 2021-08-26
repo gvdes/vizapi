@@ -105,9 +105,12 @@ class SalidasController extends Controller{
         $series = range(1,9);
         $caja_x_ticket = [];
         foreach($series as $cash){
-            $sale = OrderSupply::where('serie', $cash)->whereDate('created_at', '>' ,'2021-01-27')->max('num_ticket');
+            $sale = OrderSupply::where('serie', $cash)->whereDate('created_at', '>' ,'2021-01-27')->max('created_at');
             if($sale){
-              $caja_x_ticket[] = ["_cash" => $cash, "num_ticket" => $sale];
+                $date = explode(' ', $sale);
+                $caja_x_ticket[] = ["_cash" => $cash, "created_at" => $sale, "date" => $date[0], "hour" => $date[1]];
+            }else{
+                $caja_x_ticket[] = ["_cash" => $cash, "created_at" => "2021-01-27 00:00:00", "date" => "2021-01-27", "hour" => "00:00:00"];
             }
         }
         $salidas = $access->getLastSalidas($caja_x_ticket);

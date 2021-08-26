@@ -177,6 +177,7 @@ class ProductController extends Controller{
                 DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
                     foreach($products as $product){
                         $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
+                        $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                         $instance = Product::firstOrCreate([
                             'code'=> $product['code']
                         ], [
@@ -187,7 +188,7 @@ class ProductController extends Controller{
                             'pieces' => $product['pieces'],
                             '_category' => $_category,
                             '_status' => $product['_status'],
-                            '_provider' => $product['_provider'],
+                            '_provider' => $_provider,
                             '_unit' => $product['_unit'],
                             'created_at' => new \DateTime(),
                             'updated_at' => new \DateTime(),
@@ -200,7 +201,7 @@ class ProductController extends Controller{
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
-                        $instance->_provider = $product['_provider'];
+                        $instance->_provider = $_provider;
                         $instance->updated_at = new \DateTime();
                         $instance->save();
                         $prices = [];
