@@ -93,14 +93,31 @@ class RequisitionController extends Controller{
     public function addProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by){
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $to = $requisition->_workpoint_to;
                 $product = Product::with(['units', 'stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
                 }])->find($request->_product);
+
                 $amount = isset($request->amount) ? $request->amount : 1;
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
+                $units = $this->getAmount($product, $amount, $_supply_by);
                 $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => $stock]]);
+                $cost = $product->cost;
+                $total = $cost * $units;
+
+                $requisition->products()->syncWithoutDetaching([
+                    $request->_product => [
+                        'amount' => $amount,
+                        '_supply_by' => $_supply_by,
+                        'units' => $units,
+                        'cost' => $cost,
+                        'total' => $total,
+                        'comments' => $request->comments,
+                        'stock' => $stock
+                    ]
+                ]);
+
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -108,12 +125,16 @@ class RequisitionController extends Controller{
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
                     "pieces" => $product->pieces,
+                    "units" => $product->units,
                     "ordered" => [
                         "amount" => $amount,
+                        "_supply_by" => $_supply_by,
+                        "units" => $units,
+                        "cost" => $cost,
+                        "total" => $total,
                         "comments" => $request->comments,
                         "stock" => $stock
-                    ],
-                    "units" => $product->units
+                    ]
                 ]);
             }else{
                 return response()->json(["msg" => "No puedes agregar productos"]);
@@ -124,6 +145,7 @@ class RequisitionController extends Controller{
     }
 
     public function addMassiveProduct(Request $request){
+        /* ACTUALIZAR */
         $requisition = Requisition::find($request->_requisition);
         $added = 0;
         $fail = [];
@@ -159,9 +181,7 @@ class RequisitionController extends Controller{
     public function removeProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by){
-                /* $product = Product::with('prices', 'units')->find($request->_product);
-                $amount = isset($request->amount) ? $request->amount : 1; */
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $requisition->products()->detach([$request->_product]);
                 return response()->json(["success" => true]);
             }else{
@@ -335,11 +355,7 @@ class RequisitionController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log','products' => function($query){
-                                        $query->with(['prices' => function($query){
-                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                                        }, 'units', 'variants']);
-                                    }])
+        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->withCount(["products"])
@@ -349,6 +365,7 @@ class RequisitionController extends Controller{
             "workpoints" => $workpoints,
             "types" => $types,
             "status" => $status,
+            "units" => \App\ProductUnit::all(),
             "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
@@ -384,7 +401,8 @@ class RequisitionController extends Controller{
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query->with(['units', 'variants']);
-        }, 'to', 'from', 'created_by', 'log'])->find($id);
+        }, 'to', 'from', 'created_by', 'log'])
+        ->withCount(["products"])->find($id);
         return response()->json(new RequisitionResource($requisition));
     }
 
@@ -666,6 +684,23 @@ class RequisitionController extends Controller{
                 $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669), range(448, 514), range(553, 587), range(780, 786)];
                 return array_merge_recursive(...$_categories);
                 break;
+        }
+    }
+
+    public function getAmount($product, $amount, $_supply_by){
+        switch ($_supply_by){
+            case 1:
+                return $amount;
+            break;
+            case 2:
+                return $amount * 12;
+            break;
+            case 3:
+                return ($amount * $product->pieces);
+            break;
+            case 4:
+                return round($amount * ($product->pieces/2));
+            break;
         }
     }
 }

@@ -23,4 +23,12 @@ class CashRegister extends Model{
   public function order_log(){
     return $this->morphMany('App\OrderLog', 'responsable', '_type', '_responsable', 'id');
   }
+
+  public function status(){
+    return $this->belongsTo('App\CashStatus', '_status');
+  }
+
+  public function cashier(){
+    return $this->belongsTo('App\User', '_account');
+  }
 }

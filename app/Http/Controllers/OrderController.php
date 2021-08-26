@@ -398,6 +398,16 @@ class OrderController extends Controller{
             $query->where('_workpoint', $this->account->_workpoint);
         }])->orderBy('id')->get();
 
+        $cashRegisters = \App\CashRegister::with(['status', 'cashier'])->where('_workpoint', $this->account->_workpoint)->get()->map(function($cash){
+            return [
+                "id" => $cash->id,
+                "name" => $cash->name,
+                "num_cash" => $cash->num_cash,
+                "status" => $cash->status,
+                "cashier" => $cash->cashier
+            ];
+        });
+
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]
         ];
@@ -411,6 +421,7 @@ class OrderController extends Controller{
         return response()->json([
             'status' => $status,
             'printers' => $printers,
+            'cash_registers' => $cashRegisters,
             'orders' => OrderResource::collection($orders)
         ]);
     }
@@ -493,6 +504,34 @@ class OrderController extends Controller{
                 "success" => false,
                 "msg" => "No se encontro el status"
             ]);
+        }
+    }
+
+    public function changeCashRegisterStatus(Request $request){
+        $cash = \App\CashRegister::find($request->_cash);
+        if($cash){
+            if(in_array($request->_status, range(1,3))){
+                $cash->_status = $request->_status;
+                $cash->fresh('status');
+                $success = $cash->save();
+                return response()->json(["msg" => "", "success" => $success, "status" => $cash->status]);
+            }else{
+                return response()->json(["msg" => "Status no válido", "success" => false]);
+            }
+        }else{
+            return response()->json(["msg" => "No se ha encontrado la caja", "success" => false]);
+        }
+    }
+
+    public function assignCashier(Request $request){
+        $cash = \App\CashRegister::find($request->_cash);
+        if($cash){
+            $cash->_account = $request->_account;
+            $cash->fresh('cashier');
+            $success = $cash->save();
+            return response()->json(["msg" => "", "success" => $success, "cashier" => $cash->cashier]);
+        }else{
+            return response()->json(["msg" => "No se ha encontrado la caja", "success" => false]);
         }
     }
 

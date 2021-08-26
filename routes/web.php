@@ -117,6 +117,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/orders', 'ProviderController@getAllOrders');
     });
 
+    $router->group(['prefix' => 'cash'], function () use ($router){
+        $router->post('/status', 'OrderController@changeCashRegisterStatus');
+        $router->post('/assignCashier', 'OrderController@assignCashier');
+    });
+
     $router->group(['prefix' => 'invoices'], function () use ($router){
         $router->get('/seeder', 'InvoicesReceivedController@getAllOrders');
     });
