@@ -135,6 +135,7 @@ class OrderController extends Controller{
                 $a = $order->history->filter(function($log){
                     return $log->pivot->_status == 2;
                 })->values()->all();
+                $_workpoint_to = $order->_workpoint_from;
                 $cash_ = $a[0]->pivot->responsable;
                 $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
