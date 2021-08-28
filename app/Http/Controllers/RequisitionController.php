@@ -192,7 +192,7 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function log($case, Requisition $requisition){
+    public function log($case, Requisition $requisition, $_printer = null, $actors){
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
@@ -205,48 +205,47 @@ class RequisitionController extends Controller{
             $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
         }
         switch($case){
-            case 1:
+            case 1: /* LEVANTAR PEDIDO*/
                 $requisition->log()->attach(1, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
             break;
-            case 2:
-                // RECARGAR STOCKS DE LA REQUISISION
-                //RECARGAR LA REQUISIÓN
+            case 2: /* POR SURTIR */
                 $_workpoint_to = $requisition->_workpoint_to;
-                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                $requisition->log()->attach(2, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                ])]);
+                $requisition->fresh(['log']);
+                //IMPRESION DE COMPROBANTE EN TIENDA
+                $printer = $printer ? \App\Printer::find($_printer) : $Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                $miniprinter->requisitionReceipt($requisition);
+                return true;
+            break;
+            case 3: /* SURTIENDO */
+                $_workpoint_to = $requisition->_workpoint_to;
+                $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
                         $query->whereHas('celler', function($query) use ($_workpoint_to){
                             $query->where('_workpoint', $_workpoint_to);
                         });
                     }]);
                 }]);
-                
-                //IMPRESION EN LA BODEGA
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                if($cellerPrinter->requisitionTicket($requisition)){
+                $printer = $printer ? \App\Printer::find($_printer) : $Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                if($miniprinter->requisitionTicket($requisition)){
                     $requisition->printed = $requisition->printed +1;
                     $requisition->save();
                 }
-                //IMPRESION DE COMPROBANTE EN TIENDA
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                $storePrinter->requisitionReceipt($requisition);
-                $requisition->log()->attach(2, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                return true;
-            break;
-            case 3:
+
+
                 $requisition->log()->attach(3, [ 'details' => json_encode([
-                    "responsable" => $responsable
+                    "responsable" => $responsable,
+                    "actors" => $actors
                 ])]);
                 return true;
             break;
-            case 4:
+            case 4: /* POR VALIDAR EMBARQUE */
                 $requisition->log()->attach(4, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
@@ -408,17 +407,31 @@ class RequisitionController extends Controller{
 
     public function nextStep(Request $request){
         $requisition = Requisition::find($request->id);
-        $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
-        if($status>0 && $status<12){
-            $result = $this->log($status, $requisition);
-            if($result){
-                $requisition->_status= $status;
-                $requisition->save();
-                $requisition->load(['type', 'status', 'products', 'to', 'from', 'created_by', 'log']);
+        if($requisition){
+            $_status = $requisition->_status+1;
+            $_printer = isset($request->_printer) ? $request->_printer : null;
+            $_actors = isset($request->_actors) ? $request->_actors : null;
+            $process = Process::all()->toArray();
+            if(in_array($status, array_column($process, "id"))){
+                $result = $this->log($status, $requisition, $_printer, $_actors);
+                if($result){
+                    $requisition->refresh(['status', 'log', 'products']);
+                    return response()->json(["success" => $result/* , 'order' => new RequisitionResource($requisition) */]);
+                }else{
+                    return response()->json(["success" => $result, "msg" => "No se pudo cambiar el status"]);
+                }
             }
-            return response()->json(["success" => $result, 'order' => new RequisitionResource($requisition)]);
+            return response()->json(["success" => false, "msg" => "Status no válido"]);
         }
-        return response()->json(["success" => false, "msg" => "Status no válido"]);
+        return response()->json([
+            "success" => false,
+            "msg" => "Pedido no encontrado",
+            "updates" =>[
+                "status" => null,
+                "products" => null,
+                "log" => null
+            ]
+        ]);
     }
 
     public function reimpresion(Request $request){
@@ -461,63 +474,6 @@ class RequisitionController extends Controller{
         $requesitions = Requisition::where($where);
 
         return response()->json();
-    }
-
-    public function getPrinter($who, $for){
-        /* $dominio = explode(':', $who->dominio)[0]; */
-        $printer = \App\Printer::where([['_type', 2], ['_workpoint', $who->id]])->first();
-        return ["domain" => $printer->ip, "port" => 9100];
-        /* switch($who->id){
-            case 1:
-                if($for == 8 || $for == 11 || $for == 13 || $for == 14 || $for == 3 || $for == 4 || $for == 7){
-                    return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
-                }else{
-                    return ["domain" => env("PRINTER_ARRIBA"), "port" => 9100];
-                }
-                break;
-            case 2:
-                return ["domain" => "187.202.55.154", "port" => 4065];
-                break;
-            case 3:
-                return ["domain" => "192.168.10.181", "port" => 9100];
-                break;
-            case 4:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 5:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 6:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 7:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 8:
-                return ["domain" => $dominio, "port" => 4066];
-                break;
-            case 9:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 10:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 11:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 12:
-                return ["domain" => $dominio, "port" => 4066];
-                break;
-            case 13:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 14:
-                return ["domain" => $dominio, "port" => 9100];
-                break;
-            case 15:
-                return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
-                break;
-        } */
     }
 
     public function getVentaFromStore($folio, $workpoint_id, $caja, $to){
