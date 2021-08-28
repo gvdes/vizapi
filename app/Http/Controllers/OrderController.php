@@ -136,6 +136,13 @@ class OrderController extends Controller{
                     return $log->pivot->_status == 2;
                 })->values()->all();
                 $cash_ = $a[0]->pivot->responsable;
+                $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                        });
+                    }]);
+                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
                 $cellerPrinter->orderTicket($order, $cash_);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
@@ -438,7 +445,7 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        return response()->json($cash);
+        return response()->json($order);
     }
 
     public function config(){
