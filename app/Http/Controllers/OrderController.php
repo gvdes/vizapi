@@ -90,11 +90,11 @@ class OrderController extends Controller{
                     $printer = Printer::find($_printer);
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                $a = $order->history->filter(function($log){
+                /* $a = $order->history->filter(function($log){
                     return $log->pivot->_status == 2;
                 })->values()->all();
-                $cash_ = $a[0]->pivot->responsable;
-                $cellerPrinter->orderReceipt($order, $cash_); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
+                $cash_ = $a[0]->pivot->responsable; */
+                $cellerPrinter->orderReceipt($order/* , $cash_ */); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
                 $validate = $this->getProcess(3); // Verificar si la validación es necesaria
                 if($validate[0]['active']){
                     $user = User::find($this->account->_account);
@@ -135,7 +135,7 @@ class OrderController extends Controller{
                 $a = $order->history->filter(function($log){
                     return $log->pivot->_status == 2;
                 })->values()->all();
-                $_workpoint_to = $order->_workpoint_from;
+                /* $_workpoint_to = $order->_workpoint_from;
                 $cash_ = $a[0]->pivot->responsable;
                 $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
@@ -143,8 +143,8 @@ class OrderController extends Controller{
                             $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                         });
                     }]);
-                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-                $cellerPrinter->orderTicket($order, $cash_);
+                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']); */
+                $cellerPrinter->orderTicket($order/* , $cash_ */);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
                 $log = $this->createLog($order->id, 5, []);

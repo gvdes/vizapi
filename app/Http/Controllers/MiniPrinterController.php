@@ -89,7 +89,7 @@ class MiniPrinterController extends Controller{
         }
     }
 
-    public function orderReceipt($order, $cash){
+    public function orderReceipt($order/* , $cash */){
         $printer = $this->printer;
         if(!$printer){
             return false;
@@ -119,7 +119,8 @@ class MiniPrinterController extends Controller{
         /* $printer->text("---  "); */
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
-        $printer->text("--  ".$cash->name."  --\n");
+        /* $printer->text("--  ".$cash->name."  --\n"); */
+        $printer->text("--  CAJA 1  --\n");
         $printer->setEmphasis(false);
         $printer->setTextSize(1,1);
         /* $printer->text("---\n"); */
@@ -533,7 +534,7 @@ class MiniPrinterController extends Controller{
         }
     }
 
-    public function orderTicket(Order $order, $cash){
+    public function orderTicket(Order $order/* , $cash */){
         $printer = $this->printer;
         if(!$printer){
             return false;
@@ -562,8 +563,8 @@ class MiniPrinterController extends Controller{
         $printer->text("Pedido para ".$order->name." \n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
-        $printer->setTextSize(2,1);
-        $printer->text("--  ".$cash->name."  --\n");
+        /* $printer->setTextSize(2,1);
+        $printer->text("--  ".$cash->name."  --\n"); */
         $printer->setTextSize(1,1);
         /* if($order->notes){
             $printer->setTextSize(2,1);
