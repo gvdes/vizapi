@@ -58,6 +58,12 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order, $_printer = null){
+        /* 
+        $a = $order->history->filter(function($log){
+            return $log->pivot->_status == 2;
+        })->values()->all();
+        $cash = $a[0]->pivot->responsable;
+         */
         // Instance or OrderLog to save data
 
         switch($case){
@@ -76,6 +82,7 @@ class OrderController extends Controller{
                 $order->save();
                 $log = $this->createLog($order->id, 2, []);
                 $cashRegister->order_log()->save($log);// The system assigned cash register
+                $order->refresh('history');
             case 3:
                 if(!$_printer){
                     $printer = Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
@@ -83,7 +90,11 @@ class OrderController extends Controller{
                     $printer = Printer::find($_printer);
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                $cellerPrinter->orderReceipt($order); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
+                $a = $order->history->filter(function($log){
+                    return $log->pivot->_status == 2;
+                })->values()->all();
+                $cash_ = $a[0]->pivot->responsable;
+                $cellerPrinter->orderReceipt($order, $cash_); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
                 $validate = $this->getProcess(3); // Verificar si la validación es necesaria
                 if($validate[0]['active']){
                     $user = User::find($this->account->_account);
@@ -121,7 +132,11 @@ class OrderController extends Controller{
                     $printer = Printer::find($_printer);
                 } */
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                $cellerPrinter->orderTicket($order);
+                $a = $order->history->filter(function($log){
+                    return $log->pivot->_status == 2;
+                })->values()->all();
+                $cash_ = $a[0]->pivot->responsable;
+                $cellerPrinter->orderTicket($order, $cash_);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
                 $log = $this->createLog($order->id, 5, []);
@@ -423,7 +438,7 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        return response()->json(new OrderResource($order));
+        return response()->json($cash);
     }
 
     public function config(){
@@ -528,8 +543,16 @@ class OrderController extends Controller{
         switch($mood){
             case "Secuencial":
                 // 1.- Obtener cajas
-                $cashRegisters = CashRegister::withCount('order_log')->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
+                $date_from = new \DateTime();
+                $date_from->setTime(0,0,0);
+                $date_to = new \DateTime();
+                $date_to->setTime(23,59,59);
+                $cashRegisters = CashRegister::withCount(['order_log' => function($query) use($date_from, $date_to){
+                    $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
+                }])->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
                 $inCash = array_column($cashRegisters->toArray(), 'order_log_count');
+                /* $cashRegisters = CashRegister::withCount('order_log')->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
+                $inCash = array_column($cashRegisters->toArray(), 'order_log_count'); */
                 $_cash = $cashRegisters[array_search(min($inCash), $inCash)]->id;
                 return $_cash;
         }
