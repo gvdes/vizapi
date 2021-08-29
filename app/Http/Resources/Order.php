@@ -48,7 +48,8 @@ class Order extends JsonResource{
                         "id" => $event->id,
                         "name" => $event->name,
                         "details" => json_decode($event->pivot->details),
-                        "created_at" => $event->pivot->created_at->format('Y-m-d H:i')
+                        "created_at" => $event->pivot->created_at->format('Y-m-d H:i')/* ,
+                        "responsable" => $event->pivot->responsable */
                     ];
                 });
             }),

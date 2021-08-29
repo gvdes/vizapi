@@ -82,7 +82,6 @@ class OrderController extends Controller{
                 $order->save();
                 $log = $this->createLog($order->id, 2, []);
                 $cashRegister->order_log()->save($log);// The system assigned cash register
-                $order->refresh('history');
             case 3:
                 if(!$_printer){
                     $printer = Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
@@ -90,11 +89,19 @@ class OrderController extends Controller{
                     $printer = Printer::find($_printer);
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                /* $a = $order->history->filter(function($log){
+                $_workpoint_to = $order->_workpoint_from;
+                $order->refresh(['created_by', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                        });
+                    }]);
+                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+                $cash_ = $order->history->filter(function($log){
                     return $log->pivot->_status == 2;
-                })->values()->all();
-                $cash_ = $a[0]->pivot->responsable; */
-                $cellerPrinter->orderReceipt($order/* , $cash_ */); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
+                })->values()->all()[0];
+                /* $cash_ = $a[0]->pivot->responsable; */
+                $cellerPrinter->orderReceipt($order, $cash_); /* INVESTIGAR COMO SALTAR A LA SIGUIENTE SENTENCIA DESPUES DE X TIEMPO */
                 $validate = $this->getProcess(3); // Verificar si la validación es necesaria
                 if($validate[0]['active']){
                     $user = User::find($this->account->_account);
@@ -109,7 +116,7 @@ class OrderController extends Controller{
                 $to_supply = $this->getProcess(4);
                 if($to_supply[0]['active']){
                     $bodegueros = Account::with('user')->whereIn('_rol', [6,7])->whereNotIn('_status', [4,5])->count();
-                    $tickets = 100000;
+                    $tickets = 100000000;
                     $in_suppling = Order::where([
                         ['_workpoint_from', $this->account->_workpoint],
                         ['_status', $case] // Status Surtiendo
@@ -126,25 +133,29 @@ class OrderController extends Controller{
                     }
                 }
             case 5:
-                $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 /* if(!$_printer){
                 }else{
                     $printer = Printer::find($_printer);
                 } */
-                $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-                $a = $order->history->filter(function($log){
-                    return $log->pivot->_status == 2;
-                })->values()->all();
-                /* $_workpoint_to = $order->_workpoint_from;
-                $cash_ = $a[0]->pivot->responsable;
+                $_workpoint_to = $order->_workpoint_from;
+                
                 $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
                         $query->whereHas('celler', function($query) use ($_workpoint_to){
                             $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                         });
                     }]);
-                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']); */
-                $cellerPrinter->orderTicket($order/* , $cash_ */);
+                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+                $cash_ = $order->history->filter(function($log){
+                    return $log->pivot->_status == 2;
+                })->values()->all()[0];
+                $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint], ['name', 'LIKE', '%'.$cash_->pivot->responsable->num_cash.'%']])->first();
+                if(!$printer){
+                    $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                }
+                $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
+                /* $cash_ = $cash_[0]->pivot->responsable; */
+                $cellerPrinter->orderTicket($order, $cash_);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
                 $log = $this->createLog($order->id, 5, []);
@@ -446,7 +457,7 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        return response()->json($order);
+        return response()->json(new OrderResource($order));
     }
 
     public function config(){
@@ -536,10 +547,21 @@ class OrderController extends Controller{
                     $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                 });
             }]);
-        }, 'history']);
+        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+        $cash_ = $order->history->filter(function($log){
+            return $log->pivot->_status == 2;
+        })->values()->all()[0];
+
+        $cash_ = $order->history->filter(function($log){
+            return $log->pivot->_status == 2;
+        })->values()->all()[0];
+
+        $in_coming = $order->history->filter(function($log){
+            return $log->pivot->_status == 5;
+        })->values()->all()[0];
         $printer = Printer::find($request->_printer);
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-        $res = $cellerPrinter->orderTicket($order);
+        $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
         if($res){
             $order->printed = $order->printed +1;
             $order->save();
@@ -559,8 +581,6 @@ class OrderController extends Controller{
                     $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
                 }])->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
                 $inCash = array_column($cashRegisters->toArray(), 'order_log_count');
-                /* $cashRegisters = CashRegister::withCount('order_log')->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
-                $inCash = array_column($cashRegisters->toArray(), 'order_log_count'); */
                 $_cash = $cashRegisters[array_search(min($inCash), $inCash)]->id;
                 return $_cash;
         }
@@ -620,5 +640,18 @@ class OrderController extends Controller{
         $log->_status = $_status;
         $log->details = json_encode($details);
         return $log;
+    }
+
+    public function test(Request $request){
+        /* $order = Order::with('history')->find($request->_order);
+        $responsables = $order->history->map(function($log){
+            return $log->pivot->responsable;
+        }); */
+        $date_from = new \DateTime();
+        $date_from->setTime(0,0,0);
+        $date_to = new \DateTime();
+        $date_to->setTime(23,59,59);
+        $orders = Order::with(['history'])->where([['_workpoint_from', $this->account->_account],['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->get();
+        return response()->json(OrderResource::collection($orders));
     }
 }

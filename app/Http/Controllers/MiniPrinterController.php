@@ -89,7 +89,7 @@ class MiniPrinterController extends Controller{
         }
     }
 
-    public function orderReceipt($order/* , $cash */){
+    public function orderReceipt($order, $cash){
         $printer = $this->printer;
         if(!$printer){
             return false;
@@ -99,15 +99,11 @@ class MiniPrinterController extends Controller{
             $summary['units'] = $summary['units'] + $product->pivot->units;
             return $summary;
         }, ["models" => 0, 'units' => 0]);
-        /* $finished_at = $order->log->filter(function($log){
-            return $log->pivot->_status = 2;
-        });
-        $finished_at = $finished_at[sizeof($finished_at) - 1]; */
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
         $printer->setReverseColors(true);
-        $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
+        //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
         $printer->setEmphasis(false);
         $printer->setReverseColors(false);
         $printer->setTextSize(1,2);
@@ -116,20 +112,16 @@ class MiniPrinterController extends Controller{
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setTextSize(1,1);
         $printer->text("---------------------------\n");
-        /* $printer->text("---  "); */
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
-        /* $printer->text("--  ".$cash->name."  --\n"); */
-        $printer->text("--  CAJA 1  --\n");
+        $printer->text("--  ".$cash->pivot->responsable->name."  --\n");
         $printer->setEmphasis(false);
         $printer->setTextSize(1,1);
-        /* $printer->text("---\n"); */
         $printer->text("---------------------------\n");
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->setTextSize(1,1);
-        /* $printer->text(" Lo atendio: ".$order->created_by->names. " ".$order->created_by->surname_pat." ".$finished_at->pivot->created_at." Hrs \n"); */
         $printer->text(" Lo atendio: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
-        $printer->text(" Fecha/Hora: ".date('d/m/Y H:i', time())." \n");
+        $printer->text(" Fecha/Hora: ".$cash->pivot->created_at." \n");
         $printer->setJustification(Printer::JUSTIFY_RIGHT);
         $printer->setTextSize(1,1);
         $printer->text("Modelos: ");
@@ -145,7 +137,7 @@ class MiniPrinterController extends Controller{
         $printer->setBarcodeHeight($this->barcode_height);
         $printer->setBarcodeWidth($this->barcode_width);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->barcode("ID-".$order->id);
+        $printer->barcode($order->id);
         $printer->feed(1);
         $printer->text($order->id."\n");
         $printer->text($order->workpoint->name.", GRUPO VIZCARRA");
@@ -534,7 +526,7 @@ class MiniPrinterController extends Controller{
         }
     }
 
-    public function orderTicket(Order $order/* , $cash */){
+    public function orderTicket(Order $order, $cash, $in_coming = null){
         $printer = $this->printer;
         if(!$printer){
             return false;
@@ -544,10 +536,6 @@ class MiniPrinterController extends Controller{
             $summary['articles'] = $summary['articles'] + $product->pivot->units;
             return $summary;
         }, ["models" => 0, "articles" => 0]);
-        /* $finished_at = $requisition->log->filter(function($log){
-            return $log->pivot->_status = 1;
-        });
-        $finished_at = $finished_at[sizeof($finished_at) - 1]; */
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         if($order->printed>0){
             $printer->setTextSize(2,1);
@@ -558,22 +546,18 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
         $printer->setReverseColors(true);
-        $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
+        // $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
         $printer->setReverseColors(false);
         $printer->text("Pedido para ".$order->name." \n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
-        /* $printer->setTextSize(2,1);
-        $printer->text("--  ".$cash->name."  --\n"); */
+        $printer->setTextSize(2,1);
+        $printer->text("--  ".$cash->pivot->responsable->name."  --\n");
         $printer->setTextSize(1,1);
-        /* if($order->notes){
-            $printer->setTextSize(2,1);
-            $printer->text("$order->notes \n");
-        } */
         $printer->setTextSize(1,1);
         $printer->text("----------------------------------------\n");
-        /* $printer->text("Generado: ".$finished_at->pivot->created_at." Hrs por: ".$requisition->created_by->names."\n"); */
-        $printer->text(" Fecha/Hora: ".date('d/m/Y H:i', time())." \n");
+        $created_at = is_null($in_coming) ? date('d/m/Y H:i', time()) : $cash->pivot->created_at;
+        $printer->text(" Fecha/Hora: ".$created_at." \n");
         $printer->text("Modelos: ");
         $printer->setTextSize(2,1);
         $printer->text($summary['models']);
@@ -621,7 +605,7 @@ class MiniPrinterController extends Controller{
                 $printer->text("----------------------------------------------\n");
                 $printer->text("----------------------------------------------\n");
                 $printer->setTextSize(2,1);
-                $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
+                //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
                 $printer->text("Pedido para ".$order->name." \n");
                 $printer->setTextSize(1,1);
                 $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
@@ -636,8 +620,6 @@ class MiniPrinterController extends Controller{
                 $printer->text($y."█ ".trim($locations)."\n█ ".$product->code." █\n");
                 $printer->setTextSize(1,1);
                 $printer->text($product->description." \n");
-                /* $printer->text("CAJAS SOLICITADAS: ");
-                $printer->setTextSize(2,1); */
                 $printer->setTextSize(1,1);
                 $printer->text(" Piezas: ");
                 $printer->setTextSize(2,1);
@@ -645,14 +627,6 @@ class MiniPrinterController extends Controller{
                 $printer->setJustification(Printer::JUSTIFY_RIGHT);
                 $printer->setTextSize(2,1);
                 $printer->text("{   }\n");
-                /* $printer->setTextSize(1,1);
-                $printer->text("UF: ");
-                $printer->setTextSize(2,1);
-                $printer->text(round($product->pivot->units));
-                $printer->setTextSize(1,1);
-                $printer->text(" - UD: ");
-                $printer->setTextSize(2,1);
-                $printer->text($product->pivot->stock."\n"); */
                 if($product->pivot->comments){
                     $printer->setTextSize(1,1);
                     $printer->setReverseColors(true);
@@ -670,7 +644,7 @@ class MiniPrinterController extends Controller{
         $printer->barcode($order->id);
         $printer->feed(1);
         $printer->setTextSize(1,1);
-        $printer->text("ID".$order->id."\n");
+        $printer->text($order->id."\n");
         $printer->text("GRUPO VIZCARRA\n");
         $printer->feed(1);
         $printer->cut();
