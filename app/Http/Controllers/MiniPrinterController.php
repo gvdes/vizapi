@@ -17,9 +17,9 @@ class MiniPrinterController extends Controller{
     public $barcode_width = 2;
     public $barcode_height = 50;
 
-    public function __construct($ip_printer, $port){
+    public function __construct($ip_printer, $port, $time = 15){
         try{
-            $connector = new NetworkPrintConnector($ip_printer, $port);
+            $connector = new NetworkPrintConnector($ip_printer, $port, $time);
             $this->printer = new Printer($connector);
         }catch(\Exception $e){
             return $e;

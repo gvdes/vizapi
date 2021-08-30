@@ -58,12 +58,6 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order, $_printer = null){
-        /* 
-        $a = $order->history->filter(function($log){
-            return $log->pivot->_status == 2;
-        })->values()->all();
-        $cash = $a[0]->pivot->responsable;
-         */
         // Instance or OrderLog to save data
 
         switch($case){
@@ -88,7 +82,7 @@ class OrderController extends Controller{
                 }else{
                     $printer = Printer::find($_printer);
                 }
-                $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
+                $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
                 $_workpoint_to = $order->_workpoint_from;
                 $order->refresh(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
@@ -153,7 +147,7 @@ class OrderController extends Controller{
                 if(!$printer){
                     $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 }
-                $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
+                $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
                 /* $cash_ = $cash_[0]->pivot->responsable; */
                 $cellerPrinter->orderTicket($order, $cash_);
                 $user = User::find($this->account->_account);
@@ -447,6 +441,9 @@ class OrderController extends Controller{
             'printers' => $printers,
             'orders' => OrderResource::collection($orders)
         ]);
+        /* $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->paginate(20);
+        $result = OrderResource::collection($orders);
+        return response($result->response()->getData(true), 200); */
     }
 
     public function find($id){
@@ -548,9 +545,6 @@ class OrderController extends Controller{
                 });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-        $cash_ = $order->history->filter(function($log){
-            return $log->pivot->_status == 2;
-        })->values()->all()[0];
 
         $cash_ = $order->history->filter(function($log){
             return $log->pivot->_status == 2;
@@ -560,7 +554,7 @@ class OrderController extends Controller{
             return $log->pivot->_status == 5;
         })->values()->all()[0];
         $printer = Printer::find($request->_printer);
-        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
         $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
         if($res){
             $order->printed = $order->printed +1;
@@ -651,7 +645,14 @@ class OrderController extends Controller{
         $date_from->setTime(0,0,0);
         $date_to = new \DateTime();
         $date_to->setTime(23,59,59);
-        $orders = Order::with(['history'])->where([['_workpoint_from', $this->account->_account],['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->get();
-        return response()->json(OrderResource::collection($orders));
+        /*  */
+        //$orders = Order::with(['history'])->where([['_workpoint_from', $this->account->_workpoint],['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->orderBy('num_ticket', 'desc')->first();
+        $order = Order::with(['history'])->where([['_workpoint_from', $this->account->_workpoint],['created_at', '>=', "2021-08-28 00:00:00"], ['created_at', '<=', "2021-08-28 23:59:59"], ['_status', '>', 2]])->orderBy('num_ticket', 'desc')->first();
+        $cash = $order->history->filter(function($log){
+            return $log->pivot->_status == 2;
+        })[0]->pivot->responsable->num_ticket;
+        /* return response()->json(OrderResource::collection($orders)); */
+        return response()->json($cash);
+        return response()->json(new OrderResource($orders));
     }
 }
