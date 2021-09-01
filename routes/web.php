@@ -150,6 +150,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
+        $router->post('/excel', 'OrderController@excel');
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){

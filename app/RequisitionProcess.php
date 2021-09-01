@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class RequisitionProcess extends Model{
     
     protected $table = 'requisition_process';
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'active', 'allow'];
     public $timestamps = false;
     
     /*****************

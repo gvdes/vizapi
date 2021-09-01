@@ -33,6 +33,8 @@ class Requisition extends JsonResource{
                     return [
                         "id" => $event->id,
                         "name" => $event->name,
+                        "active" => $event->active,
+                        "allow" => $event->allow,
                         "details" => json_decode($event->pivot->details),
                         "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
                         "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
@@ -48,13 +50,6 @@ class Requisition extends JsonResource{
                         "cost" => $product->cost,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
-                        /* "prices" => $product->prices->map(function($price){
-                            return [
-                                "id" => $price->id,
-                                "name" => $price->name,
-                                "price" => $price->pivot->price,
-                            ];
-                        }), */
                         "pieces" => $product->pieces,
                         "ordered" => [
                             "amount" => $product->pivot->amount,
