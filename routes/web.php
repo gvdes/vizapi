@@ -104,6 +104,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/updateDesc', 'ProductController@addAtributes');
         $router->post('/getCategories', 'ProductController@getCategory');
         $router->post('/stocks', 'VentasController@getStocks');
+        $router->post('/check_variants', 'ProductController@demo_001');
         /* $router->get('/demo', 'ProductController@getDiferenceBetweenStores'); */
         $router->get('/lessStock', 'ProductController@getProductsByCategory');
     });
@@ -141,11 +142,15 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/{id}', 'OrderController@find');
         $router->post('/', 'OrderController@create');
         $router->post('/add', 'OrderController@addProduct');
+        $router->post('/addMassive', 'OrderController@addMassiveProducts');
         $router->post('/remove', 'OrderController@removeProduct');
         $router->post('/cancell', 'OrderController@cancelled');
         $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
+        $router->post('/exportExcel', 'OrderController@exportExcel');
+        $router->post('/edit', 'OrderController@editting');
+        $router->post('/demo', 'OrderController@getNextStatus');
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){

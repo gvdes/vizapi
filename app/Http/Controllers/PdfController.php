@@ -1450,7 +1450,7 @@ class PdfController extends Controller{
             $font_size_prices = 1.6;
           break;
           case 3:
-            $font_size_prices = 1.4;
+            $font_size_prices = 1.2;
           break;
           case 4:
             $font_size_prices = 1;
@@ -1471,8 +1471,8 @@ class PdfController extends Controller{
         $content =  '<div style="text-align: center;">'.$space.'
                     <span style="font-size:1em"><br/></span>
                     <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
-                    <span style="font-size:1.2em; font-weight: bold;  text-align: right;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
-                    <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                    <span style="font-size:1em; font-weight: bold;  text-align: right;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
+                    <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                 </div>';
         
                 $this->setImageBackground_area_2(null, $content, $width=68, $height=33.8, $cols=3, $rows=6, $top_space=-20.4, $sides_space=0, $position=$key+$counter, $top_margin=10, $sides_margin=5);
@@ -1507,7 +1507,7 @@ class PdfController extends Controller{
             $font_size_prices = 1.6;
           break;
           case 3:
-            $font_size_prices = 1.4;
+            $font_size_prices = 1.2;
           break;
           case 4:
             $font_size_prices = 1;
@@ -1528,8 +1528,8 @@ class PdfController extends Controller{
         $content =  '<div style="text-align: center;">'.$space.'
                         <span style="font-size:1em"><br/></span>
                         <span style="font-size:3.5em; font-weight: bold;">$'.$product['prices'][0]['price'].'</span>
-                        <div style="font-size:1.2em; font-weight: bold; text-align: right;">'.$product['code'].$tool.'</div>
-                        <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
+                        <div style="font-size:1em; font-weight: bold; text-align: right;">'.$product['code'].$tool.'</div>
+                        <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                         </div>';
         
                         $this->setImageBackground_area_2(null, $content, $width=65, $height=33.8, $cols=3, $rows=6, $top_space=-20.4, $sides_space=0, $position=$key+$counter, $top_margin=10, $sides_margin=5);

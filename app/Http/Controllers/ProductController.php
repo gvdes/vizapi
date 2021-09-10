@@ -221,22 +221,30 @@ class ProductController extends Controller{
         }else{
             $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
         }
-        foreach($stores as $store){
-            $access_store = new AccessController($store->dominio);
-            $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
-            if($result){
-                $store_success[] = $store->alias;
-            }else{
-                $store_fail[] = $store->alias;
+        if($products){
+
+            foreach($stores as $store){
+                $access_store = new AccessController($store->dominio);
+                $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
+                if($result){
+                    $store_success[] = $store->alias;
+                }else{
+                    $store_fail[] = $store->alias;
+                }
             }
+            return response()->json([
+                "success" => true,
+                "products" => count($products),
+                "time" => microtime(true) - $start,
+                "tiendas actualizadas" => $store_success,
+                "tiendas que no se pudieron actualizar" => $store_fail
+            ]);
+        }else{
+            return response()->json([
+                "success" => false,
+                "msg" => "No se tuvo conexión a CEDIS"
+            ]);
         }
-        return response()->json([
-            "success" => true,
-            "products" => $products,
-            "time" => microtime(true) - $start,
-            "tiendas actualizadas" => $store_success,
-            "tiendas que no se pudieron actualizar" => $store_fail
-        ]);
         /* try{
         }catch(\Exception $e){
             return response()->json(["message" => "No se ha podido actualizar la tabla de productos"]);
@@ -1086,5 +1094,48 @@ class ProductController extends Controller{
         $export = new ArrayExport(array_merge(...$response));
         $date = new \DateTime();
         return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx");
+    }
+
+    public function demo_001(Request $request){
+        $description = "(EV-805SL)(EV-2503SL)(EV-2504SL) AUDIFONOS DE X";
+        /* $split = preg_split("/[\s,]+/", $description); */
+        /* $split = preg_split("/[()]+/", $description);
+        return response()->json($split); */
+
+        $excel_rows = $request->products;
+        $products = [];
+        $problems = [];
+        foreach($excel_rows as $row){
+            $product = Product::select('code', 'name', 'description')->where("code", trim($row["code"]))->first();
+            $variant = isset($row["variant"]) ? Product::select('code', 'name', 'description')->where([["code", trim($row["variant"])], ["_status", "!=", 4]])->first() : false;
+            $variant2 = isset($row["variant2"]) ? Product::select('code', 'name', 'description')->where([["code", trim($row["variant2"])], ["_status", "!=", 4]])->first() : false;
+            $description = preg_split("/[()]+/", $product->description);
+            $el = count($description);
+            $new_description = isset($row["variant"]) ? "(".trim($row["variant"]).")" : "";
+            $new_description = isset($row["variant2"]) ? $new_description."(".trim($row["variant2"]).")" : $new_description;
+            $new_description = $new_description.$description[$el-1];
+            if($variant || $variant2){
+                $eliminar = $variant ? $variant->code : "";
+                $eliminar = $variant2 ? $eliminar." ".$variant2->code : $eliminar;
+                $problems[] = [
+                    "product" => $product->code,
+                    "descripción vieja" => $product->description,
+                    "descripción nueva" => $new_description,
+                    "familiarizado_1" => isset($row["variant"]) ? $row["variant"] : "",
+                    "familiarizado_2" => isset($row["variant2"]) ? $row["variant2"] : "",
+                    "eliminar" => $eliminar
+                ];
+            }else{
+                $products[] = [
+                    "original" => $product->code,
+                    "descripción vieja" => $product->description,
+                    "descripción nueva" => $new_description,
+                    "familiarizado_1" => isset($row["variant"]) ? $row["variant"] : "",
+                    "familiarizado_2" => isset($row["variant2"]) ? $row["variant2"] : ""
+                    
+                ];
+            }
+        }
+        return response()->json(["ok" => $products, "details" => $problems]);
     }
 }
