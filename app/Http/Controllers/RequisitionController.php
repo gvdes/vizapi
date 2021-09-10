@@ -443,6 +443,7 @@ class RequisitionController extends Controller{
 
     public function nextStep(Request $request){
         $requisition = Requisition::find($request->id);
+        $server_status = 200;
         if($requisition){
             $_status = isset($request->_status) ? $request->_status : $requisition->_status+1;
             $_printer = isset($request->_printer) ? $request->_printer : null;
@@ -451,16 +452,18 @@ class RequisitionController extends Controller{
             if(in_array($_status, array_column($process, "id"))){
                 $result = $this->log($_status, $requisition, $_printer, $_actors);
                 $msg = $result["success"] ? "" : "No se pudo cambiar el status";
+                $server_status = $result["success"] ? 200 : 500;
             }else{
                 $msg = "Status no válido";
+                $server_status = 400;
             }
         }else{
             $msg = "Pedido no encontrado";
+            $server_status = 404;
         }
-        return response()->json([$result]);
         return response()->json([
             "success" => isset($result) ? $result["success"] : false,
-            "serve_status" => null,
+            "serve_status" => $server_status,
             "msg" => $msg,
             "updates" =>[
                 "status" => isset($result) ? $result["status"] : null,
