@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model{
 
     protected $table = 'orders';
-    protected $fillable = ['num_ticket', 'name', 'printed', '_created_by', '_workpoint_from', 'time_life', '_status', '_client', '_price_list'];
+    protected $fillable = ['num_ticket', 'name', 'printed', '_created_by', '_workpoint_from', 'time_life', '_status', '_client', '_price_list', '_order'];
 
     public function workpoint(){
         return $this->belongsTo('App\WorkPoint', '_workpoint_from');

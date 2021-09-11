@@ -32,30 +32,40 @@ class OrderController extends Controller{
     }
 
     public function create(Request $request){
-        $order = DB::transaction( function () use ($request){
-            $now = new \DateTime();
-            $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
-            $client = isset($request->_client) ? \App\Client::find($request->_client) : \App\Client::find(0);
-            $order = Order::create([
-                'num_ticket' => $num_ticket,
-                'name' => isset($request->_client) ? $client->name : $request->name,
-                '_client' => $client->id,
-                '_price_list' => $client->_price_list,
-                '_created_by' => $this->account->_account,
-                '_workpoint_from' => $this->account->_workpoint,
-                'time_life' => '00:30:00',
-                '_status' => 1
-            ]);
-            $this->log(1, $order);
-            return $order->fresh(['products' => function($query){
-                $query->with(['prices' => function($query){
-                    $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                },'variants']);
-            }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-        });
         try{
+            $order = DB::transaction( function () use ($request){
+                $now = new \DateTime();
+                $_parent = null;
+                if(isset($request->_order) && $request->_order){
+                    $parent = Order::find($request->_order);
+                    if(!$parent){
+                        return response()->json(["success" => false, "server_status" => 404, "msg" => "No se encontro el pedido"]);
+                    }else{
+                        $_parent = $parent->_order ? $parent->_order : $parent->id;
+                    }
+                }
+                $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
+                $client = isset($request->_client) ? \App\Client::find($request->_client) : \App\Client::find(0);
+                $order = Order::create([
+                    'num_ticket' => $num_ticket,
+                    'name' => isset($request->_client) ? $client->name : $request->name,
+                    '_client' => $client->id,
+                    '_price_list' => $client->_price_list,
+                    '_created_by' => $this->account->_account,
+                    '_workpoint_from' => $this->account->_workpoint,
+                    'time_life' => '00:30:00',
+                    '_status' => 1,
+                    '_order' => $_parent ? $_parent : null
+                ]);
+                $this->log(1, $order);
+                return $order->fresh(['products' => function($query){
+                    $query->with(['prices' => function($query){
+                        $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+                    },'variants']);
+                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+            });
         }catch(\Exception $e){
-            return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 200]);
+            return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500]);
         }
         return response()->json(new OrderResource($order));
     }
@@ -627,6 +637,15 @@ class OrderController extends Controller{
     }
 
     public function getCash($order, $mood){
+        if($order->_order){
+            $order = Order::with('history')->find($order->_order);
+            $cash_ = $order->history->filter(function($log){
+                return $log->pivot->_status == 2;
+            })->values()->all();
+            if(count($cash_)>0){
+                return $cash_[0]->pivot->responsable->id;
+            }
+        }
         switch($mood){
             case "Secuencial":
                 // 1.- Obtener cajas

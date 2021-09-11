@@ -1138,4 +1138,53 @@ class ProductController extends Controller{
         }
         return response()->json(["ok" => $products, "details" => $problems]);
     }
+
+    public function updateRelatedCodes(){
+        $CEDIS = \App\WorkPoint::find(1);
+        $access = new AccessController($CEDIS->dominio);
+        $codes = $access->getRelatedCodes();
+        if($codes){
+            DB::table('product_variants')->delete();
+            $products = Product::all();
+            $array_codes = array_column($products->toArray(), 'code');
+            foreach($codes as $code){
+                $key = array_search($code["ARTEAN"], $array_codes);
+                if($key>0 || $key === 0){
+                    $insert[] = ["_product" => $products[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0];
+                }
+            }
+            DB::table('product_variants')->insert($insert);
+        }
+    }
+
+    public function getOriginal(Request $request){
+        $products = [];
+        foreach($request->codes as $code){
+            $product = DB::table('product_variants')->where('barcode', $code["code"])->first();
+            if($product){
+                $product2 = Product::find($product->_product);
+                $products[] = [
+                    "code" => $code["code"],
+                    "product" => $product2->code,
+                    "state" => "familiarizado"
+                ];
+            }else{
+                $product = Product::where('name', $code["code"])->orWhere('code', $code["code"])->first();
+                if($product){
+                    $products[] = [
+                        "code" => $code["code"],
+                        "product" => $product->code,
+                        "state" => "no familiarizado"
+                    ];
+                }else{
+                    $products[] = [
+                        "code" => $code["code"],
+                        "product" => "",
+                        "state" => "No existe"
+                    ];
+                }
+            }
+        }
+        return response()->json($products);
+    }
 }

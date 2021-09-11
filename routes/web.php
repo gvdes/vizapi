@@ -105,6 +105,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/getCategories', 'ProductController@getCategory');
         $router->post('/stocks', 'VentasController@getStocks');
         $router->post('/check_variants', 'ProductController@demo_001');
+        $router->post('/updateRelatedCodes', 'ProductController@updateRelatedCodes');
+        $router->post('/getOriginal', 'ProductController@getOriginal');
+        
         /* $router->get('/demo', 'ProductController@getDiferenceBetweenStores'); */
         $router->get('/lessStock', 'ProductController@getProductsByCategory');
     });
