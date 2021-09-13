@@ -1145,7 +1145,8 @@ class LocationController extends Controller{
                 "Categoría" => $category,
                 "Stock" => $producto->stocks[0]->pivot->stock,
                 "Minimo" => $producto->stocks[0]->pivot->min,
-                "Máximo" => $producto->stocks[0]->pivot->max
+                "Máximo" => $producto->stocks[0]->pivot->max,
+                "Diferencia" => $producto->stocks[0]->pivot->max - $producto->stocks[0]->pivot->min
             ];
         })->toArray();
         

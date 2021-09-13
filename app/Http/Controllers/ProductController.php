@@ -573,14 +573,6 @@ class ProductController extends Controller{
             }
         }
 
-        if(isset($request->products) && $request->products){
-            $query = $query->whereHas('variants', function(Builder $query) use ($request){
-                $query->whereIn('barcode', $request->products);
-            })
-            ->orWhereIn('name', $request->products)
-            ->orWhereIn('code', $request->product);
-        }
-
         if(isset($request->_category)){
             $_categories = $this->getCategoriesChildren($request->_category);
             $query = $query->whereIn('_category', $_categories);

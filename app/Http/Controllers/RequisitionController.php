@@ -698,4 +698,40 @@ class RequisitionController extends Controller{
             break;
         }
     }
+
+    public function setDeliveryValue(Request $request){
+        try{
+            $requisition = Requisition::find($request->_requisition);
+            $product = $order->products()->where('id', $request->_product)->first();
+            if($product){
+                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
+                return response()->json(["success" => true, "server_status" => 200]);
+            }else{
+                return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
+        }
+    }
+
+    public function setReceiveValue(Request $request){
+        try{
+            $requisition = Requisition::find($request->_requisition);
+            $product = $order->products()->where('id', $request->_product)->first();
+            if($product){
+                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['toReceived' => $units]]);
+                return response()->json(["success" => true, "server_status" => 200]);
+            }else{
+                return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
+        }
+    }
 }
