@@ -67,6 +67,8 @@ class OrderController extends Controller{
         }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500]);
         }
+        $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
+        $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
         return response()->json(new OrderResource($order));
     }
 
@@ -527,6 +529,8 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
+        $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
+        $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
         return response()->json(new OrderResource($order));
     }
 
@@ -796,8 +800,17 @@ class OrderController extends Controller{
         foreach($request->_orders as $_order){
             $order = Order::with(['products'])->find($_order);
             if($order){
-                $orders[$_order] = $order->products->map(function($product){
+                /* $orders[$_order] = $order->products->map(function($product){
                     return [
+                        "Código" => $product->name,
+                        "Modelo" => $product->code,
+                        "Descripción" => $product->description,
+                        "Piezas" => $product->pivot->units
+                    ];
+                })->toArray(); */
+                $orders[] = $order->products->map(function($product) use($_order){
+                    return [
+                        "Folio" => $_order,
                         "Código" => $product->name,
                         "Modelo" => $product->code,
                         "Descripción" => $product->description,
@@ -813,6 +826,7 @@ class OrderController extends Controller{
             'B' => "TEXT",
             'C' => "TEXT"
         ];
+        return response()->json(array_merge_recursive(...$orders));
         $export = new WithMultipleSheetsExport($orders, $format);
         return Excel::download($export, "pedidos_preventa".date("d-m-Y_H:m:s").".xlsx");
     }

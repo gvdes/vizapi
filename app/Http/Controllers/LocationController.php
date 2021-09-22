@@ -803,7 +803,8 @@ class LocationController extends Controller{
         $categories = \App\ProductCategory::all();
         $arr_categories = array_column($categories->toArray(), "id");
         $productos = Product::with(['stocks' => function($query){
-            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]])
+            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -1282,10 +1283,12 @@ class LocationController extends Controller{
                     if($key === 0 || $key > 0){
                         $gen = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
                         $exh = count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : false;
-                        if(gettype($gen) == "boolean" || gettype($exh) == "boolean"){
-                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
-                        }elseif($gen != $stocks[$key]["gen"] || $exh != $stocks[$key]["exh"]){
-                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"]]);
+                        $des = count($product->stocks)>0 ? $product->stocks[0]->pivot->des : false;
+                        $fdt = count($product->stocks)>0 ? $product->stocks[0]->pivot->fdt : false;
+                        if(gettype($gen) == "boolean" || gettype($exh) == "boolean" || gettype($des) == "boolean" || gettype($fdt) == "boolean"){
+                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"], 'des' => $stocks[$key]["des"], 'fdt' => $stocks[$key]["fdt"]]);
+                        }elseif($gen != $stocks[$key]["gen"] || $exh != $stocks[$key]["exh"] || $des != $stocks[$key]["des"] || $fdt != $stocks[$key]["fdt"]){
+                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"], 'des' => $stocks[$key]["des"], 'fdt' => $stocks[$key]["fdt"]]);
                         }
                     }
                 }
@@ -1385,18 +1388,18 @@ class LocationController extends Controller{
                 $paths = [];
                 $notFound = [];
                 $found = [];
-                /* $elements = explode(",",$row["paths"]); */
-                $path = $row["path"];
-                $key = array_search($path,$locations_path);
-                if($key === 0 || $key>0){
-                    $paths[] = $locations[$key]['id'];
-                    $found[] = $path;
-                }else{
-                    $notFound[] = $path;
+                $elements = explode(",",$row["path"]);
+                foreach($elements as $path){
+                    $final_path = implode('-T',explode("-",$path));
+                    $final_path = implode('PB-P',explode("PB",$final_path));
+                    $key = array_search( $final_path, $locations_path);
+                    if($key === 0 || $key>0){
+                        $paths[] = $locations[$key]['id'];
+                        $found[] = $final_path;
+                    }else{
+                        $notFound[] = $final_path;
+                    }
                 }
-                /* foreach($elements as $path){
-                    $key = array_search(implode('-T',explode("-",$path)),$locations_path);
-                } */
                 $product->locations()->syncWithoutDetaching($paths);
                 $result[] = ["Modelo" => $product->code,"found" => implode(", ", $found), "notFound" => implode(", ", $notFound)];
             }else{

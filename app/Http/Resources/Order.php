@@ -95,7 +95,9 @@ class Order extends JsonResource{
                         })
                     ];
                 });
-            })
+            }),
+            'parent' => (isset($this->parent) && isset($this->parent->id)) ? new Order($this->parent) : [],
+            'children' => isset($this->children) ? Order::collection($this->children) : []
         ];
     }
 }

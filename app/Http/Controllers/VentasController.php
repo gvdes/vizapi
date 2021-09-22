@@ -910,7 +910,7 @@ class VentasController extends Controller{
           $product = Product::where('code', $code)->orWhere('name', $code)
           ->whereHas('variants', function($query) use ($code){
             $query->where('barcode', $code);
-          })->with(['stocks', 'prices', 'provider'])->first();
+          })->with(['stocks', 'prices', 'provider', 'status'])->first();
           if(!$product){
             $notFound[] = $code;
           }
@@ -921,7 +921,7 @@ class VentasController extends Controller{
         ->whereHas('variants', function($query) use ($p){
           $query->whereIn('barcode', $p);
         })
-        ->with(['stocks', 'prices', 'provider'])->get();
+        ->with(['stocks', 'prices', 'provider', 'status'])->get();
       }
     }else{
       $cash = CashRegister::all()->toArray();
@@ -930,8 +930,12 @@ class VentasController extends Controller{
     
     $categories = \App\ProductCategory::all();
     $arr_categories = array_column($categories->toArray(), "id");
+    $prepare_stocks = [];
+    foreach($workpoints as $workpoint){
+      $prepare_stocks["stock_".$workpoint->name] = 0;
+    }
     
-    $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
+    $result = $products->map(function($product) use($workpoints, $arr_categories, $categories, $prepare_stocks){
       if($product->category->deep == 0){
           $familia = $product->category->name;
           $category = "";
@@ -944,15 +948,16 @@ class VentasController extends Controller{
         $res[$price->name] = $price->pivot->price;
         return $res;
       }, []);
-
       $stocks = $product->stocks->sortBy('id')->unique('id')->values()->reduce(function($res, $stock){
         $res["stock_".$stock->name] = $stock->pivot->stock;
         return $res;
-      }, []);
+      }, $prepare_stocks);
       $provider = $product->provider ? $product->provider->name : "";
       $a = [
         "Modelo" => $product->code,
         "Código" => $product->name,
+        "Fecha alta" => $product->created_at,
+        "Status" => $product->status->name,
         "Descripción" => $product->description,
         "Piezas por caja" => $product->pieces,
         "Costo" => $product->cost,
