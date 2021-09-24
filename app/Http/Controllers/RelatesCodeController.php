@@ -19,6 +19,7 @@ class RelatesCodeController extends Controller{
 
     public function seeder(){
         try{
+            $start = microtime(true);
             $workpoint = \App\WorkPoint::find(1);
             $access = new AccessController($workpoint->dominio);
             $codes = $access->getRelatedCodes();
@@ -26,7 +27,7 @@ class RelatesCodeController extends Controller{
                 DB::transaction(function() use($codes){
                     DB::table('product_variants')->delete();
                     foreach($codes as $code){
-                        $product = Product::where('code', $code['ARTEAN'])->first();
+                        $product = Product::where('code', trim($code['ARTEAN']))->first();
                         if($product){
                             $variant = new ProductVariant();
                             $product->variants()->updateOrCreate(['barcode' => $code['EANEAN']], ['stock' => 0]);

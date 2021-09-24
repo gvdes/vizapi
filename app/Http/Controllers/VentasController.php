@@ -905,17 +905,24 @@ class VentasController extends Controller{
       $p = array_column($request->products,"code");
       $products = [];
       $notFound = [];
+      $variants = [];
       if($request->validate){
         foreach($p as $code){
-          $product = Product::where('code', $code)->orWhere('name', $code)
-          ->whereHas('variants', function($query) use ($code){
+          $product = Product::whereHas('variants', function($query) use ($code){
             $query->where('barcode', $code);
           })->with(['stocks', 'prices', 'provider', 'status'])->first();
-          if(!$product){
-            $notFound[] = $code;
+          if($product){
+            $products[] = $product;
+          }else{
+            $product = Product::where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks', 'prices', 'provider', 'status'])->first();
+            if($product){
+              $products[] = $product;
+            }else{
+              $notFound[] = $code;
+            }
           }
         }
-        return $notFound;
+        /* return response()->json(["products" => $products, "variants" => $variants, "notFound" => $notFound]); */
       }else{
         $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
         ->whereHas('variants', function($query) use ($p){
@@ -924,7 +931,6 @@ class VentasController extends Controller{
         ->with(['stocks', 'prices', 'provider', 'status'])->get();
       }
     }else{
-      $cash = CashRegister::all()->toArray();
       $products = Product::where('_status', '!=', 4)->with(['prices', 'stocks', 'provider'])->get();
     }
     
@@ -934,7 +940,7 @@ class VentasController extends Controller{
     foreach($workpoints as $workpoint){
       $prepare_stocks["stock_".$workpoint->name] = 0;
     }
-    
+    $products = collect($products);
     $result = $products->map(function($product) use($workpoints, $arr_categories, $categories, $prepare_stocks){
       if($product->category->deep == 0){
           $familia = $product->category->name;

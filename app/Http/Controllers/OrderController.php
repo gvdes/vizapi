@@ -640,6 +640,21 @@ class OrderController extends Controller{
         return response()->json(["success" => $res, "server_status" => 200]);
     }
 
+    public function reimpresionClientTicket(Request $request){
+        $order = Order::with((['created_by', 'products', 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']))->find($request->_order);
+        if($order->_status>2){
+            $printer = Printer::find($request->_printer) ? : Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
+            $miniprinter = new MiniPrinterController($printer->ip, 9100, 5);
+            $cash_ = $order->history->filter(function($log){
+                return $log->pivot->_status == 2;
+            })->values()->all()[0];
+            $res = $miniprinter->orderReceipt($order, $cash_);
+        }else{
+            return response()->json(["success" => false, "msg" => "ok", "server_status" => 500]);
+        }
+        return response()->json(["success" => $res, "msg" => "Aun no se puede imprimir el ticket", "server_status" => 200]);
+    }
+
     public function getCash($order, $mood){
         if($order->_order){
             $order = Order::with('history')->find($order->_order);
@@ -702,9 +717,9 @@ class OrderController extends Controller{
             case 2:
             case 3:
             case 8:
-                return range(1,10);
+                return range(1,100);
             case 4: //vendedor
-                return range(1,10);
+                return range(1,100);
             case 5: //Cajero
                 return range(6,9);
             case 6: //Administrador de almacenes

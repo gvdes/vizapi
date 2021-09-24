@@ -69,6 +69,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/deleteSection', 'LocationController@deleteSection');
         $router->post('/massiveLocations', 'LocationController@setMassiveLocations');
         $router->get('/sinMaximos', 'LocationController@sinMaximos');
+        $router->post('/getLocations', 'LocationController@getLocations');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
@@ -107,7 +108,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/check_variants', 'ProductController@demo_001');
         $router->post('/updateRelatedCodes', 'ProductController@updateRelatedCodes');
         $router->post('/getOriginal', 'ProductController@getOriginal');
-        
+        $router->get('/compareCatalog', 'ProductController@compareCatalog');
         /* $router->get('/demo', 'ProductController@getDiferenceBetweenStores'); */
         $router->get('/lessStock', 'ProductController@getProductsByCategory');
     });
@@ -150,6 +151,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/cancell', 'OrderController@cancelled');
         $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
+        $router->post('/printTicket', 'OrderController@reimpresionClientTicket');
+        
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
         $router->post('/exportExcel', 'OrderController@exportExcel');
         $router->post('/edit', 'OrderController@editting');

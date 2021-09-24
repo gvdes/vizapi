@@ -1408,4 +1408,23 @@ class LocationController extends Controller{
         }
         return response()->json($result);
     }
+
+    public function getLocations(Request $request){
+        $result = [];
+        foreach($request->products as $product){
+            $res = Product::with(['locations' => function($query){
+                $query->with("celler");
+            }])->where("code", $product["code"])->first();
+            if($res){
+                $result[] = $res->locations->map(function($location) use($res){
+                    return [
+                        "code" => $res->code,
+                        "location" => $location->path,
+                        "_workpoint" => $location->celler->_workpoint
+                    ];
+                })->toArray();
+            }
+        }
+        return response()->json(array_merge_recursive(...$result));
+    }
 }

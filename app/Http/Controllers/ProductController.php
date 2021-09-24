@@ -43,14 +43,14 @@ class ProductController extends Controller{
                         $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                         $date = $product['created_at'] > "2000-01-01 00:00:00" ? $product['created_at'] : "2020-01-02 00:00:00";
                         $instance = Product::firstOrCreate([
-                            'code'=> $product['code']
+                            'code'=> trim($product['code'])
                         ], [
                             'name' => $product['name'],
                             'barcode' => $product['barcode'],
-                            'description' => $product['description'],
+                            'description' => trim($product['description']),
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
-                            '_category' => $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families),
+                            '_category' => $this->getCategoryId(trim($product['_family']), trim($product['_category']), $categories, $families, $array_families),
                             '_status' => $product['_status'],
                             '_provider' => $_provider,
                             '_unit' => $product['_unit'],
@@ -66,7 +66,7 @@ class ProductController extends Controller{
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
-                        /* $instance->_status = $product['_status']; */
+                        $instance->_status = $product['_status'];
                         $instance->created_at = $date;
                         $instance->updated_at = new \DateTime();
                         $instance->save();
@@ -83,6 +83,28 @@ class ProductController extends Controller{
         }catch(Exception $e){
             return response()->json(["message" => "No se ha podido poblar la base de datos"]);
         }
+    }
+
+    public function compareCatalog(){
+        $products = Product::where('_status', '!=', 4)->get();
+        $start = microtime(true);
+        $CEDIS = \App\WorkPoint::find(1);
+        $access = new AccessController($CEDIS->dominio);
+        $products_access = $access->getAllProducts();
+        $codes = array_column($products_access, 'code');
+        $ok = [];
+        $notExits = [];
+        foreach($products as $product){
+            $key = array_search($product->code, $codes);
+            if($key === 0 || $key > 0){
+                $ok[] = $product->code;
+            }else{
+                $notExits[] = $product->code;
+                $product->_status = 4;
+                $product->save();
+            }
+        }
+        return response()->json(["ok" => $ok, "notExits" => $notExits]);
     }
 
     public function getCategoryId($family, $category, $categories, $families, $array_families/* , $array_categories */){
@@ -562,7 +584,6 @@ class ProductController extends Controller{
 
     public function getProducts(Request $request){
         $query = Product::query();
-
         if(isset($request->autocomplete) && $request->autocomplete){
             $codes = explode('ID-', $request->autocomplete);
             if(count($codes)>1){
@@ -572,13 +593,19 @@ class ProductController extends Controller{
                     $query = $query->whereHas('variants', function(Builder $query) use ($request){
                         $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
                     })
-                    ->orWhere('name', $request->autocomplete)
-                    ->orWhere('barcode', $request->autocomplete)
-                    ->orWhere('code', $request->autocomplete)
-                    ->orWhere('name', 'like','%'.$request->autocomplete.'%')
-                    ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+                    ->orWhere(function($query) use($request){
+                        $query->orWhere('name', $request->autocomplete)
+                        ->orWhere('barcode', $request->autocomplete)
+                        ->orWhere('code', $request->autocomplete)
+                        ->orWhere('name', 'like','%'.$request->autocomplete.'%')
+                        ->orWhere('code', 'like','%'.$request->autocomplete.'%');
+                    });
                 }
             }
+        }
+
+        if(!in_array($this->account->_rol, [1,2,3,8])){
+            $query = $query->where("_status", "!=", 4);
         }
 
         if(isset($request->products) && $request->products){
@@ -621,7 +648,7 @@ class ProductController extends Controller{
         }
 
         $query = $query->with(['status', 'stocks' => function($query){
-            $query->where('_workpoint', $this->account->_workpoint);
+            $query = $query->where('_workpoint', $this->account->_workpoint);
         }]);
         /* if(isset($request->with_stock) && $request->with_stock){
         } */
