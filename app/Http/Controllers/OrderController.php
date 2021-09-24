@@ -508,17 +508,15 @@ class OrderController extends Controller{
             ['_workpoint_from', $this->account->_workpoint]
         ];
 
-        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
+        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint', 'history'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
 
         return response()->json([
             'status' => $status,
             'printers' => $printers,
             'orders' => OrderResource::collection($orders),
-            "server_status" => 200
+            "server_status" => 200,
+            "cash_register" => CashRegister::with('status')->where('_workpoint', $this->account->_workpoint)->get()
         ]);
-        /* $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->paginate(20);
-        $result = OrderResource::collection($orders);
-        return response($result->response()->getData(true), 200); */
     }
 
     public function find($id){
@@ -858,5 +856,16 @@ class OrderController extends Controller{
             $_status = $order->_status + 1;
         }
         return $_status;
+    }
+
+    public function changeCashRegisterStatus(Request $request){
+        $cashRegister = CashRegister::with('status')->find($request->_cash);
+        if($cashRegister){
+            $cashRegister->_status = $cashRegister->_status == 1 ? 2 : 1;
+            $cashRegister->save();
+            $cashRegister->refresh();
+            return response()->json(["msg" => "ok", "server_status" => 200, "success" => true, "status" => $cashRegister->status]);
+        }
+        return response()->json(["msg" => "No se encontro la caja", "server_status" => 404, "success" => false]);
     }
 }

@@ -175,6 +175,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/delete', 'AccessController2@next');
         $router->get('/demo', 'LocationController@demo');
     });
+
+    $router->group(['prefix' => 'cash'], function () use ($router){
+        $router->post('/changeStatus', 'OrderController@changeCashRegisterStatus');
+    });
 });
 
         $router->group(['prefix' => 'client'], function () use ($router){
