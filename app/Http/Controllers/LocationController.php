@@ -1388,12 +1388,11 @@ class LocationController extends Controller{
                 $paths = [];
                 $notFound = [];
                 $found = [];
-                $elements = explode(",",$row["path"]);
+                $elements = explode(",",$row["location"]);
                 foreach($elements as $path){
-                    /* $final_path = implode('-T',explode("-",$path));
+                    $final_path = implode('-T',explode("-",$path));
                     $final_path = implode('PB-P',explode("PB",$final_path));
-                    $key = array_search( $final_path, $locations_path); */
-                    $key = array_search($path, $locations_path);
+                    $key = array_search( $final_path, $locations_path);
                     if($key === 0 || $key>0){
                         $paths[] = $locations[$key]['id'];
                         $found[] = $final_path;
