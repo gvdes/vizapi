@@ -514,7 +514,7 @@ class OrderController extends Controller{
             'printers' => $printers,
             'orders' => OrderResource::collection($orders),
             "server_status" => 200,
-            "cash_register" => CashRegister::with('status')->where('_workpoint', $this->account->_workpoint)->get()
+            "cash_register" => CashRegister::with(['status', 'cashier'])->where('_workpoint', $this->account->_workpoint)->get()
         ]);
     }
 
