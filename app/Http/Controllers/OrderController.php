@@ -86,7 +86,7 @@ class OrderController extends Controller{
             case 2: //Asignar caja
                 $assign_cash_register = $this->getProcess($case);
                 $_cash = $this->getCash($order, "Secuencial"/* json_decode($assign_cash_register->details)->mood */);
-                $cashRegister = CashRegister::find($_cash);
+                $cashRegister = \App\CashRegister::find($_cash);
                 $order->_status = 2;
                 $order->save();
                 $events++;
@@ -514,7 +514,7 @@ class OrderController extends Controller{
             'printers' => $printers,
             'orders' => OrderResource::collection($orders),
             "server_status" => 200,
-            "cash_register" => CashRegister::with(['status', 'cashier'])->where('_workpoint', $this->account->_workpoint)->get()
+            "cash_register" => \App\CashRegister::with(['status', 'cashier'])->where('_workpoint', $this->account->_workpoint)->get()
         ]);
     }
 
@@ -669,7 +669,7 @@ class OrderController extends Controller{
                 $date_from->setTime(0,0,0);
                 $date_to = new \DateTime();
                 $date_to->setTime(23,59,59);
-                $cashRegisters = CashRegister::withCount(['order_log' => function($query) use($date_from, $date_to){
+                $cashRegisters = \App\CashRegister::withCount(['order_log' => function($query) use($date_from, $date_to){
                     $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
                 }])->where([['_workpoint', $this->account->_workpoint], ["_status", 1]])->get()->sortBy('num_cash');
                 $inCash = array_column($cashRegisters->toArray(), 'order_log_count');
