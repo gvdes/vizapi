@@ -522,8 +522,8 @@ class RequisitionController extends Controller{
                 });
             }]);
         }]);
-        $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-        $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
         $res = $cellerPrinter->requisitionTicket($requisition);
         $requisition->printed = $requisition->printed +1;
         $requisition->save();
