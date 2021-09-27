@@ -152,35 +152,73 @@ class RequisitionController extends Controller{
     public function addMassiveProduct(Request $request){
         /* ACTUALIZAR */
         $requisition = Requisition::find($request->_requisition);
-        $added = 0;
-        $fail = [];
+        $products = isset($request->products) ? $request->products : [];
+        $notFound = [];
+        $soldOut = [];
+        $added = [];
         if($requisition){
-            $products = $request->products;
             $to = $requisition->_workpoint_to;
             foreach($products as $row){
                 $code = $row['code'];
-                $product = Product::with(['stocks' => function($query) use ($to){
+                /* $product = Product::with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
-                }])->where('code', $code)->where('_status', '!=', 4)->first();
+                }])->where('code', $code)->where('_status', '!=', 4)->first(); */
+                $product = Product::whereHas('variants', function($query) use ($code){
+                    $query->where('barcode', $code);
+                })->with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])->first();
+                if(!$product){
+                    $product = Product::where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks' => function($query) use ($to){
+                        $query->where('_workpoint', $to);
+                    }])->first();
+                }
                 if($product){
-                    if(isset($row['piezas'])){
-                        $required = $row['piezas'];
-                        if($product->_unit == 3){
-                            $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                            $required = round($required/$pieces, 2);
-                        }
-                    }else{
-                        $required = $row['cajas'];
+                    $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : false;
+                    if(!$cost){
+                        $notFound [] = $product->code;
                     }
-                    $added++;
-                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
+                    $amount = isset($request->amount) ? $request->amount : 1;
+                    $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
+                    $units = $this->getAmount($product, $amount, $_supply_by);
+                    $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
+                    $total = $cost * $units;
+                    $requisition->products()->syncWithoutDetaching([
+                        $product->id => [
+                            'amount' => $amount,
+                            '_supply_by' => $_supply_by,
+                            'units' => $units,
+                            'cost' => $cost,
+                            'total' => $total,
+                            'comments' => isset($request->comments) ? $request->comments : "",
+                            'stock' => $stock
+                        ]
+                    ]);
+                    $added [] = [
+                        "id" => $product->id,
+                        "code" => $product->code,
+                        "name" => $product->name,
+                        "description" => $product->description,
+                        "dimensions" => $product->dimensions,
+                        "pieces" => $product->pieces,
+                        "units" => $product->units,
+                        "ordered" => [
+                            "amount" => $amount,
+                            "_supply_by" => $_supply_by,
+                            "units" => $units,
+                            "cost" => $cost,
+                            "total" => $total,
+                            "comments" => isset($request->comments) ? $request->comments : "",
+                            "stock" => $stock
+                        ]
+                    ];
                 }else{
-                    array_push($fail, $row['code']);
+                    $notFound[] = $row["code"];
                 }
             }
 
         }
-        return response()->json(["added" => $added, "fail" => $fail]);
+        return response()->json(["added" => $added, "notFound" => $notFound]);
     }
 
     public function removeProduct(Request $request){
