@@ -178,7 +178,7 @@ class RequisitionController extends Controller{
                     if(!$cost){
                         $notFound [] = $product->code;
                     }
-                    $amount = isset($request->amount) ? $request->amount : 1;
+                    $amount = isset($row["amount"]) ? $row["amount"] : 1;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                     $units = $this->getAmount($product, $amount, $_supply_by);
                     $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
@@ -190,7 +190,7 @@ class RequisitionController extends Controller{
                             'units' => $units,
                             'cost' => $cost,
                             'total' => $total,
-                            'comments' => isset($request->comments) ? $request->comments : "",
+                            'comments' => isset($row["comments"]) ? $row["comments"] : "",
                             'stock' => $stock
                         ]
                     ]);
@@ -208,7 +208,7 @@ class RequisitionController extends Controller{
                             "units" => $units,
                             "cost" => $cost,
                             "total" => $total,
-                            "comments" => isset($request->comments) ? $request->comments : "",
+                            "comments" => isset($row["comments"]) ? $row["comments"] : "",
                             "stock" => $stock
                         ]
                     ];
