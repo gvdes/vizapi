@@ -177,7 +177,9 @@ $router->group(['middleware' => 'auth'], function() use($router){
     });
 
     $router->group(['prefix' => 'cash'], function () use ($router){
-        $router->post('/changeStatus', 'OrderController@changeCashRegisterStatus');
+        $router->get('/{id}', 'CashRegisterController@find');
+        $router->post('/changeStatus', 'CashRegisterController@changeStatus');
+        $router->post('/changeCashier', 'CashRegisterController@changeCashier');
     });
 });
 

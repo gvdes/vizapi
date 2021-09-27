@@ -12,7 +12,6 @@ use App\Account;
 use App\Product;
 use App\OrderLog;
 use App\User;
-use App\CashRegister;
 
 use App\Http\Resources\Order as OrderResource;
 use App\Http\Resources\OrderStatus as OrderStatusResource;
@@ -856,16 +855,5 @@ class OrderController extends Controller{
             $_status = $order->_status + 1;
         }
         return $_status;
-    }
-
-    public function changeCashRegisterStatus(Request $request){
-        $cashRegister = CashRegister::with('status')->find($request->_cash);
-        if($cashRegister){
-            $cashRegister->_status = $cashRegister->_status == 1 ? 2 : 1;
-            $cashRegister->save();
-            $cashRegister->refresh();
-            return response()->json(["msg" => "ok", "server_status" => 200, "success" => true, "status" => $cashRegister->status]);
-        }
-        return response()->json(["msg" => "No se encontro la caja", "server_status" => 404, "success" => false]);
     }
 }

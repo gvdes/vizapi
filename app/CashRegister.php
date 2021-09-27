@@ -27,4 +27,8 @@ class CashRegister extends Model{
   public function status(){
     return $this->belongsTo('App\CashRegisterStatus', '_status');
   }
+
+  public function cashier(){
+    return $this->belongsTo('App\User', '_account');
+  }
 }
