@@ -646,10 +646,11 @@ class OrderController extends Controller{
                 return $log->pivot->_status == 2;
             })->values()->all()[0];
             $res = $miniprinter->orderReceipt($order, $cash_);
+            return response()->json(["success" => $res, "msg" => "ok", "server_status" => 200]);
         }else{
-            return response()->json(["success" => false, "msg" => "ok", "server_status" => 500]);
+            return response()->json(["success" => false, "msg" => "Aun no se puede imprimir el ticket", "server_status" => 500]);
         }
-        return response()->json(["success" => $res, "msg" => "Aun no se puede imprimir el ticket", "server_status" => 200]);
+        return response()->json(["success" => false, "msg" => "Folio no encontrado", "server_status" => 200]);
     }
 
     public function getCash($order, $mood){
