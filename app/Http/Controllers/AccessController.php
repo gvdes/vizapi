@@ -337,6 +337,18 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    public function createClientOrder($order){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER')."/clientOrder/create");
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 15);
+        $data = json_encode($order);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
     /************
      * RETIRADAS *
      ************/

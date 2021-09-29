@@ -192,17 +192,29 @@ class OrderController extends Controller{
                 $events++;
                 break;
             case 8: //En caja
-                $end_to_sold = $this->getProcess($case);
-                if($end_to_sold->active){
-                    $cajeros = 4;
-                    $in_cash_register = Order::where([
-                        ['_workpoint_from', $this->_account->_workpoint],
-                        ['_status', $case] //status Cobrando
-                    ])->count(); //Para saber cuantos pedidos se estan surtiendo
-                    if($in_cash_register = 0){
-                        //poner en status 7 (el pedido esta en caja)
-                        break;
-                    }
+                $workpoint = \App\WorkPoint::find($order->_workpoint_from);
+                $access = new AccessController($workpoint->dominio);
+                $response = $access->createClientOrder(new OrderResource($order));
+                if($response && $response["status"] = 200){
+                    $user = User::find($this->account->_account);
+                    $log = $this->createLog($order->id, 8, ["factusol_order" => $response["ticket"]]);
+                    $user->order_log()->save($log);
+                    $order->_status = 8;
+                    $order->save();
+                    $events++;
+                    break;
+                    /* $end_to_sold = $this->getProcess($case);
+                    if($end_to_sold->active){
+                        $cajeros = 4;
+                        $in_cash_register = Order::where([
+                            ['_workpoint_from', $this->_account->_workpoint],
+                            ['_status', $case] //status Cobrando
+                        ])->count(); //Para saber cuantos pedidos se estan surtiendo
+                        if($in_cash_register = 0){
+                            //poner en status 7 (el pedido esta en caja)
+                            break;
+                        }
+                    } */
                 }
             case 9: //Cobrando
                 $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
