@@ -197,7 +197,7 @@ class OrderController extends Controller{
                 $response = $access->createClientOrder(new OrderResource($order));
                 if($response && $response["status"] = 200){
                     $user = User::find($this->account->_account);
-                    $log = $this->createLog($order->id, 8, ["factusol_order" => $response["ticket"]]);
+                    $log = $this->createLog($order->id, 8, ["serie" => $response["serie"], "ticket" => $response["ticket"]]);
                     $user->order_log()->save($log);
                     $order->_status = 8;
                     $order->save();
