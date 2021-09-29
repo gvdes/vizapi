@@ -1079,4 +1079,62 @@ class VentasController extends Controller{
         return response()->json(["message" => "No se ha podido poblar la base de datos"]);
     }
   }
+
+  public function exportExcelByProvider(Request $request){
+    $sales = [];
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+    $providers = \App\Provider::whereIn('id',array_column($request->data, "_provider"))->get();
+    foreach($providers as $provider){
+      $_provider = $provider->id;
+      $sales[$provider->name] = Product::with(["sales" => function($query) use($date_from, $date_to){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+      }])->whereHas('sales', function($query) use($date_from, $date_to){
+        $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
+      })->where("_provider", $_provider)->get()->map(function($product){
+        $vendidos = $product->sales->reduce(function($total, $sale){
+          return $total + $sale->pivot->amount;
+        }, 0);
+        return [
+          "id" => $product->id,
+          "Modelo" => $product->code,
+          "Código" => $product->name,
+          "Descripción" => $product->description,
+          "Codigo de barras" => $product->barcode,
+          "Piezas por caja" => $product->pieces,
+          "Costo" => $product->cost,
+          "Total" => $vendidos,
+          "venta total" => $product->sales->unique('id')->values()->reduce(function($total, $sale){
+            return $total + $sale->pivot->total;
+          }, 0)
+        ];
+      })->toArray();
+    }
+
+    return response()->json($sales);
+    $format = [
+        'A' => "NUMBER",
+        'B' => "TEXT",
+        'C' => "NUMBER",
+        'D' => "TEXT",
+        'E' => "NUMBER",
+        'F' => "NUMBER",
+        'G' => "NUMBER",
+        'H' => "NUMBER",
+        'I' => "NUMBER",
+    ];
+    $export = new WithMultipleSheetsExport($sales, $format);
+    return Excel::download($export, "pedidos_proveedor".date("d-m-Y_H:m:s").".xlsx");
+  }
 }

@@ -204,6 +204,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/insertProductVentas', 'VentasController@insertProductVentas');
             $router->post('/tiendasXArticulos', 'VentasController@tiendasXArticulos');
             $router->post('/tiendasXArticulosFor', 'VentasController@tiendasXArticulosFor');
+            $router->post('/provider', 'VentasController@exportExcelByProvider');
+            
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');

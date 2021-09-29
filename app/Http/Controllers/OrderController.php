@@ -723,8 +723,8 @@ class OrderController extends Controller{
             case 6: //Administrador de almacenes
             case 7: //Bodeguero
                 return range(3,5);
-            case 9:
-                return [6,7];
+            case 9: //Validador
+                return [5,6,7];
         }
     }
 
