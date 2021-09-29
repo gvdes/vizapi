@@ -969,11 +969,8 @@ class LocationController extends Controller{
     }
 
     public function generalVsCedis(){
-        $categories = \App\ProductCategory::all();
-        $arr_categories = array_column($categories->toArray(), "id");
-
         if($this->account->_workpoint == 1){
-            $cedis = Product::with(['category', 'stocks' => function($query){
+            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['category', 'stocks' => function($query){
                 $query->where("_workpoint", 2);
             }, 'locations' => function($query){
                 $query->whereHas('celler', function($query){
@@ -983,7 +980,7 @@ class LocationController extends Controller{
                 $query->where([["stock", ">", 0], ["_workpoint", 2]]);
             })->where('_status', '!=', 4)->get();
         }else{
-            $cedis = Product::with(['category', 'stocks' => function($query){
+            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['category', 'stocks' => function($query){
                 $query->where("_workpoint", 1);
             }, 'locations' => function($query){
                 $query->whereHas('celler', function($query){
@@ -1014,24 +1011,17 @@ class LocationController extends Controller{
             }
         }
 
-        $res = collect($generalVsCedis)->map(function($producto) use($categories, $arr_categories){
+        $res = collect($generalVsCedis)->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
             }, '');
-            if($producto->category->deep == 0){
-                $familia = $producto->category->name;
-                $category = "";
-            }else{
-                $key = array_search($producto->category->root, $arr_categories, true);
-                $familia = $categories[$key]->name;
-                $category = $producto->category->name;
-            }
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
-                "Familia" => $familia,
-                "Categoría" => $category,
+                "Sección" => $producto->section,
+                "Familia" => $producto->family,
+                "Categoría" => $producto->categoryy,
                 "Piezas x caja" => $producto->pieces,
                 "CEDIS" => intval($producto->stocks[0]->pivot->stock),
                 "GENERAL" => 0,
@@ -1426,5 +1416,11 @@ class LocationController extends Controller{
             }
         }
         return response()->json(array_merge_recursive(...$result));
+    }
+
+    public function test(){
+        $products = Product::selectRaw('products.*, getSection(products._category) AS Sección, getFamily(products._category) AS Familia, getCategory(products._category) AS Categoría')->where([['_provider', 15], ['_status', '!=', 4]])->get();
+        return response()->json($products);
+
     }
 }

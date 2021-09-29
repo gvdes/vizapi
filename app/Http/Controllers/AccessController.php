@@ -210,6 +210,16 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    public function getPrices(){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/prices');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        /* curl_setopt($client, CURLOPT_POST, 1); */
+        return json_decode(curl_exec($client), true);
+    }
+
     /************
      * Clientes *
      ************/

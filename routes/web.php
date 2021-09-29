@@ -70,6 +70,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/massiveLocations', 'LocationController@setMassiveLocations');
         $router->get('/sinMaximos', 'LocationController@sinMaximos');
         $router->post('/getLocations', 'LocationController@getLocations');
+        $router->post('/test', 'LocationController@test');
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){

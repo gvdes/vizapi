@@ -149,7 +149,7 @@ class ProductController extends Controller{
                     DB::table('product_prices')->delete();
                     //array prices
                     $codes =  array_column($products, 'code');
-                    $prices_insert = $prices->map(function($price) use($products, $codes){
+                    $prices_insert = collect($prices)->map(function($price) use($products, $codes){
                         $index_product = array_search($price['code'], $codes, true);
                         if($index_product === 0 || $index_product > 0){
                             return [

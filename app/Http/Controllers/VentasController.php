@@ -841,7 +841,7 @@ class VentasController extends Controller{
     }else{
       $products = Product::where('_status', '!=', 4)->with(['prices','sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
-      }, 'stocks'])->where('_provider', 74)->get();
+      }, 'stocks'])->get();
     }
     
     $workpoints = Workpoint::all();
@@ -924,14 +924,14 @@ class VentasController extends Controller{
         }
         /* return response()->json(["products" => $products, "variants" => $variants, "notFound" => $notFound]); */
       }else{
-        $products = Product::whereIn('code', $p)->orWhereIn('name', $p)
+        $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->whereIn('code', $p)->orWhereIn('name', $p)
         ->whereHas('variants', function($query) use ($p){
           $query->whereIn('barcode', $p);
         })
         ->with(['stocks', 'prices', 'provider', 'status'])->get();
       }
     }else{
-      $products = Product::where('_status', '!=', 4)->with(['prices', 'stocks', 'provider'])->get();
+      $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->where('_status', '!=', 4)->with(['prices', 'stocks', 'provider', 'units'])->get();
     }
     
     $categories = \App\ProductCategory::all();
@@ -964,19 +964,21 @@ class VentasController extends Controller{
         "Código" => $product->name,
         "Fecha alta" => $product->created_at,
         "Status" => $product->status->name,
+        "Unidad de medida" => $product->units->name,
         "Descripción" => $product->description,
         "Piezas por caja" => $product->pieces,
         "Costo" => $product->cost,
-        "Familia" => $familia,
-        "Categoría" => $category,
+        "Sección" => $product->section,
+        "Familia" => $product->family,
+        "Categoría" => $product->categoryy,
         "Proveedor" => $provider,
         "stock" => $product->stocks->unique('id')->values()->reduce(function($total, $store){
           return $store->pivot->stock + $total;
         }, 0)
       ];
-      /* return array_merge($a, $prices);
-      $x = array_merge($a, $prices); */
-      return array_merge($a, $stocks);
+      /* return array_merge($a, $prices); */
+      $a = array_merge($a, $stocks);
+      return array_merge($a, $prices);
     });
     $export = new ArrayExport($result->toArray());
     $date = new \DateTime();
