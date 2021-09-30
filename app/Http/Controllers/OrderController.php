@@ -424,7 +424,7 @@ class OrderController extends Controller{
     public function setDeliveryValue(Request $request){
         try{
             $order = Order::find($request->_order);
-            if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3])){
+            if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
                 $product = $order->products()->where('id', $request->_product)->first();
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
