@@ -31,7 +31,10 @@ class PdfController extends Controller{
       ["id" => 11, "name" => "Mochila_16"],
       ["id" => 12, "name" => "Rectangulo x 18"],
       ["id" => 13, "name" => "Juguete x8"],
-      ["id" => 14, "name" => "Juguete x15"]
+      ["id" => 14, "name" => "Juguete x15"],
+      ["id" => 15, "name" => "Navidad x8"],
+      ["id" => 16, "name" => "Navidad x15"],
+      ["id" => 17, "name" => "Navidad vertical"]
     ];
     $priceList = \App\PriceList::all();
     return response()->json(["types" => $types, "price_list" => $priceList]);
@@ -80,6 +83,15 @@ class PdfController extends Controller{
         break;
       case 14:
         return $this->cube_15($request->products, $request->isInnerPack);
+        break;
+      case 15:
+        return $this->navidad_8($request->products, $request->isInnerPack);
+        break;
+      case 16:
+        return $this->navidad_15($request->products, $request->isInnerPack);
+        break;
+      case 17:
+        return $this->navidad_vertical($request->products, $request->isInnerPack);
         break;
     }
   }
@@ -1840,5 +1852,391 @@ class PdfController extends Controller{
     }
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 12px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:right; font-size: 15px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+  }
+
+  public function navidad_8($products, $isInnerPack){
+    PDF::SetTitle('Pdf navidad 8');
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $counter = 0;
+    $off = $this->getOffProducts($products);
+    $std = $this->getStdProducts($products);
+    //etiquetas por hoja
+    $pzHoja = 8;
+    foreach($std as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja normal #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->body_navidad($key+$counter, $product);
+      }
+    }
+
+    $counter = 0;
+    foreach($off as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja oferta #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->bodyOferta_navidad($key+$counter, $product);
+      }
+    }
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $std = collect($std);
+    $off = collect($off);
+    $totalOff = $off->reduce(function($total, $product){
+      return $total = $total + $product['copies'];
+    });
+    $totalStd = $std->reduce(function($total, $product){
+      return $total = $total + $product['copies'];
+    });
+    return response()->json([
+        'pages_off' => ceil($totalOff/$pzHoja),
+        'pages_std' => ceil($totalStd/$pzHoja),
+        'total' => ceil($totalStd/$pzHoja) + ceil($totalOff/$pzHoja),
+        'file' => $nameFile,
+    ]);
+  }
+
+  public function body_navidad($el, $product, $cols = 2, $rows = 4){
+    $height = 67;
+    $line = 10;
+    $width = 100;
+    $top_margin = 8;
+    $left_margin = 5;
+    if($el<8){
+      $el = $el;
+    }else{
+      $el = ($el%8);
+    }
+    $y_relative = intval($el/$cols)*$height;
+    switch($el){
+      case 0:
+      case 2:
+      case 4:
+      case 6:
+        $x_relative = 0;
+        break;
+      case 1:
+      case 3:
+      case 5:
+      case 7:
+        $x_relative = 1;
+        break;
+    }
+    $style = array(
+      'position' => '',
+      'align' => 'R',
+      'stretch' => false,
+      'fitwidth' => false,
+      'cellfitalign' => '',
+      'border' => false,
+      'hpadding' => 'auto',
+      'vpadding' => 'auto',
+      'fgcolor' => array(0,0,0),
+      'bgcolor' => false, //array(255,255,255),
+      'text' => false,
+      'font' => 'helvetica',
+      'fontsize' => 8,
+      'stretchtext' => 4
+    );
+    PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    foreach($product["prices"] as $key => $price){
+      $salto= $key * 8;
+      PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 24px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+29+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    }
+    $final = 3*8;
+    $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 18px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=66, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$large, $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:right; font-size: 22px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width), $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+  }
+
+  public function bodyOferta_navidad($el, $product, $cols = 2, $rows = 4){
+    $height = 67;
+    $line = 10;
+    $width = 100;
+    $top_margin = 8;
+    $left_margin = 5;
+    if($el<8){
+      $el = $el;
+    }else{
+      $el = ($el%8);
+    }
+    $y_relative = intval($el/$cols)*$height;
+    switch($el){
+      case 0:
+      case 2:
+      case 4:
+      case 6:
+        $x_relative = 0;
+        break;
+      case 1:
+      case 3:
+      case 5:
+      case 7:
+        $x_relative = 1;
+        break;
+    }
+    $style = array(
+      'position' => '',
+      'align' => 'R',
+      'stretch' => false,
+      'fitwidth' => false,
+      'cellfitalign' => '',
+      'border' => false,
+      'hpadding' => 'auto',
+      'vpadding' => 'auto',
+      'fgcolor' => array(0,0,0),
+      'bgcolor' => false, //array(255,255,255),
+      'text' => false,
+      'font' => 'helvetica',
+      'fontsize' => 8,
+      'stretchtext' => 4
+    );
+    PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 24px;"> ¡¡ OFERTA !!<span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+3, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].'.00 <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    $final = 3*8;
+    $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 18px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6.5, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=66, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$large, $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6.5, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:right; font-size: 22px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width), $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+  }
+
+  public function navidad_15($products, $isInnerPack){
+    PDF::SetTitle('Pdf navidad 15');
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $counter = 0;
+    $off = $this->getOffProducts($products);
+    $std = $this->getStdProducts($products);
+    //etiquetas por hoja
+    $pzHoja = 15;
+    foreach($std as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja normal #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->bodyNavidadX15($key+$counter, $product);
+      }
+    }
+
+    $counter = 0;
+    foreach($off as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja oferta #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->bodyNavidadX15($key+$counter, $product, 'off');
+      }
+    }
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $std = collect($std);
+    $off = collect($off);
+    $totalOff = $off->reduce(function($total, $product){
+      return $total = $total + $product['copies'];
+    });
+    $totalStd = $std->reduce(function($total, $product){
+      return $total = $total + $product['copies'];
+    });
+    return response()->json([
+        'pages_off' => ceil($totalOff/$pzHoja),
+        'pages_std' => ceil($totalStd/$pzHoja),
+        'total' => ceil($totalStd/$pzHoja) + ceil($totalOff/$pzHoja),
+        'file' => $nameFile,
+    ]);
+  }
+
+  public function bodyNavidadX15($el, $product, $type='std', $cols = 3, $rows = 5){
+    $document_width = 200;
+    $document_height = 268;
+    $line = 7;
+    $height = $document_height/$rows;
+    $width = $document_width/$cols;
+    $margin = 4;
+    $paddig_left = 7;
+    $paddig_top = 5;
+    $el = $el<($cols*$rows) ? $el : $el%($cols*$rows);
+    $y_relative = intval($el/$cols)* $height;
+    $x_relative = ($el - (intval($el/$cols) * $cols)) % $cols;
+    $style = array(
+      'position' => '',
+      'align' => 'R',
+      'stretch' => false,
+      'fitwidth' => false,
+      'cellfitalign' => '',
+      'border' => false,
+      'hpadding' => 'auto',
+      'vpadding' => 'auto',
+      'fgcolor' => array(0,0,0),
+      'bgcolor' => false, //array(255,255,255),
+      'text' => false,
+      'font' => 'helvetica',
+      'fontsize' => 8,
+      'stretchtext' => 4
+    );
+    //Especificar area de la etiqueta
+    PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
+    if($type=='std'){
+      $salto_adicional = count($product["prices"]) == 2 ? 3 : 0;
+      $prices = collect($product["prices"])->sortByDesc(function($price){
+        return $price["id"];
+      })->values()->all();
+      foreach($prices as $key => $price){
+        $salto = $key * $line;
+        PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$price['alias'].'    <span style="font-size: 17px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      }
+    }else{
+      $salto = 0 * $line;
+      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 16px;"> ¡¡OFERTA!!</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      $salto = 1 * $line;
+      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 24px; font-weight: bold;">$'.$product['prices'][0]['price'].'.00</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    }
+    $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 12px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$large, $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.85), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:right; font-size: 15px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+  }
+
+  public function navidad_vertical($products, $isInnerPack){
+    PDF::SetTitle('Pdf formato vertical');
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $counter = 0;
+    //etiquetas por hoja
+    $pzHoja = 12;
+    foreach($products as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja normal #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->bodyNavidadVertical($key+$counter, $product, $product["type"], 4, 3);
+      }
+    }
+
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $products = collect($products);
+    $total = $products->reduce( function($total, $product){
+      return $total = $total +$product['copies'];
+    });
+    return response()->json([
+      'total' => ceil($total/$pzHoja),
+      'file' => $nameFile,
+    ]);
+  }
+
+  public function bodyNavidadVertical($el, $product, $type='std', $cols = 3, $rows = 3){
+    $document_width = 200;
+    $document_height = 210;
+    $line = 7;
+    $height = $document_height/$rows;
+    $width = $document_width/$cols;
+    $margin = 8;
+    $margin_x = 4;
+    $paddig_left = 7;
+    $paddig_top = 5;
+    $el = $el<($cols*$rows) ? $el : $el%($cols*$rows);
+    $y_relative = intval($el/$cols)* $height;
+    $x_relative = ($el - (intval($el/$cols) * $cols)) % $cols;
+    $style = array(
+      'position' => '',
+      'align' => 'R',
+      'stretch' => false,
+      'fitwidth' => false,
+      'cellfitalign' => '',
+      'border' => false,
+      'hpadding' => 'auto',
+      'vpadding' => 'auto',
+      'fgcolor' => array(0,0,0),
+      'bgcolor' => false, //array(255,255,255),
+      'text' => false,
+      'font' => 'helvetica',
+      'fontsize' => 8,
+      'stretchtext' => 4
+    );
+    //Especificar area de la etiqueta
+    $words = preg_split('/[\)]/', $product["description"]);
+    $description = "";
+    foreach($words as $word){
+      if(!str_contains($word, '(')){
+        $description = $description.$word;
+      }
+    }
+    $description = trim($description);
+    PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
+    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+$line-2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($margin_x+$x_relative*$width)+4, $y=($margin/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
+    if($type=='std'){
+      $salto_adicional = count($product["prices"]) == 2 ? 3 : 0;
+      $prices = collect($product["prices"])->sortByDesc(function($price){
+        return $price["id"];
+      })->values()->all();
+      foreach($prices as $key => $price){
+        $salto = $key * $line;
+        PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 20px; font-weight: bold;">  $'.$price['price'].'0.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*3.7)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      }
+    }else{
+      $salto = 0 * $line;
+      PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 22px;">¡¡OFERTA!!</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      $salto = 1 * $line;
+      PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">$'.$product['prices'][0]['price'].'.00</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    }
+    $large = isset($product["large"]) ? $product["large"] : \App\Product::find($product['id'])->large;
+    $large = $large ? ' |'.$large : $large;
+    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:left; font-size: 15px;"> '.$product['pieces'].'pz'.$large.'</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative+($line*7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-2, $h=$line, '<p style="text-align:right; font-size: 15px; padding:4px;">'. $product["code"].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative+($line*7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::write1DBarcode($product['name'], 'C128', $margin_x-2+($x_relative*$width), $margin+$y_relative+($line*8), $width-($paddig_left/2), 13, 0.4, $style, 'N');
   }
 }

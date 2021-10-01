@@ -424,12 +424,13 @@ class OrderController extends Controller{
     public function setDeliveryValue(Request $request){
         try{
             $order = Order::find($request->_order);
+            $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
                 $product = $order->products()->where('id', $request->_product)->first();
+                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                 if($product){
-                    $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
-                    $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                    $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
                         $price_list = $order->_price_list;
                     }else{
@@ -438,14 +439,75 @@ class OrderController extends Controller{
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
 
                     $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
-                    return response()->json(["success" => true]);
+                    return response()->json(["msg" => "ok", "success" => true, "server_status" => 200]);
                     /* if($product->pivot->amount != $request->amount){
                         return response()->json(["Se recalculan datos"]);
                     }else{
                         return response()->json(["Se guarda la cantidad"]);
                     } */
-                }else{
-                    return response()->json(["Se añade el producto a la cesta", "success" => true, "server_status" => 200]);
+                    /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
+                    return response()->json(["msg" => "Se añade el producto a la cesta", "success" => true, "server_status" => 200]); */
+                }{
+                    $product = Product::with(['prices' => function($query) use($prices){
+                        $query->whereIn('_type', $prices)->orderBy('_type');
+                    }, 'units', 'stocks' => function($query){
+                        $query->where('_workpoint', $this->account->_workpoint);
+                    }])->find($request->_product);
+                    //if(count($product->stocks)>0 && $product->stocks[0]->pivot->_status != 1){ return response()->json(["msg" => "No puedes agregar ese producto", "success" => false]); }
+                    if($order->_client==0){
+                        $price_list = $order->_price_list;
+                    }else{
+                        $price_list = 1; /* PRICE LIST */
+                    }
+                    $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
+                    if($index_price === 0 || $index_price>0){
+                        $price = $product->prices[$index_price]->pivot->price;
+                        if($price > 0){
+                            $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $request->comments, 'price' => $price, "total" => ($units * $price)]]);
+                            return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
+                                "id" => $product->id,
+                                "code" => $product->code,
+                                "name" => $product->name,
+                                "description" => $product->description,
+                                "pieces" => $product->pieces,
+                                "prices" => $product->prices->map(function($price){
+                                    return [
+                                        "id" => $price->id,
+                                        "name" => $price->name,
+                                        "price" => $price->pivot->price,
+                                    ];
+                                }),
+                                "ordered" => [
+                                    "comments" => $request->comments,
+                                    "amount" => $amount,
+                                    "units" => 0,
+                                    "toDelivered" => $units,
+                                    "stock" => 0,
+                                    "_supply_by" => $_supply_by,
+                                    "_price_list" => $price_list,
+                                    "price" => $price,
+                                    "total" => $units * $price,
+                                    "kit" => "",
+                                ],
+                                "stocks" => [
+                                    [
+                                        "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
+                                        "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
+                                        "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                                        "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                                        "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
+                                        "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                        "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                    ]
+                                ]
+                            ]
+                        ]);
+                        }else{
+                            return response()->json(["msg" => "El producto tiene el precio en 0", "success" => false, "server_status" => 400]);
+                        }
+                    }else{
+                        return response()->json(["msg" => "El producto no tiene precios", "success" => false, "server_status" => 400]);
+                    }
                 }
             }else{
                 return response()->json(["msg" => "No puedes agregar productos", "success" => false, "server_status" => 400]);

@@ -47,6 +47,7 @@ class ProductController extends Controller{
                         ], [
                             'name' => $product['name'],
                             'barcode' => $product['barcode'],
+                            'large' => $product['large'],
                             'description' => trim($product['description']),
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
@@ -60,6 +61,7 @@ class ProductController extends Controller{
                         ]);
                         $instance->name = $product['name'];
                         $instance->barcode = $product['barcode'];
+                        $instance->large = $product['large'];
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
                         $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
@@ -196,7 +198,7 @@ class ProductController extends Controller{
             $array_families = array_column($families->toArray(), 'alias');
 
             if($products){
-                DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
+                /* DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
                     foreach($products as $product){
                         $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
                         $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
@@ -206,6 +208,7 @@ class ProductController extends Controller{
                             'name' => $product['name'],
                             'barcode' => $product['barcode'],
                             'description' => $product['description'],
+                            'large' => $product['large'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
                             '_category' => $_category,
@@ -217,9 +220,10 @@ class ProductController extends Controller{
                             'cost' => $product['cost']
                         ]);
                         $instance->barcode = $product['barcode'];
+                        $instance->large = $product['large'];
                         $instance->name = $product['name'];
                         $instance->cost = $product['cost'];
-                        /* $instance->_status = $product['_status']; */
+                        $instance->_status = $product['_status'];
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
@@ -234,12 +238,12 @@ class ProductController extends Controller{
                             $instance->prices()->sync($prices);
                         }
                     }
-                });
+                }); */
             }
             /* if($required_prices && count($products) >= 1000){
                 $this->restorePrices();
             } */
-            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
+            $stores = \App\Workpoint::whereIn('id', [13,17])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
         }
