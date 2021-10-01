@@ -2214,6 +2214,7 @@ class PdfController extends Controller{
       }
     }
     $description = trim($description);
+    $description = substr($description, 0, 20);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
     PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+$line-2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
