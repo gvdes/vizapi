@@ -2226,7 +2226,7 @@ class PdfController extends Controller{
       })->values()->all();
       foreach($prices as $key => $price){
         $salto = $key * $line;
-        PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 20px; font-weight: bold;">  $'.$price['price'].'0.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*3.7)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+        PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 20px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*3.7)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       }
     }else{
       $salto = 0 * $line;
