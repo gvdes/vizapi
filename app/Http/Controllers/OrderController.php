@@ -426,8 +426,8 @@ class OrderController extends Controller{
             $order = Order::find($request->_order);
             $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
+                $product = $order->products()->where('id', $request->_product)->first();
                 if($product){
-                    $product = $order->products()->where('id', $request->_product)->first();
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
