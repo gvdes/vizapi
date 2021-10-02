@@ -534,7 +534,8 @@ class RequisitionController extends Controller{
     public function getToSupplyFromStore($workpoint_id, $workpoint_to){
         $workpoint = WorkPoint::find($workpoint_id);
         $_categories = $this->categoriesByStore($workpoint_id);
-        $products = Product::with(['stocks' => function($query) use($workpoint_id){
+        $products = Product::selectRaw('products.*, getSection(products._category) AS section')
+        ->with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
@@ -553,7 +554,17 @@ class RequisitionController extends Controller{
                 ['stock', '>', 0]/* ,
                 ['_status', '=', 1] */
             ]);
-        }, '>', 1)->where('_status', '=', 1)->whereIn('_category', $_categories)->get();
+        }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
+        if(count($_categories)>1){
+            $products = $products->orHavingRaw('section = ?', [$_categories[1]]);
+        }
+        if(count($_categories)>2){
+            $products = $products->orHavingRaw('section = ?', [$_categories[2]]);
+        }
+        if(count($_categories)>3){
+            $products = $products->orHavingRaw('section = ?', [$_categories[3]]);
+        }
+        $products = $products->get();
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
@@ -638,7 +649,7 @@ class RequisitionController extends Controller{
          * JUG => 448 - 514
          * PAR => 553 - 587 AND 780 - 786
          * */
-        switch($_workpoint){
+        /* switch($_workpoint){
             case 1:
             case 4:
             case 5:
@@ -665,6 +676,44 @@ class RequisitionController extends Controller{
             case 3:
                 $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669), range(448, 514), range(553, 587), range(780, 786)];
                 return array_merge_recursive(...$_categories);
+                break;
+        } */
+
+        switch($_workpoint){
+            case 1:
+                return [];
+                break;
+            case 4:
+                return ["Navidad", "Mochila", "Juguete"];
+                break;
+            case 5:
+                return ["Mochila", "Juguete"];
+                break;
+            case 7:
+                return ["Navidad"];
+                break;
+            case 13:
+                return ["Navidad"];
+                break;
+            case 9:
+                return ["Navidad"];
+                break;
+            case 6:
+                return ["Calculadora", "Electronico", "Hogar"];
+            case 10:
+                return ["Navidad"];
+                break;
+            case 12:
+                return ["Navidad"];
+                break;
+            case 11:
+                return ["Juguete"];
+                break;
+            case 8:
+                return ["Calculadora", "Juguete", "Papeleria"];
+                break;
+            case 3:
+                return ["Navidad", "Paraguas", "Juguete"];
                 break;
         }
     }

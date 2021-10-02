@@ -28,6 +28,23 @@ class ProductController extends Controller{
     }
 
     public function restoreProducts(){
+        $products = Product::whereHas('variants')->with('variants')->limit(2)->get();
+        /* $stocks = $products->map(function($product){
+            $a = $product->stocks->unique('id')->values()->map(function($stock){
+                $res = $stock->pivot;
+                $res->created_at = new \DateTime();
+                return $res;
+            });
+            $a->created_at = date("Y/m/d h:m");
+            return $a;
+        })->toArray();
+        $insert = array_merge(...$stocks);
+        return response()->json(["a" => $insert]); */
+        $insert = $products->map(function($product){
+            return array_column($product->variants->toArray(),"barcode");
+            /* return $product->variants; */
+        });
+        return response()->json(["a" => $insert]);
         try{
             $start = microtime(true);
             $CEDIS = \App\WorkPoint::find(1);
@@ -186,26 +203,24 @@ class ProductController extends Controller{
         $access = new AccessController($workpoint->dominio);
         $required_products = $request->products ? : false;
         $required_prices = $request->prices ? : false;
-        $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
         $store_success = [];
         $store_fail = [];
+        $products = $access->getUpdatedProducts($date);
+        $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
         if($request->stores == "all"){
-            $products = $access->getUpdatedProducts($date);
-            $prices_required = $request->prices;
-            
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
             $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
             $array_families = array_column($families->toArray(), 'alias');
 
-            if($products){
+            if($products && $request->complete){
                 DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
                     foreach($products as $product){
                         $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
                         $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                         $instance = Product::firstOrCreate([
-                            'code'=> $product['code']
+                            'code'=> trim($product['code'])
                         ], [
-                            'name' => $product['name'],
+                            'name' => trim($product['name']),
                             'barcode' => $product['barcode'],
                             'description' => $product['description'],
                             'large' => $product['large'],
@@ -223,7 +238,7 @@ class ProductController extends Controller{
                         $instance->large = $product['large'];
                         $instance->name = $product['name'];
                         $instance->cost = $product['cost'];
-                        /* $instance->_status = $product['_status']; */
+                        //$instance->_status = $product['_status'];
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->pieces = $product['pieces'];
@@ -245,10 +260,9 @@ class ProductController extends Controller{
             } */
             $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
         }else{
-            $stores = \App\WorkPoint::whereIn('alias', $request->stores)->get();
+            $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
         }
-        if($products){
-
+        if($raw_data){
             foreach($stores as $store){
                 $access_store = new AccessController($store->dominio);
                 $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);

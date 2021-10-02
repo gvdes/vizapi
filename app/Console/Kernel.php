@@ -212,11 +212,13 @@ class Kernel extends ConsoleKernel
         /* Historico de stocks */
         $schedule->call(function(){
             $products = Product::whereHas('stocks')->with('stocks')->get();
-            $stocks = $products->map(function($product){
-                $a = $product->stocks->unique('id')->values()->map(function($stock){
-                    return $stock->pivot;
+            $created_at = new \DateTime();
+            $stocks = $products->map(function($product) use($created_at){
+                $a = $product->stocks->unique('id')->values()->map(function($stock) use($created_at){
+                    $res = $stock->pivot;
+                    $res->created_at = $created_at;
+                    return $res;
                 });
-                $a->created_at = date("Y/m/d h:m");
                 return $a;
             })->toArray();
             $insert = array_merge(...$stocks);

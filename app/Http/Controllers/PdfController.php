@@ -55,7 +55,7 @@ class PdfController extends Controller{
         return $this->pdf_star_4($request->products, $request->isInnerPack);
         break;
       case 5:
-        return $this->pdf_bodega($request->products);
+        return $this->bodega_new($request->products, $request->isInnerPack);
         break;
       case 6:
         return $this->pdf_mochila($request->products, $request->isInnerPack);
@@ -2239,5 +2239,107 @@ class PdfController extends Controller{
     PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:left; font-size: 15px;"> '.$product['pieces'].'pz'.$large.'</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative+($line*7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-2, $h=$line, '<p style="text-align:right; font-size: 15px; padding:4px;">'. $product["code"].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative+($line*7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $margin_x-2+($x_relative*$width), $margin+$y_relative+($line*8), $width-($paddig_left/2), 13, 0.4, $style, 'N');
+  }
+
+  public function bodega_new($products, $isInnerPack){
+    PDF::SetTitle('Pdf formato vertical');
+    $account = Account::with('user')->find($this->account->id);
+    $person = $account->user->names.' '.$account->user->surname_pat.' '.$account->user->surname_mat;
+    $counter = 0;
+    //etiquetas por hoja
+    $pzHoja = 18;
+    foreach($products as $key => $product){
+      for($i=0; $i<$product['copies']; $i++){
+        if($i>0){
+          $counter +=1;
+        }
+        if(($key+$counter)%$pzHoja==0){
+          PDF::AddPage();
+          PDF::SetMargins(0, 0, 0);
+          PDF::SetAutoPageBreak(FALSE, 0);
+          PDF::setCellPaddings(0,0,0,0);
+          PDF::MultiCell($w=240, $h=5, '<span style="font-size:1em;">Hoja normal #'.(intval(($key+$counter)/$pzHoja)+1).'. Creada por: '.$person.'</span>', $border=0, $align='center', $fill=0, $ln=0, $x=0, $y=0, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=0);
+        }
+        $this->bodyBodega($key+$counter, $product, $product["type"], 2, 9);
+      }
+    }
+
+    $nameFile = time().'.pdf';
+    PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
+    $products = collect($products);
+    $total = $products->reduce( function($total, $product){
+      return $total = $total +$product['copies'];
+    });
+    return response()->json([
+      'total' => ceil($total/$pzHoja),
+      'file' => $nameFile,
+    ]);
+  }
+
+  public function bodyBodega($el, $product, $type='std', $cols = 3, $rows = 3){
+    $document_width = 200;
+    $document_height = 268;
+    $line = 7;
+    $height = $document_height/$rows;
+    $width = $document_width/$cols;
+    $margin = 8;
+    $margin_x = 4;
+    $paddig_left = 7;
+    $paddig_top = 5;
+    $el = $el<($cols*$rows) ? $el : $el%($cols*$rows);
+    $y_relative = intval($el/$cols)* $height;
+    $x_relative = ($el - (intval($el/$cols) * $cols)) % $cols;
+    $style = array(
+      'position' => '',
+      'align' => 'R',
+      'stretch' => false,
+      'fitwidth' => false,
+      'cellfitalign' => '',
+      'border' => false,
+      'hpadding' => 'auto',
+      'vpadding' => 'auto',
+      'fgcolor' => array(0,0,0),
+      'bgcolor' => false, //array(255,255,255),
+      'text' => false,
+      'font' => 'helvetica',
+      'fontsize' => 8,
+      'stretchtext' => 4
+    );
+    //Especificar area de la etiqueta
+    $isBorder = 0;
+    $font_size_principal = strlen($product['code'])<9 ? 35 : 26;
+    PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
+    PDF::MultiCell($w=$width*.7, $h=$line, '<p style="text-align:center; font-size: '.$font_size_principal.'px; font-weight: bold;">'.$product['code'].'</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width*.27, $h=$line, '<p style="text-align:right; font-size: 20px; font-weight: bold;">'.$product['name'].'</p>', $border=$isBorder, $align='center', $fill=0, $ln=0, $x=$margin_x+($width*.7)+$x_relative*$width, $y=$margin+$y_relative+($line/2), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    /* $strings = ["JL1232"]; */
+    if(isset($product["variants"])){
+      $strings = array_column($product["variants"],"barcode");
+    }else{
+      $product_2 = \App\Product::find($product["id"]);
+      $strings = array_column($product_2->variants->toArray(),"barcode");
+    }
+    switch(count($strings)){
+      case 1:
+        $font_size = 24;
+        $line_2 = 7;
+        break;
+      case 2:
+        $font_size = 16;
+        $line_2 = 6;
+        break;
+      case 3:
+        $font_size = 12;
+        $line_2 = 4;
+        break;
+      case 4:
+        $font_size = 10;
+        $line_2 = 3.5;
+        break;
+    }
+    foreach($strings as $key => $string){
+      $salto = $key * $line_2;
+      PDF::MultiCell($w=$width-4, $h=$line, '<p style="text-align:left; font-size: '.$font_size.'px; font-weight: bold;">'.$string.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width+3, $y=$margin+$y_relative+($line*2.2)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    }
+    PDF::write1DBarcode($product['name'], 'C128', $margin_x+4+($x_relative*$width), $margin+$y_relative+($line*2.25), $width-($paddig_left/2), 13, 0.4, $style, 'N');
   }
 }
