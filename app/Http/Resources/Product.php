@@ -61,6 +61,9 @@ class Product extends JsonResource{
             'status' => $this->whenLoaded('status', function(){
                 return $this->status;
             }),
+            'variants' => $this->whenLoaded('variants', function(){
+                return $this->variants;
+            }),
             'units' => $this->whenLoaded('units', function(){
                 return $this->units;
             }),
