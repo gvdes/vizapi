@@ -28,23 +28,6 @@ class ProductController extends Controller{
     }
 
     public function restoreProducts(){
-        $products = Product::whereHas('variants')->with('variants')->limit(2)->get();
-        /* $stocks = $products->map(function($product){
-            $a = $product->stocks->unique('id')->values()->map(function($stock){
-                $res = $stock->pivot;
-                $res->created_at = new \DateTime();
-                return $res;
-            });
-            $a->created_at = date("Y/m/d h:m");
-            return $a;
-        })->toArray();
-        $insert = array_merge(...$stocks);
-        return response()->json(["a" => $insert]); */
-        $insert = $products->map(function($product){
-            return array_column($product->variants->toArray(),"barcode");
-            /* return $product->variants; */
-        });
-        return response()->json(["a" => $insert]);
         try{
             $start = microtime(true);
             $CEDIS = \App\WorkPoint::find(1);
