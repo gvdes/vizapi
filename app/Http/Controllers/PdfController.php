@@ -1681,7 +1681,7 @@ class PdfController extends Controller{
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     foreach($product["prices"] as $key => $price){
       $salto= $key * 8;
-      PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 24px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+29+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 24px; font-weight: bold;">  $'.$price['price'].' </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+29+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     }
     $final = 3*8;
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 18px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1736,7 +1736,7 @@ class PdfController extends Controller{
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 24px;"> ¡¡ OFERTA !!<span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+3, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].'.00 <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].' <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     $final = 3*8;
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 18px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:right; font-size: 22px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width), $y=$top_margin+$y_relative+25+$final+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1842,13 +1842,13 @@ class PdfController extends Controller{
       })->values()->all();
       foreach($prices as $key => $price){
         $salto = $key * $line;
-        PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$price['alias'].'    <span style="font-size: 17px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+        PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$price['alias'].'    <span style="font-size: 17px; font-weight: bold;">  $'.$price['price'].' </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       }
     }else{
       $salto = 0 * $line;
       PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 16px;"> ¡¡OFERTA!!</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       $salto = 1 * $line;
-      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 24px; font-weight: bold;">$'.$product['prices'][0]['price'].'.00</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 24px; font-weight: bold;">$'.$product['prices'][0]['price'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     }
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 12px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:right; font-size: 15px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1960,9 +1960,12 @@ class PdfController extends Controller{
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    foreach($product["prices"] as $key => $price){
+    $prices = collect($product["prices"])->sortByDesc(function($price){
+      return $price["id"];
+    })->values()->all();
+    foreach($prices as $key => $price){
       $salto= $key * 8;
-      PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 24px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+29+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 24px; font-weight: bold;">  $'.$price['price'].' </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+29+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     }
     $final = 3*8;
     $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
@@ -2019,7 +2022,7 @@ class PdfController extends Controller{
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 24px;"> ¡¡ OFERTA !!<span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+3, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].'.00 <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].' <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     $final = 3*8;
     $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 18px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($left_margin+$x_relative*$width)+10, $y=$top_margin+$y_relative+25+$final+6.5, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2127,13 +2130,13 @@ class PdfController extends Controller{
       })->values()->all();
       foreach($prices as $key => $price){
         $salto = $key * $line;
-        PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$price['alias'].'    <span style="font-size: 17px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+        PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 12px;">'.$price['alias'].'    <span style="font-size: 17px; font-weight: bold;">  $'.$price['price'].' </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       }
     }else{
       $salto = 0 * $line;
       PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 16px;"> ¡¡OFERTA!!</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       $salto = 1 * $line;
-      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 24px; font-weight: bold;">$'.$product['prices'][0]['price'].'.00</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 24px; font-weight: bold;">$'.$product['prices'][0]['price'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     }
     $large = isset($large) ? $large : \App\Product::find($product['id'])->large;
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 12px;">'.$product['pieces'].'pz', $border=0, $align='center', $fill=0, $ln=0, $x=($paddig_left+$x_relative*$width), $y=$paddig_top+$y_relative+($line*6.7), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2226,13 +2229,13 @@ class PdfController extends Controller{
       })->values()->all();
       foreach($prices as $key => $price){
         $salto = $key * $line;
-        PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 20px; font-weight: bold;">  $'.$price['price'].'.00 </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*3.7)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+        PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 18px;">'.$price['alias'].'    <span style="font-size: 20px; font-weight: bold;">  $'.$price['price'].' </span></p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*3.7)+$salto+$salto_adicional, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       }
     }else{
       $salto = 0 * $line;
       PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 22px;">¡¡OFERTA!!</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
       $salto = 1 * $line;
-      PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">$'.$product['prices'][0]['price'].'.00</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+      PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">$'.$product['prices'][0]['price'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+($line*4)+$salto, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     }
     $large = isset($product["large"]) ? $product["large"] : \App\Product::find($product['id'])->large;
     $large = $large ? ' |'.$large : $large;
