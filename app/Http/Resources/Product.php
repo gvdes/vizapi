@@ -29,6 +29,7 @@ class Product extends JsonResource{
             'pieces' => $this->pieces,
             'dimensions' => $this->dimensions,
             'weight' => $this->weight,
+            'large' => $this->large,
             'attributes' => $this->whenLoaded('attributes', function(){
                 return $this->attributes->map(function($attribute){
                     return [
