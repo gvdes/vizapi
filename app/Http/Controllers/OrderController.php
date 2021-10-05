@@ -426,7 +426,9 @@ class OrderController extends Controller{
             $order = Order::find($request->_order);
             $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
-                $product = $order->products()->where('id', $request->_product)->first();
+                $product = $order->products()->with(['stocks' => function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                }])->where('id', $request->_product)->first();
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
@@ -440,7 +442,43 @@ class OrderController extends Controller{
                     $price = $product->prices[$index_price]->pivot->price;
                     $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
                     /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]); */
-                    return response()->json(["msg" => "ok", "success" => true, "server_status" => 200]);
+                    return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
+                                "id" => $product->id,
+                                "code" => $product->code,
+                                "name" => $product->name,
+                                "description" => $product->description,
+                                "pieces" => $product->pieces,
+                                "prices" => $product->prices->map(function($price){
+                                    return [
+                                        "id" => $price->id,
+                                        "name" => $price->name,
+                                        "price" => $price->pivot->price,
+                                    ];
+                                }),
+                                "ordered" => [
+                                    "comments" => $product->pivot->comments,
+                                    "amount" => $amount,
+                                    "units" => $product->pivot->units,
+                                    "toDelivered" => $units,
+                                    "stock" => 0,
+                                    "_supply_by" => $_supply_by,
+                                    "_price_list" => $price_list,
+                                    "price" => $price,
+                                    "total" => $units * $price,
+                                    "kit" => "",
+                                ],
+                                "stocks" => [
+                                    [
+                                        "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
+                                        "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
+                                        "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                                        "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                                        "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
+                                        "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                        "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                    ]
+                                ]
+                    ]]);
                     /* if($product->pivot->amount != $request->amount){
                         return response()->json(["Se recalculan datos"]);
                     }else{
