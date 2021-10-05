@@ -437,8 +437,9 @@ class OrderController extends Controller{
                         $price_list = 1; /* PRICE LIST */
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
-
-                    $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
+                    $price = $product->prices[$index_price]->pivot->price;
+                    $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
+                    /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]); */
                     return response()->json(["msg" => "ok", "success" => true, "server_status" => 200]);
                     /* if($product->pivot->amount != $request->amount){
                         return response()->json(["Se recalculan datos"]);
