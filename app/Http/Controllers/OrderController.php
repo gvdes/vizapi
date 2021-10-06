@@ -202,7 +202,6 @@ class OrderController extends Controller{
                     $order->_status = 8;
                     $order->save();
                     $events++;
-                    break;
                     /* $end_to_sold = $this->getProcess($case);
                     if($end_to_sold->active){
                         $cajeros = 4;
@@ -216,7 +215,9 @@ class OrderController extends Controller{
                         }
                     } */
                 }
+                break;
             case 9: //Cobrando
+                break;
                 $order->history()->attach($case, ["details" => json_encode([]), '_responsable' => $this->account->_account]);
                 break;
             case 10: //Finalizado

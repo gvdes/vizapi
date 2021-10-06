@@ -662,6 +662,7 @@ class VentasController extends Controller{
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
           $ventas = $access->getLastSales($caja_x_ticket);
+          return response()->json($ventas);
           $resumen[$workpoint->alias] = [$caja_x_ticket];
           if($ventas){
             $products = Product::all()->toArray();

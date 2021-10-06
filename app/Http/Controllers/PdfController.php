@@ -2311,8 +2311,18 @@ class PdfController extends Controller{
     //Especificar area de la etiqueta
     $isBorder = 0;
     $font_size_principal = strlen($product['code'])<9 ? 35 : 26;
+    $words = preg_split('/[\)]/', $product["description"]);
+    $description = "";
+    foreach($words as $word){
+      if(!str_contains($word, '(')){
+        $description = $description.$word;
+      }
+    }
+    $description = trim($description);
+    $description = substr($description, 0, 28);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width*.7, $h=$line, '<p style="text-align:center; font-size: '.$font_size_principal.'px; font-weight: bold;">'.$product['code'].'</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width*.7, $h=$line, '<p style="text-align:center; font-size: '.$font_size_principal.'px; font-weight: bold;">'.$product['code'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative-3, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width*.7, $h=$line, '<p style="text-align:left; font-size: 11.5px; font-weight: bold;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width)+2, $y=$margin+$y_relative+($line*1.4), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width*.27, $h=$line, '<p style="text-align:right; font-size: 20px; font-weight: bold;">'.$product['name'].'</p>', $border=$isBorder, $align='center', $fill=0, $ln=0, $x=$margin_x+($width*.7)+$x_relative*$width, $y=$margin+$y_relative+($line/2), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     /* $strings = ["JL1232"]; */
     if(isset($product["variants"])){
