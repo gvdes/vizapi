@@ -207,7 +207,8 @@ class OrderController extends Controller{
                     }else{
                         $printer = Printer::find($_printer);
                     }
-                    $printer->validationTicket($response["serie"], $response["ticket"], $order->id, $order->name);
+                    $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
+                    $cellerPrinter->validationTicket($response["serie"], $response["ticket"], $order->id, $order->name);
                     /* $end_to_sold = $this->getProcess($case);
                     if($end_to_sold->active){
                         $cajeros = 4;
