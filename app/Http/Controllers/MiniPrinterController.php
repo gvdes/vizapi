@@ -684,4 +684,43 @@ class MiniPrinterController extends Controller{
             return false;
         } */
     }
+
+    public function validationTicket($serie, $ticket, $id, $name){
+        try{
+            $printer = $this->printer;
+            if(!$printer){
+                return false;
+            }
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setTextSize(1,2);
+            $printer->setEmphasis(true);
+            /* $printer->setReverseColors(true); */
+            $printer->text($name);
+            $printer->setTextSize(2,2);
+            $printer->text(" #".$id."\n");
+            $printer->setEmphasis(false);
+            /* $printer->setReverseColors(false); */
+            $printer->setTextSize(1,1);
+            $printer->text("--------------------------------------------\n");
+            $printer->setTextSize(3,3);
+            $printer->text($serie."-".$ticket."\n");
+            $printer->setTextSize(1,1);
+            $printer->text("--------------------------------------------\n");
+            $printer->setJustification(Printer::JUSTIFY_RIGHT);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setTextSize(2,1);
+            $printer->feed(1);
+            $printer->setBarcodeHeight($this->barcode_height);
+            $printer->setBarcodeWidth($this->barcode_width);
+            $printer->barcode("ID-".$id);
+            $printer->feed(1);
+            $printer->setTextSize(2,1);
+            $printer->text("GRUPO VIZCARRA\n");
+            $printer->cut();
+            $printer->close();
+            return true;
+        }catch(\Exception $e){
+            return false;
+        }
+    }
 }
