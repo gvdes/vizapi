@@ -881,7 +881,7 @@ class LocationController extends Controller{
     }
 
     public function generalVsExhibicion(){
-        $productos = Product::with(['stocks' => function($query){
+        $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
