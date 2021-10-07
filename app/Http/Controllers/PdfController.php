@@ -1955,11 +1955,20 @@ class PdfController extends Controller{
       'fontsize' => 8,
       'stretchtext' => 4
     );
+    $words = preg_split('/[\)]/', $product["description"]);
+    $description = "";
+    foreach($words as $word){
+      if(!str_contains($word, '(')){
+        $description = $description.$word;
+      }
+    }
+    $description = trim($description);
+    $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     $prices = collect($product["prices"])->sortByDesc(function($price){
       return $price["id"];
     })->values()->all();
@@ -2016,11 +2025,20 @@ class PdfController extends Controller{
       'fontsize' => 8,
       'stretchtext' => 4
     );
+    $words = preg_split('/[\)]/', $product["description"]);
+    $description = "";
+    foreach($words as $word){
+      if(!str_contains($word, '(')){
+        $description = $description.$word;
+      }
+    }
+    $description = trim($description);
+    $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 24px;"> ¡¡ OFERTA !!<span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+3, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 38px; font-weight: bold;"> $'.$product['prices'][0]['price'].' <span style="font-size: 22px; font-weight: bold;">', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+27+12, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     $final = 3*8;
@@ -2118,11 +2136,20 @@ class PdfController extends Controller{
       'stretchtext' => 4
     );
     //Especificar area de la etiqueta
+    $words = preg_split('/[\)]/', $product["description"]);
+    $description = "";
+    foreach($words as $word){
+      if(!str_contains($word, '(')){
+        $description = $description.$word;
+      }
+    }
+    $description = trim($description);
+    $description = substr($description, 0, 28);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
-    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
     if($type=='std'){
       $salto_adicional = count($product["prices"]) == 2 ? 3 : 0;
       $prices = collect($product["prices"])->sortByDesc(function($price){
