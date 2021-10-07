@@ -127,10 +127,14 @@ class ProductController extends Controller{
 
     public function saveStocks(){
         $products = Product::whereHas('stocks')->with('stocks')->get();
-        $stocks = $products->map(function($product){
-            return $product->stocks->unique('id')->values()->map(function($stock){
-                return $stock->pivot;
+        $created_at = new \DateTime();
+        $stocks = $products->map(function($product) use($created_at){
+            $a = $product->stocks->unique('id')->values()->map(function($stock) use($created_at){
+                $res = $stock->pivot;
+                $res->created_at = $created_at;
+                return $res;
             });
+            return $a;
         })->toArray();
         $insert = array_merge(...$stocks);
         foreach(array_chunk($insert, 1000) as $toInsert){
@@ -229,12 +233,12 @@ class ProductController extends Controller{
                         $instance->updated_at = new \DateTime();
                         $instance->save();
                         $prices = [];
-                        /* if($required_prices && count($products)<1000){
+                        if($required_prices && count($products)<1000){
                             foreach($product['prices'] as $price){
                                 $prices[$price['_type']] = ['price' => $price['price']];
                             }
                             $instance->prices()->sync($prices);
-                        } */
+                        }
                     }
                 });
             }

@@ -662,7 +662,6 @@ class VentasController extends Controller{
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
           $ventas = $access->getLastSales($caja_x_ticket);
-          return response()->json($ventas);
           $resumen[$workpoint->alias] = [$caja_x_ticket];
           if($ventas){
             $products = Product::all()->toArray();
@@ -832,7 +831,7 @@ class VentasController extends Controller{
             $notFound[] = $code;
           }
         }
-        return $notFound;
+        /* return $notFound; */
       }else{
         $products = Product::whereIn('code', $p)
         ->with(['sales' => function($query) use($date_from, $date_to){
@@ -840,7 +839,7 @@ class VentasController extends Controller{
         }, 'category'])->get();
       }
     }else{
-      $products = Product::where('_status', '!=', 4)->with(['prices','sales' => function($query) use($date_from, $date_to){
+      $products = Product::/* where('_status', '!=', 4)-> */with(['prices','sales' => function($query) use($date_from, $date_to){
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
       }, 'stocks'])->get();
     }
@@ -909,13 +908,13 @@ class VentasController extends Controller{
       $variants = [];
       if($request->validate){
         foreach($p as $code){
-          $product = Product::whereHas('variants', function($query) use ($code){
+          $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->whereHas('variants', function($query) use ($code){
             $query->where('barcode', $code);
           })->with(['stocks', 'prices', 'provider', 'status'])->first();
           if($product){
             $products[] = $product;
           }else{
-            $product = Product::where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks', 'prices', 'provider', 'status'])->first();
+            $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->where([['code', $code]/* , ['_status', '!=', 4] */])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks', 'prices', 'provider', 'status'])->first();
             if($product){
               $products[] = $product;
             }else{
@@ -934,23 +933,12 @@ class VentasController extends Controller{
     }else{
       $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->where('_status', '!=', 4)->with(['prices', 'stocks', 'provider', 'units'])->get();
     }
-    
-    $categories = \App\ProductCategory::all();
-    $arr_categories = array_column($categories->toArray(), "id");
     $prepare_stocks = [];
     foreach($workpoints as $workpoint){
       $prepare_stocks["stock_".$workpoint->name] = 0;
     }
     $products = collect($products);
-    $result = $products->map(function($product) use($workpoints, $arr_categories, $categories, $prepare_stocks){
-      if($product->category->deep == 0){
-          $familia = $product->category->name;
-          $category = "";
-      }else{
-          $key = array_search($product->category->root, $arr_categories, true);
-          $familia = $categories[$key]->name;
-          $category = $product->category->name;
-      }
+    $result = $products->map(function($product) use($workpoints, $prepare_stocks){
       $prices = $product->prices->sortBy('id')->reduce(function($res, $price){
         $res[$price->name] = $price->pivot->price;
         return $res;
