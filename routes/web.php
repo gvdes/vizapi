@@ -123,6 +123,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/orders', 'ProviderController@getAllOrders');
     });
 
+    $router->group(['prefix' => 'cash'], function () use ($router){
+        $router->post('/status', 'OrderController@changeCashRegisterStatus');
+        $router->post('/assignCashier', 'OrderController@assignCashier');
+    });
+
     $router->group(['prefix' => 'invoices'], function () use ($router){
         $router->get('/seeder', 'InvoicesReceivedController@getAllOrders');
     });
@@ -158,6 +163,8 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/exportExcel', 'OrderController@exportExcel');
         $router->post('/edit', 'OrderController@editting');
         $router->post('/demo', 'OrderController@getNextStatus');
+        $router->post('/excel', 'OrderController@excel');
+        
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){

@@ -25,10 +25,12 @@ class Product extends JsonResource{
             'code' => $this->code,
             'barcode' => $this->barcode,
             'name' => $this->name,
+            'barcode' => $this->barcode,
             'description' => $this->description,
             'pieces' => $this->pieces,
             'dimensions' => $this->dimensions,
             'weight' => $this->weight,
+            'large' => $this->large,
             'attributes' => $this->whenLoaded('attributes', function(){
                 return $this->attributes->map(function($attribute){
                     return [
@@ -60,6 +62,9 @@ class Product extends JsonResource{
             }), */
             'status' => $this->whenLoaded('status', function(){
                 return $this->status;
+            }),
+            'variants' => $this->whenLoaded('variants', function(){
+                return $this->variants;
             }),
             'units' => $this->whenLoaded('units', function(){
                 return $this->units;

@@ -93,14 +93,36 @@ class RequisitionController extends Controller{
     public function addProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by){
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $to = $requisition->_workpoint_to;
                 $product = Product::with(['units', 'stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
+                }, 'prices' => function($query){
+                    $query->where('_type', 7);
                 }])->find($request->_product);
+
+                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : false;
+                if(!$cost){
+                    return response()->json(["msg" => "El producto no tiene costo", "success" => false]);
+                }
                 $amount = isset($request->amount) ? $request->amount : 1;
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
+                $units = $this->getAmount($product, $amount, $_supply_by);
                 $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
-                $requisition->products()->syncWithoutDetaching([$request->_product => ['units' => $amount, 'comments' => $request->comments, 'stock' => $stock]]);
+                $total = $cost * $units;
+
+                $requisition->products()->syncWithoutDetaching([
+                    $request->_product => [
+                        'amount' => $amount,
+                        '_supply_by' => $_supply_by,
+                        'units' => $units,
+                        'cost' => $cost,
+                        'total' => $total,
+                        'comments' => isset($request->comments) ? $request->comments : "",
+                        'stock' => $stock
+                    ]
+                ]);
+
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -108,60 +130,101 @@ class RequisitionController extends Controller{
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
                     "pieces" => $product->pieces,
+                    "units" => $product->units,
                     "ordered" => [
                         "amount" => $amount,
-                        "comments" => $request->comments,
+                        "_supply_by" => $_supply_by,
+                        "units" => $units,
+                        "cost" => $cost,
+                        "total" => $total,
+                        "comments" => isset($request->comments) ? $request->comments : "",
                         "stock" => $stock
-                    ],
-                    "units" => $product->units
+                    ]
                 ]);
             }else{
-                return response()->json(["msg" => "No puedes agregar productos"]);
+                return response()->json(["msg" => "No puedes agregar productos", "success" => false]);
             }
         }catch(Exception $e){
-            return response()->json(["msg" => "No se ha podido agregar el producto"]);
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false]);
         }
     }
 
     public function addMassiveProduct(Request $request){
+        /* ACTUALIZAR */
         $requisition = Requisition::find($request->_requisition);
-        $added = 0;
-        $fail = [];
+        $products = isset($request->products) ? $request->products : [];
+        $notFound = [];
+        $soldOut = [];
+        $added = [];
         if($requisition){
-            $products = $request->products;
             $to = $requisition->_workpoint_to;
             foreach($products as $row){
                 $code = $row['code'];
-                $product = Product::with(['stocks' => function($query) use ($to){
+                /* $product = Product::with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
-                }])->where('code', $code)->where('_status', '!=', 4)->first();
+                }])->where('code', $code)->where('_status', '!=', 4)->first(); */
+                $product = Product::whereHas('variants', function($query) use ($code){
+                    $query->where('barcode', $code);
+                })->with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
+                }])->first();
+                if(!$product){
+                    $product = Product::where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks' => function($query) use ($to){
+                        $query->where('_workpoint', $to);
+                    }])->first();
+                }
                 if($product){
-                    if(isset($row['piezas'])){
-                        $required = $row['piezas'];
-                        if($product->_unit == 3){
-                            $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                            $required = round($required/$pieces, 2);
-                        }
-                    }else{
-                        $required = $row['cajas'];
+                    $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : false;
+                    if(!$cost){
+                        $notFound [] = $product->code;
                     }
-                    $added++;
-                    $requisition->products()->syncWithoutDetaching([$product->id => ['units' => $required, "comments" => "", "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0]]);
+                    $amount = isset($row["amount"]) ? $row["amount"] : 1;
+                    $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
+                    $units = $this->getAmount($product, $amount, $_supply_by);
+                    $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
+                    $total = $cost * $units;
+                    $requisition->products()->syncWithoutDetaching([
+                        $product->id => [
+                            'amount' => $amount,
+                            '_supply_by' => $_supply_by,
+                            'units' => $units,
+                            'cost' => $cost,
+                            'total' => $total,
+                            'comments' => isset($row["comments"]) ? $row["comments"] : "",
+                            'stock' => $stock
+                        ]
+                    ]);
+                    $added [] = [
+                        "id" => $product->id,
+                        "code" => $product->code,
+                        "name" => $product->name,
+                        "description" => $product->description,
+                        "dimensions" => $product->dimensions,
+                        "pieces" => $product->pieces,
+                        "units" => $product->units,
+                        "ordered" => [
+                            "amount" => $amount,
+                            "_supply_by" => $_supply_by,
+                            "units" => $units,
+                            "cost" => $cost,
+                            "total" => $total,
+                            "comments" => isset($row["comments"]) ? $row["comments"] : "",
+                            "stock" => $stock
+                        ]
+                    ];
                 }else{
-                    array_push($fail, $row['code']);
+                    $notFound[] = $row["code"];
                 }
             }
 
         }
-        return response()->json(["added" => $added, "fail" => $fail]);
+        return response()->json(["added" => $added, "notFound" => $notFound]);
     }
 
     public function removeProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by){
-                /* $product = Product::with('prices', 'units')->find($request->_product);
-                $amount = isset($request->amount) ? $request->amount : 1; */
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $requisition->products()->detach([$request->_product]);
                 return response()->json(["success" => true]);
             }else{
@@ -172,7 +235,7 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function log($case, Requisition $requisition){
+    public function log($case, Requisition $requisition, $_printer = null, $actors = []){
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
@@ -185,89 +248,89 @@ class RequisitionController extends Controller{
             $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
         }
         switch($case){
-            case 1:
+            case 1: /* LEVANTAR PEDIDO*/
                 $requisition->log()->attach(1, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
+                return true;
             break;
-            case 2:
-                // RECARGAR STOCKS DE LA REQUISISION
-                //RECARGAR LA REQUISIÓN
+            case 2: /* POR SURTIR */ //IMPRESION DE COMPROBANTE EN TIENDA
+                $requisition->log()->attach(2, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                    ])]);
+                $requisition->_status = 2;
+                $requisition->save();
+                $requisition->fresh(['log']);
+                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
+            break;
+            case 3: /* SURTIENDO */
+                $requisition->log()->attach(3, [ 'details' => json_encode([
+                    "responsable" => $responsable,
+                    "actors" => $actors
+                ])]);
+                $requisition->_status = 3;
+                $requisition->save();
                 $_workpoint_to = $requisition->_workpoint_to;
-                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
                         $query->whereHas('celler', function($query) use ($_workpoint_to){
                             $query->where('_workpoint', $_workpoint_to);
                         });
                     }]);
                 }]);
-                
-                //IMPRESION EN LA BODEGA
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_to);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                if($cellerPrinter->requisitionTicket($requisition)){
-                    $requisition->printed = $requisition->printed +1;
+                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                if($miniprinter->requisitionTicket($requisition)){
+                    $requisition->printed = $requisition->printed + 1;
                     $requisition->save();
                 }
-                //IMPRESION DE COMPROBANTE EN TIENDA
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                $storePrinter->requisitionReceipt($requisition);
-                $requisition->log()->attach(2, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                return true;
             break;
-            case 3:
-                $requisition->log()->attach(3, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                return true;
-            break;
-            case 4:
+            case 4: /* POR VALIDAR EMBARQUE */
                 $requisition->log()->attach(4, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                return true;
+                $requisition->_status = 4;
+                $requisition->save();
             break;
-            case 5:
+            case 5: /* VALIDANDO EMBARQUE */
                 $requisition->log()->attach(5, [ 'details' => json_encode([
-                    "responsable" => $responsable
+                    "responsable" => $responsable,
+                    "actors" => $actors
                 ])]);
-                return true;
+                $requisition->_status = 5;
+                $requisition->save();
             break;
-            case 6:
-                /* $_workpoint_from = $requisition->_workpoint_from;
-                $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
-                    $query->with(['locations' => function($query)  use ($_workpoint_from){
-                        $query->whereHas('celler', function($query) use ($_workpoint_from){
-                            $query->where('_workpoint', $_workpoint_from);
-                        });
-                    }]);
-                }]);
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-                $printer->requisitionTicket($requisition); */
+            case 6: /* POR ENVIAR */
                 $requisition->log()->attach(6, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                return true;
+                $requisition->_status = 6;
+                $requisition->save();
             break;
-            case 7:
+            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 $requisition->log()->attach(7, [ 'details' => json_encode([
-                    "responsable" => $responsable
+                    "responsable" => $responsable,
+                    "actors" => $actors
                 ])]);
-                return true;
+                $requisition->_status = 7;
+                $requisition->save();
             break;
-            case 8:
+            case 8: /* POR VALIDAR RECEPCIÓN */
                 $requisition->log()->attach(8, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                return true;
+                $requisition->_status = 8;
+                $requisition->save();
             break;
-            case 9:
+            case 9: /* VALIDANDO RECEPCIÓN */
+                $requisition->log()->attach(9, [ 'details' => json_encode([
+                    "responsable" => $responsable,
+                    "actors" => $actors
+                ])]);
+                $requisition->_status = 9;
+                $requisition->save();
                 $_workpoint_from = $requisition->_workpoint_from;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
                     $query->with(['locations' => function($query)  use ($_workpoint_from){
@@ -276,25 +339,49 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $workpoint_to_print = Workpoint::find($requisition->_workpoint_from);
-                $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
+                $printer = $printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_from]])->first();
                 $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
                 $storePrinter->requisitionTicket($requisition);
-                $requisition->log()->attach(9, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                return true;
             break;
             case 10:
                 $requisition->log()->attach(10, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
-                return true;
+                $requisition->_status = 10;
+                $requisition->save();
             break;
-            case 11:
-                $requisition->log()->attach(11, [ 'details' => json_encode([])]);
+            case 100:
+                $requisition->log()->attach(100, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                ])]);
+                $requisition->_status = 100;
+                $requisition->save();
+            break;
+            case 101:
+                $requisition->log()->attach(101, [ 'details' => json_encode([])]);
+                $requisition->_status = 101;
+                $requisition->save();
             break;
         }
+        $requisition->refresh('log');
+        return [
+            "success" => true,
+            "printed" => $requisition->printed,
+            "status" => $requisition->status,
+            "log" => $requisition->log->filter(function($event) use($case){
+                return $event->id >= $case;
+            })->values()->map(function($event){
+                return [
+                    "id" => $event->id,
+                    "name" => $event->name,
+                    "active" => $event->active,
+                    "allow" => $event->allow,
+                    "details" => json_decode($event->pivot->details),
+                    "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
+                    "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
+                ];
+            })
+        ];
     }
 
     public function index(Request $request){
@@ -335,11 +422,7 @@ class RequisitionController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log','products' => function($query){
-                                        $query->with(['prices' => function($query){
-                                            $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
-                                        }, 'units', 'variants']);
-                                    }])
+        $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                                     ->where($clause)
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->withCount(["products"])
@@ -349,6 +432,7 @@ class RequisitionController extends Controller{
             "workpoints" => $workpoints,
             "types" => $types,
             "status" => $status,
+            /* "units" => \App\ProductUnit::all(), */
             "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
@@ -378,29 +462,53 @@ class RequisitionController extends Controller{
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get();
-        return response()->json(RequisitionResource::collection($requisitions));
+                                    
+        return response()->json([
+            "workpoints" => WorkPoint::all(),
+            "types" => Type::all(),
+            "status" => Process::all(),
+            "requisitions" => RequisitionResource::collection($requisitions)
+        ]);
     }
 
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query->with(['units', 'variants']);
-        }, 'to', 'from', 'created_by', 'log'])->find($id);
+        }, 'to', 'from', 'created_by', 'log'])
+        ->withCount(["products"])->find($id);
         return response()->json(new RequisitionResource($requisition));
     }
 
     public function nextStep(Request $request){
         $requisition = Requisition::find($request->id);
-        $status = isset($request->_status) ? $request->_status : ($requisition->_status+1);
-        if($status>0 && $status<12){
-            $result = $this->log($status, $requisition);
-            if($result){
-                $requisition->_status= $status;
-                $requisition->save();
-                $requisition->load(['type', 'status', 'products', 'to', 'from', 'created_by', 'log']);
+        $server_status = 200;
+        if($requisition){
+            $_status = isset($request->_status) ? $request->_status : $requisition->_status+1;
+            $_printer = isset($request->_printer) ? $request->_printer : null;
+            $_actors = isset($request->_actors) ? $request->_actors : [];
+            $process = Process::all()->toArray();
+            if(in_array($_status, array_column($process, "id"))){
+                $result = $this->log($_status, $requisition, $_printer, $_actors);
+                $msg = $result["success"] ? "" : "No se pudo cambiar el status";
+                $server_status = $result["success"] ? 200 : 500;
+            }else{
+                $msg = "Status no válido";
+                $server_status = 400;
             }
-            return response()->json(["success" => $result, 'order' => new RequisitionResource($requisition)]);
+        }else{
+            $msg = "Pedido no encontrado";
+            $server_status = 404;
         }
-        return response()->json(["success" => false, "msg" => "Status no válido"]);
+        return response()->json([
+            "success" => isset($result) ? $result["success"] : false,
+            "serve_status" => $server_status,
+            "msg" => $msg,
+            "updates" =>[
+                "status" => isset($result) ? $result["status"] : null,
+                "log" => isset($result) ? $result["log"] : null,
+                "printed" =>  isset($result) ? $result["printed"] : null,
+            ]
+        ]);
     }
 
     public function reimpresion(Request $request){
@@ -414,8 +522,8 @@ class RequisitionController extends Controller{
                 });
             }]);
         }]);
-        $printer = $this->getPrinter($workpoint_to_print, $requisition->_workpoint_from);
-        $cellerPrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
         $res = $cellerPrinter->requisitionTicket($requisition);
         $requisition->printed = $requisition->printed +1;
         $requisition->save();
@@ -443,63 +551,6 @@ class RequisitionController extends Controller{
         $requesitions = Requisition::where($where);
 
         return response()->json();
-    }
-
-    public function getPrinter($who, $for){
-        /* $dominio = explode(':', $who->dominio)[0]; */
-        $printer = \App\Printer::where([['_type', 2], ['_workpoint', $who->id]])->first();
-        return ["domain" => $printer->ip, "port" => 9100];
-        /* switch($who->id){
-            case 1:
-                if($for == 8 || $for == 11 || $for == 13 || $for == 14 || $for == 3 || $for == 4 || $for == 7){
-                    return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
-                }else{
-                    return ["domain" => env("PRINTER_ARRIBA"), "port" => 9100];
-                }
-                break;
-            case 2:
-                return ["domain" => "187.202.55.154", "port" => 4065];
-                break;
-            case 3:
-                return ["domain" => "192.168.10.181", "port" => 9100];
-                break;
-            case 4:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 5:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 6:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 7:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 8:
-                return ["domain" => $dominio, "port" => 4066];
-                break;
-            case 9:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 10:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 11:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 12:
-                return ["domain" => $dominio, "port" => 4066];
-                break;
-            case 13:
-                return ["domain" => $dominio, "port" => 4065];
-                break;
-            case 14:
-                return ["domain" => $dominio, "port" => 9100];
-                break;
-            case 15:
-                return ["domain" => env("PRINTER_ABAJO"), "port" => 9100];
-                break;
-        } */
     }
 
     public function getVentaFromStore($folio, $workpoint_id, $caja, $to){
@@ -715,6 +766,59 @@ class RequisitionController extends Controller{
             case 3:
                 return ["Navidad", "Paraguas", "Juguete"];
                 break;
+        }
+    }
+
+    public function getAmount($product, $amount, $_supply_by){
+        switch ($_supply_by){
+            case 1:
+                return $amount;
+            break;
+            case 2:
+                return $amount * 12;
+            break;
+            case 3:
+                return ($amount * $product->pieces);
+            break;
+            case 4:
+                return round($amount * ($product->pieces/2));
+            break;
+        }
+    }
+
+    public function setDeliveryValue(Request $request){
+        try{
+            $requisition = Requisition::find($request->_requisition);
+            $product = $order->products()->where('id', $request->_product)->first();
+            if($product){
+                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
+                return response()->json(["success" => true, "server_status" => 200]);
+            }else{
+                return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
+        }
+    }
+
+    public function setReceiveValue(Request $request){
+        try{
+            $requisition = Requisition::find($request->_requisition);
+            $product = $order->products()->where('id', $request->_product)->first();
+            if($product){
+                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                $requisition->products()->syncWithoutDetaching([$request->_product => ['toReceived' => $units]]);
+                return response()->json(["success" => true, "server_status" => 200]);
+            }else{
+                return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
+            }
+        }catch(Exception $e){
+            return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
         }
     }
 }

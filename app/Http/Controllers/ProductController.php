@@ -688,6 +688,8 @@ class ProductController extends Controller{
             $query = $query->limit($request->limit);
         }
 
+        $query = $query->with('variants');
+
         if(isset($request->paginate) && $request->paginate){
             $products = $query->orderBy('_status', 'asc')->paginate($request->paginate);
         }else{
