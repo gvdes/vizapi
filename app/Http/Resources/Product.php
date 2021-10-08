@@ -27,10 +27,14 @@ class Product extends JsonResource{
             'name' => $this->name,
             'barcode' => $this->barcode,
             'description' => $this->description,
+            'label' => $this->label,
             'pieces' => $this->pieces,
             'dimensions' => $this->dimensions,
             'weight' => $this->weight,
             'large' => $this->large,
+            'section' => $this->section,
+            'family' => $this->family,
+            'category' => $this->category,
             'attributes' => $this->whenLoaded('attributes', function(){
                 return $this->attributes->map(function($attribute){
                     return [

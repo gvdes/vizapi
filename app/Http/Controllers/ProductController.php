@@ -49,6 +49,7 @@ class ProductController extends Controller{
                             'barcode' => $product['barcode'],
                             'large' => $product['large'],
                             'description' => trim($product['description']),
+                            'label' => trim($product['label']),
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
                             '_category' => $this->getCategoryId(trim($product['_family']), trim($product['_category']), $categories, $families, $array_families),
@@ -65,7 +66,8 @@ class ProductController extends Controller{
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
                         $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
-                        $instance->description = $product['description'];
+                        $instance->description = trim($product['description']);
+                        $instance->label = trim($product['label']);
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
                         $instance->_status = $product['_status'];
@@ -209,7 +211,8 @@ class ProductController extends Controller{
                         ], [
                             'name' => trim($product['name']),
                             'barcode' => $product['barcode'],
-                            'description' => $product['description'],
+                            'description' => trim($product['description']),
+                            'label' => trim($product['label']),
                             'large' => $product['large'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
@@ -228,6 +231,7 @@ class ProductController extends Controller{
                         //$instance->_status = $product['_status'];
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
+                        $instance->label = $product['label'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
                         $instance->updated_at = new \DateTime();
@@ -588,7 +592,7 @@ class ProductController extends Controller{
     }
 
     public function getProducts(Request $request){
-        $query = Product::query();
+        $query = Product::query()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy');
         if(isset($request->autocomplete) && $request->autocomplete){
             $codes = explode('ID-', $request->autocomplete);
             if(count($codes)>1){
