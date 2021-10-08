@@ -359,7 +359,8 @@ class OrderController extends Controller{
         try{
             $order = Order::find($request->_order);
             $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
-            $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['prices' => function($query) use($prices){
+            $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+            ->with(['prices' => function($query) use($prices){
                 $query->whereIn('_type', $prices)->orderBy('_type');
             }, 'units', 'stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -651,7 +652,7 @@ class OrderController extends Controller{
     public function find($id){
         $order = Order::with(['products' => function($query){
             $query
-            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
             ->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
             },'variants', 'stocks' => function($query){
