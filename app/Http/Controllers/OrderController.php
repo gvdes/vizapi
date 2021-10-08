@@ -359,7 +359,7 @@ class OrderController extends Controller{
         try{
             $order = Order::find($request->_order);
             $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
-            $product = Product::with(['prices' => function($query) use($prices){
+            $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['prices' => function($query) use($prices){
                 $query->whereIn('_type', $prices)->orderBy('_type');
             }, 'units', 'stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -384,7 +384,11 @@ class OrderController extends Controller{
                             "code" => $product->code,
                             "name" => $product->name,
                             "description" => $product->description,
-                            "pieces" => $product->pieces,
+                            "dimensions" => $product->dimensions,
+                            "cost" => $product->cost,
+                            "section" => $product->section,
+                            "family" => $product->family,
+                            "category" => $product->category,
                             "prices" => $product->prices->map(function($price){
                                 return [
                                     "id" => $price->id,
@@ -392,6 +396,7 @@ class OrderController extends Controller{
                                     "price" => $price->pivot->price,
                                 ];
                             }),
+                            "pieces" => $product->pieces,
                             "ordered" => [
                                 "comments" => $request->comments,
                                 "amount" => $amount,
@@ -594,14 +599,15 @@ class OrderController extends Controller{
         }
     }
 
-    public function calculatePriceList($product, $units){
+    public function calculatePriceList($product, $units,$order){
         if($units >= $product->pieces){
-            return 5;
-        }elseif($units>=round($product->pieces/2)){
+            return 4;
+        }elseif($units>=round($product->pieces/2) && $product->pieces > 3){
             return 3;
         }elseif($units>=3){
             return 2;
         }else{
+            //evaluate family of products
             return 1;
         }
     }
@@ -644,7 +650,9 @@ class OrderController extends Controller{
 
     public function find($id){
         $order = Order::with(['products' => function($query){
-            $query->with(['prices' => function($query){
+            $query
+            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+            ->with(['prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
             },'variants', 'stocks' => function($query){
                 $query->where('_workpoint', $this->account->_workpoint);

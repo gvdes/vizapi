@@ -62,6 +62,9 @@ class Order extends JsonResource{
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
                         "cost" => $product->cost,
+                        "section" => $product->section,
+                        "family" => $product->family,
+                        "category" => $product->category,
                         "prices" => $product->prices->map(function($price){
                             return [
                                 "id" => $price->id,
