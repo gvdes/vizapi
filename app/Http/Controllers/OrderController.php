@@ -358,7 +358,7 @@ class OrderController extends Controller{
     public function addProduct(Request $request){
         try{
             $order = Order::find($request->_order);
-            $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
+            $prices = /* $order->_price_list ? [$order->_price_list] :  */[1,2,3,4];
             $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
             ->with(['prices' => function($query) use($prices){
                 $query->whereIn('_type', $prices)->orderBy('_type');
@@ -371,9 +371,9 @@ class OrderController extends Controller{
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                 $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                 if($order->_client==0){
-                    $price_list = $order->_price_list;
+                    $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
                 }else{
-                    $price_list = 1; /* PRICE LIST */
+                    $price_list = $order->_price_list;
                 }
                 $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                 if($index_price === 0 || $index_price>0){
@@ -600,8 +600,8 @@ class OrderController extends Controller{
         }
     }
 
-    public function calculatePriceList($product, $units,$order){
-        if($units >= $product->pieces){
+    public function calculatePriceList($product, $units, $order){
+        if($units >= $product->pieces && $product->pieces > 3){
             return 4;
         }elseif($units>=round($product->pieces/2) && $product->pieces > 3){
             return 3;
@@ -609,7 +609,20 @@ class OrderController extends Controller{
             return 2;
         }else{
             //evaluate family of products
-            return 1;
+            $products = $order
+            ->products()
+            ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', [$product->section, $product->family])
+            ->get();
+            
+            $units = $products->sum(function($product){
+                return $product->pivot->units;
+            });
+
+            if($units>=6){
+                return 2;
+            }else{
+                return 1;
+            }
         }
     }
     
@@ -669,6 +682,14 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
+        $products = $order
+        ->products()
+        ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', ["Mochila", "Bolsos"])
+        ->get();
+        $units = $products->sum(function($product){
+            return $product->pivot->units;
+        });
+        return response()->json(["products" => $products, "units" => $units]);
         $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
         $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
         return response()->json(new OrderResource($order));
@@ -936,7 +957,7 @@ class OrderController extends Controller{
 
             if($order){
                 foreach($request->products as $product_code) {
-                    $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
+                    $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];
                     $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                     ->with(['prices' => function($query) use($prices){
                         $query->whereIn('_type', $prices)->orderBy('_type');
@@ -948,9 +969,9 @@ class OrderController extends Controller{
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                         $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                         if($order->_client==0){
-                            $price_list = $order->_price_list;
+                            $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
                         }else{
-                            $price_list = 1; /* PRICE LIST */
+                            $price_list = $order->_price_list;
                         }
                         $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                         if($index_price === 0 || $index_price>0){
