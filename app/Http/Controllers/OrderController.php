@@ -932,18 +932,19 @@ class OrderController extends Controller{
             $order = Order::find($request->_order);
             $notFound = [];
             $notPrices = [];
-            $notPrice = [];
+            $added = [];
 
             if($order){
                 foreach($request->products as $product_code) {
                     $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
-                    $product = Product::with(['prices' => function($query) use($prices){
+                    $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    ->with(['prices' => function($query) use($prices){
                         $query->whereIn('_type', $prices)->orderBy('_type');
                     }, 'units', 'stocks' => function($query) use($order){
                         $query->where('_workpoint', $order->_workpoint_from);
                     }])->where("code", $product_code["code"])->first();
                     if($product){
-                        $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                        $amount = isset($product_code["amount"]) ? $product_code["amount"] : 1; /* CANTIDAD EN UNIDAD */
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                         $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                         if($order->_client==0){
@@ -955,14 +956,53 @@ class OrderController extends Controller{
                         if($index_price === 0 || $index_price>0){
                             $price = $product->prices[$index_price]->pivot->price;
                             if($price > 0){
-                                $order->products()->syncWithoutDetaching([$product->id => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => "", 'price' => $price, "total" => ($units * $price)]]);
+                                $order->products()->syncWithoutDetaching([$product->id => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $product_code["comments"], 'price' => $price, "total" => ($units * $price)]]);
+                                $added[] = [
+                                    "id" => $product->id,
+                                    "code" => $product->code,
+                                    "name" => $product->name,
+                                    "description" => $product->description,
+                                    "dimensions" => $product->dimensions,
+                                    "cost" => $product->cost,
+                                    "section" => $product->section,
+                                    "family" => $product->family,
+                                    "category" => $product->category,
+                                    "prices" => $product->prices->map(function($price){
+                                        return [
+                                            "id" => $price->id,
+                                            "name" => $price->name,
+                                            "price" => $price->pivot->price,
+                                        ];
+                                    }),
+                                    "pieces" => $product->pieces,
+                                    "ordered" => [
+                                        "comments" => $product_code["comments"],
+                                        "amount" => $amount,
+                                        "units" => $units,
+                                        "stock" => 0,
+                                        "_supply_by" => $_supply_by,
+                                        "_price_list" => $price_list,
+                                        "price" => $price,
+                                        "total" => $units * $price,
+                                        "kit" => "",
+                                    ],
+                                    "stocks" => [
+                                        [
+                                            "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
+                                            "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
+                                            "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                                            "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                                            "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
+                                            "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                            "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                        ]
+                                    ]
+                                ];
                             }else{
-                                /* return response()->json(["msg" => "El producto tiene el precio en 0", "success" => false]); */
                                 $notPrices[] = $product_code["code"];
                             }
                         }else{
-                            /* return response()->json(["msg" => "El producto no tiene precios", "success" => false]); */
-                            $notPrice[] = $product_code["code"];
+                            $notPrices[] = $product_code["code"];
                         }
                     }else{
                         $notFound[] = $product_code["code"];
@@ -972,7 +1012,7 @@ class OrderController extends Controller{
             return response()->json([
                 "notFound" => $notFound,
                 "notPrices" => $notPrices,
-                "notPrice" => $notPrice
+                "added" => $added
             ]);
         }catch(Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false]);

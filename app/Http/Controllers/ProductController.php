@@ -50,6 +50,7 @@ class ProductController extends Controller{
                             'large' => $product['large'],
                             'description' => trim($product['description']),
                             'label' => trim($product['label']),
+                            'reference' => trim($product['reference']),
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
                             '_category' => $this->getCategoryId(trim($product['_family']), trim($product['_category']), $categories, $families, $array_families),
@@ -68,6 +69,7 @@ class ProductController extends Controller{
                         $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
                         $instance->description = trim($product['description']);
                         $instance->label = trim($product['label']);
+                        $instance->reference = trim($product['reference']);
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
                         $instance->_status = $product['_status'];
@@ -213,6 +215,7 @@ class ProductController extends Controller{
                             'barcode' => $product['barcode'],
                             'description' => trim($product['description']),
                             'label' => trim($product['label']),
+                            'reference' => trim($product['reference']),
                             'large' => $product['large'],
                             'dimensions' => $product['dimensions'],
                             'pieces' => $product['pieces'],
@@ -232,6 +235,7 @@ class ProductController extends Controller{
                         $instance->_category = $_category;
                         $instance->description = $product['description'];
                         $instance->label = $product['label'];
+                        $instance->reference = $product['reference'];
                         $instance->pieces = $product['pieces'];
                         $instance->_provider = $_provider;
                         $instance->updated_at = new \DateTime();

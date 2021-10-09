@@ -955,6 +955,7 @@ class VentasController extends Controller{
         "Status" => $product->status->name,
         "Unidad de medida" => $product->units->name,
         "Descripción" => $product->description,
+        "Referencia" => $product->reference,
         "Código de barras" => $product->barcode,
         "Piezas por caja" => $product->pieces,
         "Costo" => $product->cost,
