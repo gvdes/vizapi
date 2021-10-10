@@ -682,14 +682,14 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        $products = $order
+        /* $products = $order
         ->products()
         ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', ["Mochila", "Bolsos"])
         ->get();
         $units = $products->sum(function($product){
             return $product->pivot->units;
         });
-        return response()->json(["products" => $products, "units" => $units]);
+        return response()->json(["products" => $products, "units" => $units]); */
         $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
         $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
         return response()->json(new OrderResource($order));
