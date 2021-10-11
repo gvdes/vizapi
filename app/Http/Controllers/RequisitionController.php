@@ -264,7 +264,7 @@ class RequisitionController extends Controller{
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 $miniprinter = new MiniPrinterController($printer->ip, 9100);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
-            break;
+            /* break; */
             case 3: /* SURTIENDO */
                 $requisition->log()->attach(3, [ 'details' => json_encode([
                     "responsable" => $responsable,
@@ -273,7 +273,7 @@ class RequisitionController extends Controller{
                 $requisition->_status = 3;
                 $requisition->save();
                 $_workpoint_to = $requisition->_workpoint_to;
-                $requisition->fresh(['log', 'products' => function($query) use ($_workpoint_to){
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
                         $query->whereHas('celler', function($query) use ($_workpoint_to){
                             $query->where('_workpoint', $_workpoint_to);
@@ -568,13 +568,13 @@ class RequisitionController extends Controller{
                 }])->where('code', $row['code'])->first();
                 if($product){
                     $required = $row['req'];
-                    /* if($product->_unit == 3){
+                    if($product->_unit == 3){
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                        $required = round($required/$pieces, 2);
+                        $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => round($required/$pieces, 2),  "_supply_by" => 3, 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                     }
                     if($required > 0){
-                    } */
-                    $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
+                        $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
+                    }
                 }
             }
             return ["notes" => "Pedido preventa tienda #".$folio, "products" => $toSupply];

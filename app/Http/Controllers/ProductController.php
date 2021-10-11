@@ -319,8 +319,12 @@ class ProductController extends Controller{
         $esElProducto = Product::with(['prices' => function($query){
             $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
         }, 'units', 'variants', 'status'])
-        ->orWhere('name', $request->code)
-        ->orWhere('code', $request->code)->first();
+        ->orWhere(function($query) use($code){
+            $query->orWhere('name', $code)
+            ->orWhere('code', $code);
+        })
+        ->where("_status", "!=", 4)
+        ->first();
 
         $products = Product::with(['prices' => function($query){
                             $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
@@ -328,11 +332,15 @@ class ProductController extends Controller{
                         ->whereHas('variants', function(Builder $query) use ($code){
                             $query->where('barcode', 'like', '%'.$code.'%');
                         })
-                        ->orWhere('name', $request->code)
-                        ->orWhere('code', $request->code)
-                        ->orWhere('name', 'like','%'.$code.'%')
-                        ->orWhere('code', 'like','%'.$code.'%')
-                        ->orWhere('description', 'like','%'.$code.'%')->orderBy('_status', 'asc')
+                        ->orWhere(function($query) use($code){
+                            $query->orWhere('name', $code)
+                            ->orWhere('code', $code)
+                            ->orWhere('name', 'like','%'.$code.'%')
+                            ->orWhere('code', 'like','%'.$code.'%')
+                            ->orWhere('description', 'like','%'.$code.'%');
+                        })
+                        ->where("_status", "!=", 4)
+                        ->orderBy('_status', 'asc')
                         ->limit('20')->get();
         if($esElProducto && count($products)==20){
             $products[] = $esElProducto;
@@ -848,11 +856,14 @@ class ProductController extends Controller{
         }
         $categories = \App\ProductCategory::where('deep', "<=" ,2)->get();
         $ids_categories = array_column($categories->toArray(), 'id');
-        $products = Product::with(['category','sales' => function($query) use($date_from, $date_to){
+        $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+        ->with(['category','sales' => function($query) use($date_from, $date_to){
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 7);
-        }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])->get()->map(function($product) use($categories, $ids_categories){
+        }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])
+        ->havingRaw('section = ?', ["Navidad"])
+        ->get()->map(function($product) use($categories, $ids_categories){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;
             });
@@ -885,39 +896,6 @@ class ProductController extends Controller{
                     $rentabilidad = $price;
                 }
             }
-            if($product->category->deep == 0){
-                $section = $product->category->name;
-                $family = "";
-                $category = "";
-            }else if($product->category->deep == 1){
-                $key = array_search($product->category->root, $ids_categories);
-                if($key === 0 || $key > 0){
-                    $section = $categories[$key]->name;
-                    $family = $product->category->name;
-                    $category = "";
-                }else{
-                    $section = $categories->category->root;
-                    $family = $product->category->name;
-                    $category = "";
-                }
-            }else{
-                $key = array_search($product->category->root, $ids_categories);
-                if($key === 0 || $key > 0){
-                    $family = $categories[$key]->name;
-                    $key2 = array_search($categories[$key]->root, $ids_categories);
-                    if($key2 === 0 || $key2 > 0){
-                        $section = $categories[$key2]->name;
-                        $category = $product->category->name;
-                    }else{
-                        $section = $categories[$key]->root;
-                        $category = $product->category->name;
-                    }
-                }else{
-                    $section = "";
-                    $family = $categories->category->root;
-                    $category = $product->category->name;
-                }
-            }
             $prices = $product->prices->reduce(function($res, $price){
                 $res[$price->name] = $price->pivot->price;
                 return $res;
@@ -927,9 +905,9 @@ class ProductController extends Controller{
                 "Código" => $product->name,
                 "Descripción" => $product->description,
                 /* "Proveedor" => $product->provider->name, */
-                "Sección" => $section,
-                "Familia" => $family,
-                "Categoria" => $category,
+                "Sección" => $product->section,
+                "Familia" => $product->family,
+                "Categoria" => $product->categoryy,
                 "Costo" => $product->cost,
                 "Precio AAA" => $price,
                 "stock" => $stock,
