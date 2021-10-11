@@ -264,7 +264,6 @@ class MiniPrinterController extends Controller{
                     switch($product->pivot->_supply_by){
                         case 1:
                             $printer->text("UNIDADES SOLICITADAS: ");
-                            $multiple = '1';
                             break;
                         case 2:
                             $printer->text("DOCENAS SOLICITADAS: ");
