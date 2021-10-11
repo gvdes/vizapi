@@ -429,7 +429,7 @@ class RequisitionController extends Controller{
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get();
         return response()->json([
-            "workpoints" => $workpoints,
+            "workpoints" => WorkPoint::all()/* $workpoints */,
             "types" => $types,
             "status" => $status,
             /* "units" => \App\ProductUnit::all(), */
