@@ -260,28 +260,31 @@ class MiniPrinterController extends Controller{
                     $printer->setTextSize(1,1);
                     $printer->text($product->description." \n");
                     $amount = '';
+                    $multiple = "";
                     switch($product->pivot->_supply_by){
                         case 1:
                             $printer->text("UNIDADES SOLICITADAS: ");
-                            $amount = '1';
+                            $multiple = '1';
                             break;
                         case 2:
                             $printer->text("DOCENAS SOLICITADAS: ");
-                            $amount = '12';
+                            $multiple = '12';
                             break;
                         case 3:
                             $printer->text("CAJAS SOLICITADAS: ");
+                            $multiple = ''.$product->pices;
                             break;
                         case 4:
                             $printer->text("MEDIAS CAJAS SOLICITADAS: ");
+                            $multiple = ($product->pices/2)."";
                             break;
                     }
                     $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->amount);
+                    $printer->text($product->pivot->amount."x".$multiple);
                     $printer->setTextSize(1,1);
                     $printer->text(" x: ");
                     $printer->setTextSize(2,2);
-                    $printer->text("[ ".$amount." ]");
+                    $printer->text("[  ]");
                     $printer->setJustification(Printer::JUSTIFY_RIGHT);
                     $printer->setTextSize(2,2);
                     $printer->text("{  }\n");
