@@ -280,8 +280,8 @@ class MiniPrinterController extends Controller{
                     }
                     $printer->setTextSize(2,1);
                     $printer->text($product->pivot->amount."".$multiple);
-                    $printer->setTextSize(1,1);
-                    $printer->text(" x: ");
+                    /* $printer->setTextSize(1,1);
+                    $printer->text(" x: "); */
                     $printer->setTextSize(2,2);
                     $printer->text("[  ]");
                     $printer->setJustification(Printer::JUSTIFY_RIGHT);
