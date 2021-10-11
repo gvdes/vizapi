@@ -267,15 +267,15 @@ class MiniPrinterController extends Controller{
                             break;
                         case 2:
                             $printer->text("DOCENAS SOLICITADAS: ");
-                            $multiple = ' x 12';
+                            $multiple = 'x12';
                             break;
                         case 3:
                             $printer->text("CAJAS SOLICITADAS: ");
-                            $multiple = ' x '.$product->pices;
+                            $multiple = 'x'.$product->pieces;
                             break;
                         case 4:
                             $printer->text("MEDIAS CAJAS SOLICITADAS: ");
-                            $multiple = " x ".($product->pices/2)."";
+                            $multiple = "x".($product->pieces/2)."";
                             break;
                     }
                     $printer->setTextSize(2,1);
