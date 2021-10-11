@@ -567,14 +567,14 @@ class RequisitionController extends Controller{
                     $query->where('_workpoint', $to);
                 }])->where('code', $row['code'])->first();
                 if($product){
-                    $required = $row['req'];
+                    /* $required = $row['req'];
                     if($product->_unit == 3){
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                         $required = round($required/$pieces, 2);
                     }
                     if($required > 0){
-                        $toSupply[$product->id] = ['units' => $required, 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
-                    }
+                    } */
+                    $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                 }
             }
             return ["notes" => "Pedido preventa tienda #".$folio, "products" => $toSupply];
