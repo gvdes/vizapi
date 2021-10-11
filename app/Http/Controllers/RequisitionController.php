@@ -635,7 +635,8 @@ class RequisitionController extends Controller{
             }
             if($required > 0){
                 if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
-                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0];
+                    /* $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0]; */
+                    $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => 0];
                 }
             }
         }
