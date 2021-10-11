@@ -567,8 +567,8 @@ class RequisitionController extends Controller{
                     $query->where('_workpoint', $to);
                 }])->where('code', $row['code'])->first();
                 if($product){
-                    /* $required = $row['req'];
-                    if($product->_unit == 3){
+                    $required = $row['req'];
+                    /* if($product->_unit == 3){
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                         $required = round($required/$pieces, 2);
                     }
