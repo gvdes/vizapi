@@ -438,7 +438,7 @@ class OrderController extends Controller{
     public function setDeliveryValue(Request $request){
         try{
             $order = Order::find($request->_order);
-            $prices = $order->_price_list ? [$order->_price_list] : [1,2,3,4];
+            $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
                 $product = $order->products()->with(['stocks' => function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
@@ -448,9 +448,9 @@ class OrderController extends Controller{
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
-                        $price_list = $order->_price_list;
+                        $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
                     }else{
-                        $price_list = 1; /* PRICE LIST */
+                        $price_list = $order->_price_list;
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     $price = $product->prices[$index_price]->pivot->price;
