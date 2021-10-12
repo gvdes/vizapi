@@ -50,6 +50,9 @@ class Requisition extends JsonResource{
                         "cost" => $product->cost,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
+                        "section" => $product->section,
+                        "family" => $product->family,
+                        "category" => $product->category,
                         "pieces" => $product->pieces,
                         "ordered" => [
                             "amount" => $product->pivot->amount,

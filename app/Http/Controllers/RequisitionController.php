@@ -95,7 +95,9 @@ class RequisitionController extends Controller{
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $to = $requisition->_workpoint_to;
-                $product = Product::with(['units', 'stocks' => function($query) use ($to){
+                $product = Product::
+                selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                ->with(['units', 'stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
                 }, 'prices' => function($query){
                     $query->where('_type', 7);
@@ -129,6 +131,9 @@ class RequisitionController extends Controller{
                     "name" => $product->name,
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
+                    "section" => $product->section,
+                    "family" => $product->family,
+                    "category" => $product->category,
                     "pieces" => $product->pieces,
                     "units" => $product->units,
                     "ordered" => [
@@ -163,13 +168,17 @@ class RequisitionController extends Controller{
                 /* $product = Product::with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
                 }])->where('code', $code)->where('_status', '!=', 4)->first(); */
-                $product = Product::whereHas('variants', function($query) use ($code){
+                $product = Product::
+                selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                ->whereHas('variants', function($query) use ($code){
                     $query->where('barcode', $code);
                 })->with(['stocks' => function($query) use ($to){
                     $query->where('_workpoint', $to);
                 }])->first();
                 if(!$product){
-                    $product = Product::where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks' => function($query) use ($to){
+                    $product = Product::
+                    selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    ->where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks' => function($query) use ($to){
                         $query->where('_workpoint', $to);
                     }])->first();
                 }
@@ -200,6 +209,9 @@ class RequisitionController extends Controller{
                         "name" => $product->name,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
+                        "section" => $product->section,
+                        "family" => $product->family,
+                        "category" => $product->category,
                         "pieces" => $product->pieces,
                         "units" => $product->units,
                         "ordered" => [
@@ -280,11 +292,13 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
-                $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                if($miniprinter->requisitionTicket($requisition)){
-                    $requisition->printed = $requisition->printed + 1;
-                    $requisition->save();
+                if($requisition->printer == 0){
+                    $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+                    $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                    if($miniprinter->requisitionTicket($requisition)){
+                        $requisition->printed = $requisition->printed + 1;
+                        $requisition->save();
+                    }
                 }
             break;
             case 4: /* POR VALIDAR EMBARQUE */
@@ -473,7 +487,9 @@ class RequisitionController extends Controller{
 
     public function find($id){
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
-            $query->with(['units', 'variants']);
+            $query
+            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+            ->with(['units', 'variants']);
         }, 'to', 'from', 'created_by', 'log'])
         ->withCount(["products"])->find($id);
         return response()->json(new RequisitionResource($requisition));
