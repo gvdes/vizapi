@@ -668,7 +668,7 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        $query = $query->with(['status', 'stocks' => function($query){
+        $query = $query->with(['units', 'status', 'stocks' => function($query){
             $query = $query->where('_workpoint', $this->account->_workpoint);
         }]);
         /* if(isset($request->with_stock) && $request->with_stock){
