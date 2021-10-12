@@ -292,13 +292,11 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                if($requisition->printer == 0){
-                    $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
-                    $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                    if($miniprinter->requisitionTicket($requisition)){
-                        $requisition->printed = $requisition->printed + 1;
-                        $requisition->save();
-                    }
+                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                if($miniprinter->requisitionTicket($requisition)){
+                    $requisition->printed = $requisition->printed + 1;
+                    $requisition->save();
                 }
             break;
             case 4: /* POR VALIDAR EMBARQUE */
@@ -530,15 +528,14 @@ class RequisitionController extends Controller{
     public function reimpresion(Request $request){
         $requisition = Requisition::find($request->_requisition);
         $workpoint_to_print = Workpoint::find($this->account->_workpoint);
-        $_workpoint_to = $workpoint_to_print->id;
-        $requisition->load(['created_by' ,'log', 'products' => function($query) use ($_workpoint_to){
-            $query->with(['locations' => function($query)  use ($_workpoint_to){
-                $query->whereHas('celler', function($query) use ($_workpoint_to){
-                    $query->where('_workpoint', $_workpoint_to);
+        $requisition->load(['created_by' ,'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', $this->account->_workpoint);
                 });
             }]);
         }]);
-        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
         $res = $cellerPrinter->requisitionTicket($requisition);
         $requisition->printed = $requisition->printed +1;
