@@ -61,6 +61,7 @@ class Order extends JsonResource{
                         "name" => $product->name,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
+                        "barcode" => $product->barcode,
                         "cost" => $product->cost,
                         "section" => $product->section,
                         "family" => $product->family,

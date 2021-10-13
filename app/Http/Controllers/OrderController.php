@@ -385,6 +385,7 @@ class OrderController extends Controller{
                             "code" => $product->code,
                             "name" => $product->name,
                             "description" => $product->description,
+                            "barcode" => $product->barcode,
                             "dimensions" => $product->dimensions,
                             "cost" => $product->cost,
                             "section" => $product->section,
@@ -462,6 +463,7 @@ class OrderController extends Controller{
                                 "code" => $product->code,
                                 "name" => $product->name,
                                 "description" => $product->description,
+                                "barcode" => $product->barcode,
                                 "pieces" => $product->pieces,
                                 "prices" => $product->prices->map(function($price){
                                     return [
@@ -526,6 +528,7 @@ class OrderController extends Controller{
                                 "code" => $product->code,
                                 "name" => $product->name,
                                 "description" => $product->description,
+                                "barcode" => $product->barcode,
                                 "pieces" => $product->pieces,
                                 "prices" => $product->prices->map(function($price){
                                     return [
