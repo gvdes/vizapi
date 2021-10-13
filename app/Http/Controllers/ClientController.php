@@ -16,12 +16,16 @@ class ClientController extends Controller{
         //
     }
 
-  public function update(){
+  public function update(Request $request){
     try{
       $workpoint = \App\WorkPoint::find(1);
+
       $access = new AccessController($workpoint->dominio);
-      $clients = $access->getClients();
+      $date = isset($request->date) ? $request->date : null;
+      $clients = $access->getClients($date);
       $rows = [];
+      $store_success = [];
+      $store_fail = [];
       if($clients){
         foreach($clients as $client){
           $rows[] = Client::updateOrCreate(
@@ -37,10 +41,31 @@ class ClientController extends Controller{
             ]
           );
         }
+
+        $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
+        $raw_clients = $access->getRawClients($date);
+        if($raw_clients){
+          foreach($stores as $store){
+            $access_store = new AccessController($store->dominio);
+            $result = $access_store->syncClients($raw_clients);
+            if($result){
+              if($result["success"]){
+                $store_success[] = $store->alias;
+              }else{
+                $store_fail[] = $store->alias;
+              }
+            }else{
+              $store_fail[] = $store->alias;
+            }
+          }
+        }
+
         return response()->json([
-          "success" => true,
           "clients" => count($clients),
-          "updated" => $rows
+          "Tiendas actualizadas" => $store_success,
+          "Tiendas no actualizadas" => $store_fail,
+          "updated" => $rows,
+          "raw" => count($raw_clients)
         ]);
       }
       return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);

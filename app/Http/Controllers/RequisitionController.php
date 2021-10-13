@@ -641,15 +641,17 @@ class RequisitionController extends Controller{
             }else{
                 $required = 0;
             }
-
-            if($product->_unit == 3){
-                $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                $required = floor($required/$pieces);
-            }
             if($required > 0){
                 if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
-                    /* $toSupply[$product->id] = ['units' => $required, 'comments' => '', 'stock' => 0]; */
-                    $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => 0];
+                    if($product->_unit == 3){
+                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
+                        $boxes = floor($required/$pieces);
+                        if($boxes >= 1){
+                            $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $boxes,  "_supply_by" => 3 , 'comments' => '', "stock" => 0];
+                        }
+                    }else{
+                        $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => 0];
+                    }
                 }
             }
         }

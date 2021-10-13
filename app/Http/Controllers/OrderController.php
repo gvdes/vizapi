@@ -445,6 +445,7 @@ class OrderController extends Controller{
                 }])->where('id', $request->_product)->first();
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                    $new_amount = $amount ? $amount : $product->pivot->amount;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
@@ -454,7 +455,7 @@ class OrderController extends Controller{
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     $price = $product->prices[$index_price]->pivot->price;
-                    $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
+                    $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $new_amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
                     /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]); */
                     return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
                                 "id" => $product->id,
@@ -471,7 +472,7 @@ class OrderController extends Controller{
                                 }),
                                 "ordered" => [
                                     "comments" => $product->pivot->comments,
-                                    "amount" => $amount,
+                                    "amount" => $new_amount,
                                     "units" => $product->pivot->units,
                                     "toDelivered" => $units,
                                     "stock" => 0,
@@ -507,19 +508,19 @@ class OrderController extends Controller{
                         $query->where('_workpoint', $this->account->_workpoint);
                     }])->find($request->_product);
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                    $new_amount = $amount ? $amount : $product->pivot->amount;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
-                    //if(count($product->stocks)>0 && $product->stocks[0]->pivot->_status != 1){ return response()->json(["msg" => "No puedes agregar ese producto", "success" => false]); }
                     if($order->_client==0){
-                        $price_list = $order->_price_list;
+                        $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
                     }else{
-                        $price_list = 1; /* PRICE LIST */
+                        $price_list = $order->_price_list;
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     if($index_price === 0 || $index_price>0){
                         $price = $product->prices[$index_price]->pivot->price;
                         if($price > 0){
-                            $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $request->comments, 'price' => $price, "total" => ($units * $price)]]);
+                            $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $new_amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $request->comments, 'price' => $price, "total" => ($units * $price)]]);
                             return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
                                 "id" => $product->id,
                                 "code" => $product->code,
@@ -535,7 +536,7 @@ class OrderController extends Controller{
                                 }),
                                 "ordered" => [
                                     "comments" => $request->comments,
-                                    "amount" => $amount,
+                                    "amount" => $new_amount,
                                     "units" => 0,
                                     "toDelivered" => $units,
                                     "stock" => 0,
@@ -614,11 +615,11 @@ class OrderController extends Controller{
             ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', [$product->section, $product->family])
             ->get();
             
-            $units = $products->sum(function($product){
+            $units_for_price = $products->sum(function($product){
                 return $product->pivot->units;
             });
 
-            if($units>=6){
+            if($units_for_price>=3){
                 return 2;
             }else{
                 return 1;
