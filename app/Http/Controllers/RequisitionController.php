@@ -165,9 +165,6 @@ class RequisitionController extends Controller{
             $to = $requisition->_workpoint_to;
             foreach($products as $row){
                 $code = $row['code'];
-                /* $product = Product::with(['stocks' => function($query) use ($to){
-                    $query->where('_workpoint', $to);
-                }])->where('code', $code)->where('_status', '!=', 4)->first(); */
                 $product = Product::
                 selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                 ->whereHas('variants', function($query) use ($code){
@@ -184,9 +181,6 @@ class RequisitionController extends Controller{
                 }
                 if($product){
                     $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : false;
-                    if(!$cost){
-                        $notFound [] = $product->code;
-                    }
                     $amount = isset($row["amount"]) ? $row["amount"] : 1;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                     $units = $this->getAmount($product, $amount, $_supply_by);

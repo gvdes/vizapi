@@ -254,7 +254,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/client/sync');
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        curl_setopt($client,CURLOPT_TIMEOUT, 40);
         curl_setopt($client, CURLOPT_POST, 1);
         $data = json_encode(["clients" => $clients]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);

@@ -609,6 +609,17 @@ class ProductController extends Controller{
             $codes = explode('ID-', $request->autocomplete);
             if(count($codes)>1){
                 $query = $query->where('id', $codes[1]);
+            }elseif(isset($request->strict) && $request->strict){
+                if(strlen($request->autocomplete)>1){
+                    $query = $query->whereHas('variants', function(Builder $query) use ($request){
+                        $query->where('barcode', $request->autocomplete);
+                    })
+                    ->orWhere(function($query) use($request){
+                        $query->orWhere('name', $request->autocomplete)
+                        ->orWhere('barcode', $request->autocomplete)
+                        ->orWhere('code', $request->autocomplete);
+                    });
+                }
             }else{
                 if(strlen($request->autocomplete)>1){
                     $query = $query->whereHas('variants', function(Builder $query) use ($request){

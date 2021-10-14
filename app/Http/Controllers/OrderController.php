@@ -203,7 +203,7 @@ class OrderController extends Controller{
                     $order->save();
                     $events++;
                     if(!$_printer){
-                        $printer = Printer::where([['_type', 1], ['_workpoint', $this->account->_workpoint]])->first();
+                        $printer = Printer::where([['_type', 4], ['_workpoint', $this->account->_workpoint]])->first();
                     }else{
                         $printer = Printer::find($_printer);
                     }
@@ -441,7 +441,9 @@ class OrderController extends Controller{
             $order = Order::find($request->_order);
             $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
-                $product = $order->products()->with(['stocks' => function($query){
+                $product = $order
+                ->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                ->with(['stocks' => function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
                 }])->where('id', $request->_product)->first();
                 if($product){
@@ -450,19 +452,21 @@ class OrderController extends Controller{
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
-                        $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
+                        $price_list = $this->calculatePriceList($product, $units, $order, 7); /* PRICE LIST */
                     }else{
                         $price_list = $order->_price_list;
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     $price = $product->prices[$index_price]->pivot->price;
                     $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $new_amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
-                    /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]); */
                     return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
                                 "id" => $product->id,
                                 "code" => $product->code,
                                 "name" => $product->name,
                                 "description" => $product->description,
+                                "section" => $product->section,
+                                "family" => $product->family,
+                                "category" => $product->category,
                                 "barcode" => $product->barcode,
                                 "pieces" => $product->pieces,
                                 "prices" => $product->prices->map(function($price){
@@ -504,7 +508,9 @@ class OrderController extends Controller{
                     /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
                     return response()->json(["msg" => "Se añade el producto a la cesta", "success" => true, "server_status" => 200]); */
                 }{
-                    $product = Product::with(['prices' => function($query) use($prices){
+                    $product = Product::
+                    products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    ->with(['prices' => function($query) use($prices){
                         $query->whereIn('_type', $prices)->orderBy('_type');
                     }, 'units', 'stocks' => function($query){
                         $query->where('_workpoint', $this->account->_workpoint);
@@ -528,6 +534,9 @@ class OrderController extends Controller{
                                 "code" => $product->code,
                                 "name" => $product->name,
                                 "description" => $product->description,
+                                "section" => $product->section,
+                                "family" => $product->family,
+                                "category" => $product->category,
                                 "barcode" => $product->barcode,
                                 "pieces" => $product->pieces,
                                 "prices" => $product->prices->map(function($price){
@@ -604,7 +613,7 @@ class OrderController extends Controller{
         }
     }
 
-    public function calculatePriceList($product, $units, $order){
+    public function calculatePriceList($product, $units, $order, $mood = 1){
         if($units >= $product->pieces && $product->pieces > 3){
             return 4;
         }elseif($units>=round($product->pieces/2) && $product->pieces > 3){
@@ -615,17 +624,112 @@ class OrderController extends Controller{
             //evaluate family of products
             $products = $order
             ->products()
+            ->with(['prices' => function($query){
+                $query->whereIn('_type', [1,2])->orderBy('_type');
+            }])
             ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', [$product->section, $product->family])
             ->get();
-            
-            $units_for_price = $products->sum(function($product){
-                return $product->pivot->units;
-            });
-
-            if($units_for_price>=3){
-                return 2;
-            }else{
-                return 1;
+            if($mood == 1){
+                $units_for_price = $products->sum(function($product){
+                    return $product->pivot->units;
+                });
+                
+                if(($units_for_price+$units)>=3){
+                    /* ACTUALIZAR TODOS LOS PRODUCTOS A PRECIO MAYOREO (2) */
+                    foreach($products as $product){
+                        if($product->pivot->_price_list != 2 && $product->pivot->_price_list == 1){
+                            $price = $product->prices[1]->pivot->price;
+                            $order
+                            ->products()
+                            ->syncWithoutDetaching([
+                                $product->id => [
+                                    'kit' => "",
+                                    'amount' => $product->pivot->amount,
+                                    'units' => $product->pivot->units,
+                                    "_supply_by" => $product->pivot->_supply_by,
+                                    "_price_list" => 2,
+                                    'comments' => $product->pivot->comments,
+                                    'price' => $price,
+                                    "total" => ($product->pivot->units * $price)
+                                ]
+                            ]);
+                        }
+                    }
+                    return 2;
+                }else{
+                    /* ACTUALIZAR TODOS LOS PRODUCTOS A PRECIO MAYOREO (1) */
+                    foreach($products as $product){
+                        if($product->pivot->_price_list != 1 && $product->pivot->units <=3){
+                            $price = $product->prices[0]->pivot->price;
+                            $order
+                            ->products()
+                            ->syncWithoutDetaching([
+                                $product->id => [
+                                    'kit' => "",
+                                    'amount' => $product->pivot->amount,
+                                    'units' => $product->pivot->units,
+                                    "_supply_by" => $product->pivot->_supply_by,
+                                    "_price_list" => 1,
+                                    'comments' => $product->pivot->comments,
+                                    'price' => $price,
+                                    "total" => ($product->pivot->units * $price)
+                                ]
+                            ]);
+                        }
+                    }
+                    return 1;
+                }
+            }elseif($mood == 7){
+                $units_for_price = $products->sum(function($product){
+                    return $product->pivot->toDelivered;
+                });
+                if(($units_for_price+$units)>=3){
+                    /* ACTUALIZAR TODOS LOS PRODUCTOS A PRECIO MAYOREO (2) */
+                    foreach($products as $product){
+                        if($product->pivot->_price_list != 2 && $product->pivot->_price_list == 1){
+                            $price = $product->prices[1]->pivot->price;
+                            $order
+                            ->products()
+                            ->syncWithoutDetaching([
+                                $product->id => [
+                                    'kit' => "",
+                                    'amount' => $product->pivot->amount,
+                                    'units' => $product->pivot->units,
+                                    "_supply_by" => $product->pivot->_supply_by,
+                                    "_price_list" => 2,
+                                    'comments' => $product->pivot->comments,
+                                    'price' => $price,
+                                    "total" => ($product->pivot->toDelivered * $price),
+                                    "toDelivered" => $product->pivot->toDelivered
+                                ]
+                            ]);
+                        }
+                    }
+                    return 2;
+                }else{
+                    /* ACTUALIZAR TODOS LOS PRODUCTOS A PRECIO MENUDEO (1) */
+                    foreach($products as $product){
+                        if($product->pivot->_price_list != 1 && $product->pivot->units <=3){
+                            $price = $product->prices[0]->pivot->price;
+                            $order
+                            ->products()
+                            ->syncWithoutDetaching([
+                                $product->id => [
+                                    'kit' => "",
+                                    'amount' => $product->pivot->amount,
+                                    'units' => $product->pivot->units,
+                                    "_supply_by" => $product->pivot->_supply_by,
+                                    "_price_list" => 1,
+                                    'comments' => $product->pivot->comments,
+                                    'price' => $price,
+                                    "total" => ($product->pivot->toDelivered * $price),
+                                    "toDelivered" => $product->pivot->toDelivered
+                                ]
+                            ]);
+                        }
+                    }
+                    return 1;
+                }
             }
         }
     }
