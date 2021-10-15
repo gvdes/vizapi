@@ -546,7 +546,7 @@ class MiniPrinterController extends Controller{
         }
         if($order->_order){
             $printer->setTextSize(2,2);
-            $printer->text("ANEXO -".$requisition->_order."- \n");
+            $printer->text("ANEXO -".$order->_order."- \n");
         }
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
