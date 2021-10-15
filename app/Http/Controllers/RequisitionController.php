@@ -481,7 +481,9 @@ class RequisitionController extends Controller{
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query
             ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-            ->with(['units', 'variants']);
+            ->with(['units', 'variants', 'prices' => function($query){
+                return $query->where('type', 1);
+            }]);
         }, 'to', 'from', 'created_by', 'log'])
         ->withCount(["products"])->find($id);
         return response()->json(new RequisitionResource($requisition));
