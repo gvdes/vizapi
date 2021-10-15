@@ -481,7 +481,7 @@ class RequisitionController extends Controller{
             $query
             ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
             ->with(['units', 'variants', 'prices' => function($query){
-                return $query->where('type', 1);
+                return $query->where('_type', 1);
             }]);
         }, 'to', 'from', 'created_by', 'log'])
         ->withCount(["products"])->find($id);
