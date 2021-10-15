@@ -544,6 +544,10 @@ class MiniPrinterController extends Controller{
             $printer->text("REIMPRESION \n");
             $printer->setReverseColors(false);
         }
+        if($order->_order){
+            $printer->setTextSize(2,2);
+            $printer->text("ANEXO -".$requisition->_order."- \n");
+        }
         $printer->setTextSize(2,2);
         $printer->setEmphasis(true);
         $printer->setReverseColors(true);
@@ -686,19 +690,24 @@ class MiniPrinterController extends Controller{
         } */
     }
 
-    public function validationTicket($serie, $ticket, $id, $name){
+    public function validationTicket($serie, $ticket, $order){
         try{
             $printer = $this->printer;
             if(!$printer){
                 return false;
             }
+            $summary = $order->products->reduce(function($summary, $product){
+                $summary['models'] = $summary['models'] + 1;
+                $summary['articles'] = $summary['articles'] + $product->pivot->units;
+                return $summary;
+            }, ["models" => 0, "articles" => 0]);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setTextSize(1,2);
             $printer->setEmphasis(true);
             /* $printer->setReverseColors(true); */
-            $printer->text($name);
+            $printer->text($order->name);
             $printer->setTextSize(2,2);
-            $printer->text(" #".$id."\n");
+            $printer->text(" #".$order->id."\n");
             $printer->setEmphasis(false);
             /* $printer->setReverseColors(false); */
             $printer->setTextSize(1,1);
@@ -709,11 +718,19 @@ class MiniPrinterController extends Controller{
             $printer->text("--------------------------------------------\n");
             $printer->setJustification(Printer::JUSTIFY_RIGHT);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setTextSize(1,1);
+            $printer->text("----------------------------------------\n");
+            $printer->text("Modelos: ");
             $printer->setTextSize(2,1);
+            $printer->text($summary['models']);
+            $printer->setTextSize(1,1);
+            $printer->text(" Piezas: ");
+            $printer->setTextSize(2,1);
+            $printer->text(round($summary['articles'])."\n");
             $printer->feed(1);
             $printer->setBarcodeHeight($this->barcode_height);
             $printer->setBarcodeWidth($this->barcode_width);
-            $printer->barcode("ID-".$id);
+            $printer->barcode($order->id);
             $printer->feed(1);
             $printer->setTextSize(2,1);
             $printer->text("GRUPO VIZCARRA\n");
