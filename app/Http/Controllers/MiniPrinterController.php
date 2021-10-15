@@ -111,6 +111,10 @@ class MiniPrinterController extends Controller{
         $printer->setEmphasis(true);
         $printer->setReverseColors(true);
         //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
+        if($order->_order){
+            $printer->setTextSize(2,2);
+            $printer->text("ANEXO -".$order->_order."- \n");
+        }
         $printer->setEmphasis(false);
         $printer->setReverseColors(false);
         $printer->setTextSize(1,2);
