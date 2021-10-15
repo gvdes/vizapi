@@ -107,16 +107,16 @@ class MiniPrinterController extends Controller{
             return $summary;
         }, ["models" => 0, 'units' => 0]);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setTextSize(2,2);
-        $printer->setEmphasis(true);
-        $printer->setReverseColors(true);
         //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
         if($order->_order){
             $printer->setTextSize(2,2);
-            $printer->text("ANEXO -".$order->_order."- \n");
+            $printer->setEmphasis(true);
+            $printer->setReverseColors(true);
+            $printer->setTextSize(2,2);
+            $printer->text("ANEXO ".$order->_order." \n");
+            $printer->setEmphasis(false);
+            $printer->setReverseColors(false);
         }
-        $printer->setEmphasis(false);
-        $printer->setReverseColors(false);
         $printer->setTextSize(1,2);
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->text("Gracias por su pedido ".$order->name.", te esperamos en\n");
@@ -144,7 +144,7 @@ class MiniPrinterController extends Controller{
         $printer->text($summary['units']."\n");
         $printer->setTextSize(1,1);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->text("--------------------------------------------\n");
+        $printer->text("---------------------------\n");
         $printer->setBarcodeHeight($this->barcode_height);
         $printer->setBarcodeWidth($this->barcode_width);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
@@ -548,15 +548,15 @@ class MiniPrinterController extends Controller{
             $printer->text("REIMPRESION \n");
             $printer->setReverseColors(false);
         }
+        //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
         if($order->_order){
+            $printer->text("ANEXO ");
+            $printer->setReverseColors(true);
             $printer->setTextSize(2,2);
-            $printer->text("ANEXO -".$order->_order."- \n");
+            $printer->text($order->_order." \n");
+            $printer->setEmphasis(false);
+            $printer->setReverseColors(false);
         }
-        $printer->setTextSize(2,2);
-        $printer->setEmphasis(true);
-        $printer->setReverseColors(true);
-        // $printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
-        $printer->setReverseColors(false);
         $printer->text("Pedido para ".$order->name." \n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
@@ -615,7 +615,7 @@ class MiniPrinterController extends Controller{
                 $printer->text("----------------------------------------------\n");
                 $printer->setTextSize(2,1);
                 //$printer->text(" ".substr("0000".$order->num_ticket,-5,5)." \n");
-                $printer->text("Pedido para ".$order->name." \n");
+                $printer->text("Pedido para ".$order->name.", ".substr("0000".$order->id,-5,5)." \n");
                 $printer->setTextSize(1,1);
                 $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
                 $printer->feed(1);
@@ -706,6 +706,16 @@ class MiniPrinterController extends Controller{
                 return $summary;
             }, ["models" => 0, "articles" => 0]);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
+            
+            if($order->_order){
+                $printer->setTextSize(2,2);
+                $printer->setEmphasis(true);
+                $printer->setReverseColors(true);
+                $printer->setTextSize(2,2);
+                $printer->text("ANEXO ".$order->_order." \n");
+                $printer->setEmphasis(false);
+                $printer->setReverseColors(false);
+            }
             $printer->setTextSize(1,2);
             $printer->setEmphasis(true);
             /* $printer->setReverseColors(true); */
