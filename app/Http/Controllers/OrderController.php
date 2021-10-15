@@ -357,6 +357,10 @@ class OrderController extends Controller{
 
     public function addProduct(Request $request){
         try{
+            $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+            if($amount<=0){
+                return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]);
+            }
             $order = Order::find($request->_order);
             $prices = /* $order->_price_list ? [$order->_price_list] :  */[1,2,3,4];
             $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
@@ -367,7 +371,6 @@ class OrderController extends Controller{
             }])->find($request->_product);
             if($product){
                 //if(count($product->stocks)>0 && $product->stocks[0]->pivot->_status != 1){ return response()->json(["msg" => "No puedes agregar ese producto", "success" => false]); }
-                $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                 $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                 if($order->_client==0){
@@ -438,6 +441,10 @@ class OrderController extends Controller{
 
     public function setDeliveryValue(Request $request){
         try{
+            $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+            if($amount<0){
+                return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]);
+            }
             $order = Order::find($request->_order);
             $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
@@ -447,7 +454,6 @@ class OrderController extends Controller{
                     $query->where('_workpoint', $this->account->_workpoint);
                 }])->where('id', $request->_product)->first();
                 if($product){
-                    $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $new_amount = $amount ? $amount : $product->pivot->amount;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
@@ -500,16 +506,9 @@ class OrderController extends Controller{
                                     ]
                                 ]
                     ]]);
-                    /* if($product->pivot->amount != $request->amount){
-                        return response()->json(["Se recalculan datos"]);
-                    }else{
-                        return response()->json(["Se guarda la cantidad"]);
-                    } */
-                    /* $order->products()->syncWithoutDetaching([$request->_product => ['toDelivered' => $units]]);
-                    return response()->json(["msg" => "Se añade el producto a la cesta", "success" => true, "server_status" => 200]); */
                 }{
                     $product = Product::
-                    products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                     ->with(['prices' => function($query) use($prices){
                         $query->whereIn('_type', $prices)->orderBy('_type');
                     }, 'units', 'stocks' => function($query){

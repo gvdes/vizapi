@@ -91,6 +91,10 @@ class RequisitionController extends Controller{
 
     public function addProduct(Request $request){
         try{
+            $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+            if($amount<=0){
+                return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]);
+            }
             $requisition = Requisition::find($request->_requisition);
             if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $to = $requisition->_workpoint_to;
@@ -106,7 +110,6 @@ class RequisitionController extends Controller{
                 /* if(!$cost){
                     return response()->json(["msg" => "El producto no tiene costo", "success" => false]);
                 } */
-                $amount = isset($request->amount) ? $request->amount : 1;
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                 $units = $this->getAmount($product, $amount, $_supply_by);
                 $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
