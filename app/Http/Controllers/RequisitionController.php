@@ -39,12 +39,11 @@ class RequisitionController extends Controller{
                         $folio = count($cadena)>1 ? $cadena[1] : '0';
                         $caja = count($cadena)>0 ? $cadena[0] : '0';
                         $data = $this->getVentaFromStore($folio, $_workpoint_from, $caja, $_workpoint_to);
-                        $request->notes = $request->notes ? $request->notes : $data['notes'];
+                        $request->notes = $request->notes ? $request->notes." ".$data['notes'] : $data['notes'];
                     break;
                     case 4:
-                        $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
                         $data = $this->getPedidoFromStore($request->folio, $_workpoint_from, $_workpoint_to);
-                        $request->notes = $request->notes ? $request->notes : $data['notes'];
+                        $request->notes = $request->notes ? $request->notes." ".$data['notes'] : $data['notes'];
                     break;
                 }
                 if(isset($data['msg'])){
@@ -103,10 +102,10 @@ class RequisitionController extends Controller{
                     $query->where('_type', 7);
                 }])->find($request->_product);
 
-                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : false;
-                if(!$cost){
+                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
+                /* if(!$cost){
                     return response()->json(["msg" => "El producto no tiene costo", "success" => false]);
-                }
+                } */
                 $amount = isset($request->amount) ? $request->amount : 1;
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                 $units = $this->getAmount($product, $amount, $_supply_by);
@@ -654,33 +653,30 @@ class RequisitionController extends Controller{
         return ["products" => $toSupply];
     }
 
-    public function getPedidoFromStore($folio, $workpoint_id, $to){
-        $workpoint = WorkPoint::find($workpoint_id);
-        $access = new AccessController($workpoint->dominio);
-        $venta = $access->getOrderStore($folio);
-        if($venta){
-            if(isset($venta['msg'])){
-                return ["msg" => $venta['msg']];
-            }
+    public function getPedidoFromStore($folio, $to){
+        $order = \App\Order::find($folio);
+        if($order){
             $toSupply = [];
-            foreach($venta['products'] as $row){
-                $product = Product::with(['stocks' => function($query) use ($to){
-                    $query->where('_workpoint', $to);
-                }])->where('code', $row['code'])->first();
-                $required = $row['req'];
-                if(($row['units'] == 1 || $row['units'] == 2) && $product->_unit == 3){
-                    $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                    $required = round($required/$pieces, 2);
-                }elseif($row['units'] == 3 && $product->_unit == 3){
-                    $required = .5;
-                }
-                if($required > 0){
-                    $toSupply[$product->id] = ['units' => $required, 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
-                }
+            $products = $order->products()->with(["stocks" => function($query) use($to){
+                $query->where("_workpoint", $to);
+            }, 'prices' => function($query){
+                $query->where('_type', 7);
+            }])->get();
+            foreach($products as $product){
+                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
+                $toSupply[$product->id] = [
+                    'amount' => $product->pivot->amount,
+                    '_supply_by' => $product->pivot->_supply_by, 
+                    'units' => $product->pivot->units,
+                    'cost' => $cost,
+                    'total' => $cost * $product->pivot->units,
+                    'comments' => $product->pivot->comments,
+                    "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0
+                ];
             }
-            return ["notes" => " Pedido preventa # ".$folio.$venta["notes"], "products" => $toSupply];
+            return ["notes" => " Pedido preventa #".$folio.", ".$order->name, "products" => $toSupply];
         }
-        return ["msg" => "No se tenido conexión con la tienda"];
+        return ["msg" => "No se encontro el pedido"];
     }
 
     public function refreshStocks(Requisition $requisition){
