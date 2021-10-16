@@ -95,7 +95,7 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyFiveMinutes()->between('9:00', '19:00');
+        })->everyFiveMinutes()->between('9:00', '21:00');
 
         $schedule->call(function(){
             $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17])->get();
@@ -121,7 +121,7 @@ class Kernel extends ConsoleKernel
                     }
                 }
             }
-        })->everyThreeMinutes()->between('9:00', '22:00');
+        })->everyThreeMinutes()->between('9:00', '23:00');
         /* SALIDAS */
         $schedule->call(function(){
             $CEDIS = \App\WorkPoint::find(1);
