@@ -175,7 +175,7 @@ class MiniPrinterController extends Controller{
                 $summary['volumen'] = $summary['volumen'] + $volumen;
             }else{
                 $summary['modelsSouldOut'] = $summary['modelsSouldOut'] + 1;
-                $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + $product->pivot->units * $pieces;
+                $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + $product->pivot->units;
             }
             return $summary;
         }, ["models" => 0, "articles" => 0, "volumen" => 0, "sinVolumen" => 0, "modelsSouldOut" => 0, "articlesSouldOut" => 0]);
