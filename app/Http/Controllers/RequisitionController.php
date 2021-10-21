@@ -101,18 +101,20 @@ class RequisitionController extends Controller{
                 $product = Product::
                 selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                 ->with(['units', 'stocks' => function($query) use ($to){
-                    $query->where('_workpoint', $to);
+                    $query->whereIn('_workpoint', [$to, $this->account->_workpoint]);
                 }, 'prices' => function($query){
                     $query->where('_type', 7);
                 }])->find($request->_product);
 
                 $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
-                /* if(!$cost){
-                    return response()->json(["msg" => "El producto no tiene costo", "success" => false]);
-                } */
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                 $units = $this->getAmount($product, $amount, $_supply_by);
-                $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
+                $_workpoint_stock = $product->stocks->map(function($stock){
+                    return $stock->id;
+                })->toArray();
+                $key_stock = array_search($to, $_workpoint_stock); //Tienda a la que se le pide la mercancia
+                $key_stock_from = array_search($this->account->_workpoint, $_workpoint_stock); //Tienda que pide la mercancia
+                $stock = ($key_stock > 0 || $key_stock === 0) ? $product->stocks[$key_stock]->pivot->stock : 0;
                 $total = $cost * $units;
 
                 $requisition->products()->syncWithoutDetaching([
@@ -126,7 +128,6 @@ class RequisitionController extends Controller{
                         'stock' => $stock
                     ]
                 ]);
-
                 return response()->json([
                     "id" => $product->id,
                     "code" => $product->code,
@@ -146,6 +147,17 @@ class RequisitionController extends Controller{
                         "total" => $total,
                         "comments" => isset($request->comments) ? $request->comments : "",
                         "stock" => $stock
+                    ],
+                    "stocks" => [
+                        [
+                            "alias" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->alias : "",
+                            "name" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->name : "",
+                            "stock"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->stock : 0,
+                            "gen" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->gen : 0,
+                            "exh" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->exh : 0,
+                            "min" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
+                            "max"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
+                        ]
                     ]
                 ]);
             }else{
@@ -157,7 +169,6 @@ class RequisitionController extends Controller{
     }
 
     public function addMassiveProduct(Request $request){
-        /* ACTUALIZAR */
         $requisition = Requisition::find($request->_requisition);
         $products = isset($request->products) ? $request->products : [];
         $notFound = [];
@@ -172,13 +183,13 @@ class RequisitionController extends Controller{
                 ->whereHas('variants', function($query) use ($code){
                     $query->where('barcode', $code);
                 })->with(['stocks' => function($query) use ($to){
-                    $query->where('_workpoint', $to);
+                    $query->whereIn('_workpoint', [$to, $this->account->_workpoint]);
                 }])->first();
                 if(!$product){
                     $product = Product::
                     selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                     ->where([['code', $code], ['_status', '!=', 4]])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks' => function($query) use ($to){
-                        $query->where('_workpoint', $to);
+                        $query->whereIn('_workpoint', [$to, $this->account->_workpoint]);
                     }])->first();
                 }
                 if($product){
@@ -186,7 +197,12 @@ class RequisitionController extends Controller{
                     $amount = isset($row["amount"]) ? $row["amount"] : 1;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                     $units = $this->getAmount($product, $amount, $_supply_by);
-                    $stock = count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0;
+                    $_workpoint_stock = $product->stocks->map(function($stock){
+                        return $stock->id;
+                    })->toArray();
+                    $key_stock = array_search($to, $_workpoint_stock); //Tienda que solicita la mercancia
+                    $key_stock_from = array_search($this->account->_workpoint, $_workpoint_stock); //Tienda a la que le piden la mercancia
+                    $stock = ($key_stock > 0 || $key_stock === 0) ? $product->stocks[$key_stock]->pivot->stock : 0;
                     $total = $cost * $units;
                     $requisition->products()->syncWithoutDetaching([
                         $product->id => [
@@ -218,6 +234,17 @@ class RequisitionController extends Controller{
                             "total" => $total,
                             "comments" => isset($row["comments"]) ? $row["comments"] : "",
                             "stock" => $stock
+                        ],
+                        "stocks" => [
+                            [
+                                "alias" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->alias : "",
+                                "name" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->name : "",
+                                "stock"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->stock : 0,
+                                "gen" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->gen : 0,
+                                "exh" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->exh : 0,
+                                "min" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
+                                "max"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
+                            ]
                         ]
                     ];
                 }else{
@@ -272,7 +299,7 @@ class RequisitionController extends Controller{
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 $miniprinter = new MiniPrinterController($printer->ip, 9100);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
-            /* break; */
+            break;
             case 3: /* SURTIENDO */
                 $requisition->log()->attach(3, [ 'details' => json_encode([
                     "responsable" => $responsable,
@@ -485,6 +512,8 @@ class RequisitionController extends Controller{
             ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
             ->with(['units', 'variants', 'prices' => function($query){
                 return $query->where('_type', 1);
+            }, 'stocks' => function($query){
+                return $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'to', 'from', 'created_by', 'log'])
         ->withCount(["products"])->find($id);
@@ -582,13 +611,12 @@ class RequisitionController extends Controller{
                     if($product->_unit == 3){
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
                         $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => round($required/$pieces, 2),  "_supply_by" => 3, 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
-                    }
-                    if($required > 0){
+                    }else{
                         $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0];
                     }
                 }
             }
-            return ["notes" => "Pedido preventa tienda #".$folio, "products" => $toSupply];
+            return ["notes" => "Pedido venta tienda #".$folio, "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }

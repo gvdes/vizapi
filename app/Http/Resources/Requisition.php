@@ -70,7 +70,21 @@ class Requisition extends JsonResource{
                                 "price" => $price->pivot->price,
                             ];
                         }),
-                        "units" => $product->units
+                        "units" => $product->units,
+                        'stocks' => $product->stocks->map(function($stock){
+                            return [
+                                "_workpoint" => $stock->id,
+                                "alias" => $stock->alias,
+                                "name" => $stock->name,
+                                "stock" => $stock->pivot->stock,
+                                "gen" => $stock->pivot->gen,
+                                "exh" => $stock->pivot->exh,
+                                "min" => $stock->pivot->min,
+                                "max" => $stock->pivot->max,
+                            ];
+                        })->filter(function($stock){
+                            return $this->_workpoint_from == $stock['_workpoint'];
+                        })
                     ];
                 });
             })

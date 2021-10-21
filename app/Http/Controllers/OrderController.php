@@ -918,6 +918,33 @@ class OrderController extends Controller{
                 });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+        /* $products = $order->products->map(function($product){
+            $product->locations->sortBy('path');
+            return $product;
+        })->sortBy(function($product){
+            if(count($product->locations)>0){
+                $location = $product->locations[0]->path;
+                $res = '';
+                $parts = explode('-', $location);
+                foreach($parts as $part){
+                    $numbers = preg_replace('/[^0-9]/', '', $part);
+                    $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                    if(strlen($numbers)==1){
+                        $numbers = '0'.$numbers;
+                    }
+                    $res = $res.$letters.$numbers.'-';
+                }
+                return $res;
+            }
+            return '';
+        })->groupBy(function($product){
+            if(count($product->locations)>0){
+                return explode('-',$product->locations[0]->path)[0];
+            }else{
+                return '';
+            }
+        })->sortKeys(); */
+        /* return response()->json($products); */
 
         $cash_ = $order->history->filter(function($log){
             return $log->pivot->_status == 2;
@@ -929,6 +956,7 @@ class OrderController extends Controller{
         $printer = Printer::find($request->_printer);
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
         $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
+        /* $res = $cellerPrinter->orderTicket2($order, $cash_, $in_coming); */
         if($res){
             $order->printed = $order->printed +1;
             $order->save();

@@ -1095,12 +1095,18 @@ class LocationController extends Controller{
     }
 
     public function catologo(){
-        $result = [];
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
         with(['stocks' => function($query){
             $query->where("_workpoint", $this->account->_workpoint);
+        }, 'locations' => function($query){
+            $query->whereHas('celler', function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            });
         } , 'category', 'status'])->where('_status', '!=', 4)->get();
         $res = $productos->map(function($producto){
+            $locations = $producto->locations->reduce(function($res, $location){
+                return $res.$location->path.",";
+            }, '');
             return [
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
@@ -1112,7 +1118,8 @@ class LocationController extends Controller{
                 "Piezas x caja" => $producto->pieces,
                 "Stock" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->stock : 0,
                 "General" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->gen : 0,
-                "Exhibición" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->exh : 0
+                "Exhibición" => count($producto->stocks)>0 ? $producto->stocks[0]->pivot->exh : 0,
+                "locations" => $locations
             ];
         })->toArray();
         return $res;
@@ -1146,7 +1153,8 @@ class LocationController extends Controller{
     }
 
     public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17])->get();
+        /* $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17])->get(); */
+        $workpoints = WorkPoint::whereIn('id', [4])->get();
         $success = 0;
         $_success = [];
         $res = [];
