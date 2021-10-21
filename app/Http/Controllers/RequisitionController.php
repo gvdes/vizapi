@@ -34,7 +34,7 @@ class RequisitionController extends Controller{
                         $data = $this->getToSupplyFromStore($this->account->_workpoint, $_workpoint_to);
                     break;
                     case 3:
-                        $_workpoint_from = isset($request->store) ? $request->store : $this->account->_workpoint;
+                        $_workpoint_from = (isset($request->store) && $request->store) ? $request->store : $this->account->_workpoint;
                         $cadena = explode('-', $request->folio);
                         $folio = count($cadena)>1 ? $cadena[1] : '0';
                         $caja = count($cadena)>0 ? $cadena[0] : '0';

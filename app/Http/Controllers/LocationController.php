@@ -1153,8 +1153,8 @@ class LocationController extends Controller{
     }
 
     public function updateStocks2(){
-        /* $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17])->get(); */
-        $workpoints = WorkPoint::whereIn('id', [4])->get();
+        $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17,19])->get();
+        /* $workpoints = WorkPoint::whereIn('id', [19])->get(); */
         $success = 0;
         $_success = [];
         $res = [];
