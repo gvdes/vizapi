@@ -194,10 +194,29 @@ class OrderController extends Controller{
             case 8: //En caja
                 $workpoint = \App\WorkPoint::find($order->_workpoint_from);
                 $access = new AccessController($workpoint->dominio);
-                $response = $access->createClientOrder(new OrderResource($order));
+                /* $types = [
+                    ["_type" => 1, "serie" => 1, "ticket" => 13],
+                    ["_type" => 2, "serie" => 1, "ticket" => 14],
+                    ["_type" => 3, "serie" => 1, "ticket" => 15]
+                ]; */
+                /* $a = $cellerPrinter->validationTicket($series, $order); */
+                $productos = $order->products->groupBy(function($product){
+                    return $product->pivot->_supply_by;
+                });
+                $series = [];
+                foreach($productos as $key => $p){
+                    $a = $order->load(["products" => function($query) use($key){
+                        return $query->where('_supply_by', $key);
+                    }]);
+                    $response = $access->createClientOrder(new OrderResource($a));
+                    if($response && $response["status"] = 200){
+                        $series[] = ["_type" => $key, "serie" => $response["serie"], "ticket" => $response["ticket"]];
+                    }
+                }
+
                 if($response && $response["status"] = 200){
                     $user = User::find($this->account->_account);
-                    $log = $this->createLog($order->id, 8, ["serie" => $response["serie"], "ticket" => $response["ticket"]]);
+                    $log = $this->createLog($order->id, 8, [$series]);
                     $user->order_log()->save($log);
                     $order->_status = 8;
                     $order->save();
@@ -207,8 +226,17 @@ class OrderController extends Controller{
                     }else{
                         $printer = Printer::find($_printer);
                     }
+                    $_workpoint_to = $order->_workpoint_from;
+                    $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+                        $query->with(['locations' => function($query)  use ($_workpoint_to){
+                            $query->whereHas('celler', function($query) use ($_workpoint_to){
+                                $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                            });
+                        }]);
+                    }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
                     $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
-                    $cellerPrinter->validationTicket($response["serie"], $response["ticket"], $order);
+                    /* $cellerPrinter->validationTicket($response["serie"], $response["ticket"], $order); */
+                    $cellerPrinter->validationTicket($series, $order);
                     /* $end_to_sold = $this->getProcess($case);
                     if($end_to_sold->active){
                         $cajeros = 4;
@@ -789,14 +817,7 @@ class OrderController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
-        /* $products = $order
-        ->products()
-        ->havingRaw('getSection(products._category) = ? AND getFamily(products._category) = ?', ["Mochila", "Bolsos"])
-        ->get();
-        $units = $products->sum(function($product){
-            return $product->pivot->units;
-        });
-        return response()->json(["products" => $products, "units" => $units]); */
+
         $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
         $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
         return response()->json(new OrderResource($order));
@@ -918,33 +939,6 @@ class OrderController extends Controller{
                 });
             }]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-        /* $products = $order->products->map(function($product){
-            $product->locations->sortBy('path');
-            return $product;
-        })->sortBy(function($product){
-            if(count($product->locations)>0){
-                $location = $product->locations[0]->path;
-                $res = '';
-                $parts = explode('-', $location);
-                foreach($parts as $part){
-                    $numbers = preg_replace('/[^0-9]/', '', $part);
-                    $letters = preg_replace('/[^a-zA-Z]/', '', $part);
-                    if(strlen($numbers)==1){
-                        $numbers = '0'.$numbers;
-                    }
-                    $res = $res.$letters.$numbers.'-';
-                }
-                return $res;
-            }
-            return '';
-        })->groupBy(function($product){
-            if(count($product->locations)>0){
-                return explode('-',$product->locations[0]->path)[0];
-            }else{
-                return '';
-            }
-        })->sortKeys(); */
-        /* return response()->json($products); */
 
         $cash_ = $order->history->filter(function($log){
             return $log->pivot->_status == 2;

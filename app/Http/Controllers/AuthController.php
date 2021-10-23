@@ -48,18 +48,22 @@ class AuthController extends Controller{
             ])
         ]);
         $account = new AccountResource(\App\Account::with('workpoint', 'user')->find($workpoint->id));
-        $account->token = $token;
         if($payload['workpoint']->_status==4){
+            $account->token = null;
             return response()->json([
                 'message' => 'Cuenta principal bloqueada',
+                'server_status' => 500,
                 'account' => $account,
                 'workpoints' => AccountResource::collection($workpoints)
             ]);
+        }else{
+            $account->token = $token;
+            return response()->json([
+                'account' => $account,
+                'server_status' => 200,
+                'workpoints' => AccountResource::collection($workpoints)
+            ]);
         }
-        return response()->json([
-            'account' => $account,
-            'workpoints' => AccountResource::collection($workpoints)
-        ]);
     }
     /**
      * Join user to workpoint

@@ -677,12 +677,13 @@ class MiniPrinterController extends Controller{
         return true;
     }
 
-    public function validationTicket($serie, $ticket, $order){
+    public function validationTicket($series, $order){
         try{
             $printer = $this->printer;
             if(!$printer){
                 return false;
             }
+            $_series_type = array_column($series, "_type");
             $summary = $order->products->reduce(function($summary, $product){
                 $summary['models'] = $summary['models'] + 1;
                 $summary['articles'] = $summary['articles'] + $product->pivot->units;
@@ -699,18 +700,74 @@ class MiniPrinterController extends Controller{
                 $printer->setEmphasis(false);
                 $printer->setReverseColors(false);
             }
-            $printer->setTextSize(1,2);
-            $printer->setEmphasis(true);
-            $printer->text($order->name);
-            $printer->setTextSize(2,2);
-            $printer->text(" #".$order->id."\n");
-            $printer->setEmphasis(false);
+
+            $products = $order->products->filter(function($product){
+                if($product->pivot->toDelivered && $product->pivot->toDelivered > 0){
+                    return true;
+                }
+                return false;
+            })->groupBy(function($product){
+                return $product->pivot->_supply_by;
+            })->sortKeysDesc();
+            $x = 0;
+            foreach($products as $key => $el){
+                $x++;
+                $printer->setJustification(Printer::JUSTIFY_CENTER);
+                $printer->setReverseColors(true);
+                $printer->setTextSize(2,1);
+                switch($key){
+                    case 1:
+                        $printer->text(" PIEZAS - ".$x."/".count($products));
+                        break;
+                    case 2:
+                        $printer->text(" DOCENAS - ".$x."/".count($products));
+                        break;
+                    case 3:
+                        $printer->text(" CAJAS - ".$x."/".count($products));
+                        break;
+                    case 4:
+                        $printer->text(" MEDIAS CAJAS - ".$x."/".count($products));
+                        break;
+                }
+                $printer->setReverseColors(false);
+                $printer->text(" ".$order->id."\n");
+                $printer->setEmphasis(false);
+                $printer->setFont(Printer::FONT_B);
+                $printer->setTextSize(3,1);
+                $printer->text(" ".$order->name."\n");
+                $printer->setFont(Printer::FONT_A);
+                $printer->setTextSize(1,1);
+                $printer->setTextSize(4,3);
+                $buscar_supply = array_search($key, $_series_type);
+                $printer->text($series[$buscar_supply]["serie"]."-".$series[$buscar_supply]["ticket"]."\n");
+                $printer->setTextSize(1,1);
+                $printer->setEmphasis(true);
+                $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                $printer->text(" Modelos: ".count($el));
+                $cantidad = $el->sum(function($product){
+                    return $product->pivot->amount;
+                });
+                switch($key){
+                    case 1:
+                        $printer->text(" Piezas: ".$cantidad."\n");
+                        break;
+                    case 2:
+                        $printer->text(" Docenas: ".$cantidad."\n");
+                        break;
+                    case 3:
+                        $printer->text(" Cajas: ".$cantidad."\n");
+                        break;
+                    case 4:
+                        $printer->text(" Medias cajas: ".$cantidad."\n");
+                        break;
+                }
+                $printer->setEmphasis(false);
+                $printer->feed(1);
+                $printer->text("--------------------------------------------\n");
+                $printer->feed(1);
+            }
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setTextSize(1,1);
-            $printer->text("--------------------------------------------\n");
-            $printer->setTextSize(3,3);
-            $printer->text($serie."-".$ticket."\n");
-            $printer->setTextSize(1,1);
-            $printer->text("--------------------------------------------\n");
             $printer->text("Modelos: ");
             $printer->setTextSize(2,1);
             $printer->text($summary['models']);
@@ -724,7 +781,8 @@ class MiniPrinterController extends Controller{
             $printer->barcode($order->id);
             $printer->feed(1);
             $printer->setTextSize(2,1);
-            $printer->text("GRUPO VIZCARRA\n");
+            $printer->setFont(Printer::FONT_B);
+            $printer->text("GRUPO VIZCARRA - ".$order->id."\n");
             $printer->cut();
             $printer->close();
             return true;
