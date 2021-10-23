@@ -37,6 +37,7 @@ class Kernel extends ConsoleKernel
             $_workpoints = range(3,13);
             $_workpoints[] = 1;
             $_workpoints[] = 17;
+            $_workpoints[] = 19;
             $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
             $resumen = [];
             $start = microtime(true);
@@ -98,7 +99,7 @@ class Kernel extends ConsoleKernel
         })->everyFiveMinutes()->between('9:00', '21:00');
 
         $schedule->call(function(){
-            $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17])->get();
+            $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17,19])->get();
             foreach($workpoints as $workpoint){
                 $access = new AccessController($workpoint->dominio);
                 $stocks = $access->getStocks($workpoint->id);
