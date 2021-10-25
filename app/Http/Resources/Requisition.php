@@ -84,9 +84,9 @@ class Requisition extends JsonResource{
                                 "min" => $stock->pivot->min,
                                 "max" => $stock->pivot->max,
                             ];
-                        })->filter(function($stock){
+                        })/* ->filter(function($stock){
                             return $this->_workpoint_from == $stock['_workpoint'];
-                        })
+                        }) */
                     ];
                 });
             })

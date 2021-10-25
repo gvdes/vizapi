@@ -422,7 +422,7 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(2,1);
         $printer->text($summary['models']);
         $printer->setTextSize(1,1);
-        $printer->text("Piezas: ");
+        $printer->text(" Piezas: ");
         $printer->setTextSize(2,1);
         $printer->text(round($summary['articles'])."\n");
         $printer->setTextSize(1,1);
@@ -894,6 +894,119 @@ class MiniPrinterController extends Controller{
         $printer->text("----------------------------------------\n");
         $y = 1;
         $products = $order->products->map(function($product){
+            $product->locations->sortBy('path');
+            return $product;
+        })->sortBy(function($product){
+            if(count($product->locations)>0){
+                $location = $product->locations[0]->path;
+                $res = '';
+                $parts = explode('-', $location);
+                foreach($parts as $part){
+                    $numbers = preg_replace('/[^0-9]/', '', $part);
+                    $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+                    if(strlen($numbers)==1){
+                        $numbers = '0'.$numbers;
+                    }
+                    $res = $res.$letters.$numbers.'-';
+                }
+                return $res;
+            }
+            return '';
+        })->groupBy(function($product){
+            return $product->pivot->_supply_by;
+        })->sortKeysDesc()->values()->all();
+        
+        foreach($products as $key => $el){
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setReverseColors(true);
+            $printer->setTextSize(2,1);
+            switch($key){
+                case 1:
+                    $printer->text(" Piezas - ".$key."/".count($products));
+                    break;
+                case 2:
+                    $printer->text(" Docenas - ".$key."/".count($products));
+                    break;
+                case 3:
+                    $printer->text(" Cajas - ".$key."/".count($products));
+                    break;
+                case 4:
+                    $printer->text(" Medias cajas - ".$key."/".count($products));
+                    break;
+            }
+            $printer->setReverseColors(false);
+            $printer->text(" ".$order->id."\n");
+            foreach($el as $key => $product){
+                $this->printBodyTicket($printer, $product, $key+1);
+            }
+            $printer->setTextSize(1,1);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("----------------------------------------\n");
+            $printer->text("----------------------------------------\n");
+            $printer->feed(1);
+        }
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setBarcodeHeight($this->barcode_height);
+        $printer->setBarcodeWidth($this->barcode_width);
+        $printer->barcode($order->id);
+        $printer->feed(1);
+        $printer->setTextSize(1,1);
+        $printer->text($order->id."\n");
+        $printer->text("GRUPO VIZCARRA\n");
+        $printer->feed(1);
+        $printer->cut();
+        $printer->close();
+        return true;
+    }
+
+    public function orderTicketToDelivered(Order $order, $cash, $in_coming = null){
+        $printer = $this->printer;
+        if(!$printer){
+            return false;
+        }
+        $summary = $order->products->reduce(function($summary, $product){
+            if(!$product->pivot->toDelivered){
+                $summary['models'] = $summary['models'] + 1;
+                $summary['articles'] = $summary['articles'] + $product->pivot->units;
+                return $summary;
+            }
+        }, ["models" => 0, "articles" => 0]);
+
+        if($order->_order){
+            $printer->text("ANEXO ");
+            $printer->setReverseColors(true);
+            $printer->setTextSize(2,2);
+            $printer->text($order->_order." \n");
+            $printer->setEmphasis(false);
+            $printer->setReverseColors(false);
+        }
+
+        $printer->setReverseColors(true);
+        $printer->text(" Productos faltante ");
+        $printer->setReverseColors(false);
+        $printer->text(" del pedido para ".$order->name." \n");
+        $printer->setTextSize(1,1);
+        $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
+        $printer->setTextSize(2,1);
+        $printer->text("--  ".$cash->pivot->responsable->name."  --\n");
+        $printer->setTextSize(1,1);
+        $printer->text("----------------------------------------\n");
+        $created_at = is_null($in_coming) ? date('d/m/Y H:i', time()) : $cash->pivot->created_at;
+        $printer->text(" Fecha/Hora: ".$created_at." \n");
+        $printer->text("Modelos: ");
+        $printer->setTextSize(2,1);
+        $printer->text($summary['models']);
+        $printer->setTextSize(1,1);
+        $printer->text(" Piezas: ");
+        $printer->setTextSize(2,1);
+        $printer->text(round($summary['articles'])."\n");
+        $printer->setTextSize(1,1);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text("----------------------------------------\n");
+        $y = 1;
+        $products = $order->products->filter(function($product){
+            return !$product->pivot->toDelivered;
+        })->values()->map(function($product){
             $product->locations->sortBy('path');
             return $product;
         })->sortBy(function($product){

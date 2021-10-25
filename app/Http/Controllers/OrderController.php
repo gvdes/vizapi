@@ -958,6 +958,34 @@ class OrderController extends Controller{
         return response()->json(["success" => $res, "server_status" => 200]);
     }
 
+    /* public function printNotDelivered(Request $request){
+        $order = Order::find($request->_order);
+        $_workpoint_to = $order->_workpoint_from;
+        $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                });
+            }]);
+        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+
+        $cash_ = $order->history->filter(function($log){
+            return $log->pivot->_status == 2;
+        })->values()->all()[0];
+
+        $in_coming = $order->history->filter(function($log){
+            return $log->pivot->_status == 5;
+        })->values()->all()[0];
+        $printer = Printer::find($request->_printer);
+        $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
+        $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
+        if($res){
+            $order->printed = $order->printed +1;
+            $order->save();
+        }
+        return response()->json(["success" => $res, "server_status" => 200]);
+    } */
+
     public function reimpresionClientTicket(Request $request){
         $order = Order::with((['created_by', 'products', 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']))->find($request->_order);
         if($order->_status>2){

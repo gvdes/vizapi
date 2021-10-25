@@ -843,7 +843,7 @@ class RequisitionController extends Controller{
     public function setDeliveryValue(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($requisition->_status == 5){
+            if(/* $requisition->_status == 5 */ 1 == 1){
                 $product = $requisition
                     ->products()
                     ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
