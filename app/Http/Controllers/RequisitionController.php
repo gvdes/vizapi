@@ -132,6 +132,7 @@ class RequisitionController extends Controller{
                     "id" => $product->id,
                     "code" => $product->code,
                     "name" => $product->name,
+                    "cost" => $product->cost,
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
                     "section" => $product->section,
@@ -221,6 +222,7 @@ class RequisitionController extends Controller{
                         "id" => $product->id,
                         "code" => $product->code,
                         "name" => $product->name,
+                        "cost" => $product->cost,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
                         "section" => $product->section,
@@ -327,12 +329,12 @@ class RequisitionController extends Controller{
                 }
             break;
             case 4: /* POR VALIDAR EMBARQUE */
-                $requisition->log()->attach(4, [ 'details' => json_encode([
+                /* $requisition->log()->attach(4, [ 'details' => json_encode([
                     "responsable" => $responsable
                 ])]);
                 $requisition->_status = 4;
                 $requisition->save();
-            break;
+            break; */
             case 5: /* VALIDANDO EMBARQUE */
                 $requisition->log()->attach(5, [ 'details' => json_encode([
                     "responsable" => $responsable,
