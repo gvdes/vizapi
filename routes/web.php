@@ -142,6 +142,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
+        $router->post('/toDelivered', 'RequisitionController@setDeliveryValue');
     });
 
     $router->group(['prefix' => 'order'], function () use ($router){

@@ -61,7 +61,9 @@ class Requisition extends JsonResource{
                             "cost" => $product->pivot->cost,
                             "total" => $product->pivot->total,
                             "comments" => $product->pivot->comments,
-                            "stock" => $product->pivot->stock
+                            "stock" => $product->pivot->stock,
+                            "toDelivered" => $product->pivot->toDelivered,
+                            "toReceived" => $product->pivot->toReceived
                         ],
                         "prices" => $product->prices->map(function($price){
                             return [

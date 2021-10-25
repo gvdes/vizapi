@@ -35,7 +35,7 @@ class MiniPrinterController extends Controller{
             $summary = $requisition->products->reduce(function($summary, $product){
                 if(intval($product->pivot->stock)>0){
                     $summary['models'] = $summary['models'] + 1;
-                    $summary['acticles'] = $product->pivot->units;
+                    $summary['acticles'] = $summary['acticles'] + $product->pivot->units;
                 }else{
                     $summary['soldOut'] = $summary['soldOut'] + 1;
                 }
@@ -786,6 +786,60 @@ class MiniPrinterController extends Controller{
             $printer->cut();
             $printer->close();
             return true;
+        }catch(\Exception $e){
+            return false;
+        }
+    }
+
+    public function validationTicketRequisition($series, $requisition){
+        $printer = $this->printer;
+        if(!$printer){
+            return false;
+        }
+        
+        $summary = $requisition->products->reduce(function($summary, $product){
+            if($product->pivot->toDelivered && $product->pivot->toDelivered > 0){
+                $summary['models'] = $summary['models'] + 1;
+            }
+            $summary['articles'] = $summary['articles'] + $product->pivot->toDelivered;
+            return $summary;
+        }, ["models" => 0, "articles" => 0]);
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(2,1);
+        $printer->setReverseColors(true);
+        $printer->text(" ".$requisition->id." \n");
+        $printer->setReverseColors(false);
+        $printer->setFont(Printer::FONT_B);
+        $printer->setTextSize(3,1);
+        $printer->text($requisition->notes."\n");
+        $printer->setFont(Printer::FONT_A);
+        $printer->setTextSize(1,1);
+        $printer->text("Pedido de cliente para generar factura\n");
+        $printer->setTextSize(4,3);
+        $printer->text($series["serie"]."-".$series["ticket"]."\n");
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(1,1);
+        $printer->text("Modelos: ");
+        $printer->setTextSize(2,1);
+        $printer->text($summary['models']);
+        $printer->setTextSize(1,1);
+        $printer->text(" Piezas: ");
+        $printer->setTextSize(2,1);
+        $printer->text(round($summary['articles'])."\n");
+        $printer->feed(1);
+        $printer->setBarcodeHeight($this->barcode_height);
+        $printer->setBarcodeWidth($this->barcode_width);
+        $printer->barcode($requisition->id);
+        $printer->feed(1);
+        $printer->setTextSize(2,1);
+        $printer->setFont(Printer::FONT_B);
+        $printer->text("GRUPO VIZCARRA - ".$requisition->id."\n");
+        $printer->cut();
+        $printer->close();
+        return true;
+        try{
         }catch(\Exception $e){
             return false;
         }
