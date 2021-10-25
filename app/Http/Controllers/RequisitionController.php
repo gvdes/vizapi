@@ -146,7 +146,9 @@ class RequisitionController extends Controller{
                         "cost" => $cost,
                         "total" => $total,
                         "comments" => isset($request->comments) ? $request->comments : "",
-                        "stock" => $stock
+                        "stock" => $stock,
+                        "toDelivered" => null,
+                        "toReceived" => null
                     ],
                     "stocks" => [
                         [
@@ -233,7 +235,9 @@ class RequisitionController extends Controller{
                             "cost" => $cost,
                             "total" => $total,
                             "comments" => isset($row["comments"]) ? $row["comments"] : "",
-                            "stock" => $stock
+                            "stock" => $stock,
+                            "toDelivered" => null,
+                            "toReceived" => null
                         ],
                         "stocks" => [
                             [
@@ -879,10 +883,12 @@ class RequisitionController extends Controller{
                             "ordered" => [
                                 "amount" => $amount,
                                 "_supply_by" => $_supply_by,
-                                "units" => $units,
+                                "units" => $product->pivot->units,
                                 "cost" => $product->pivot->cost,
                                 "total" => $total,
                                 "comments" => $product->pivot->comments,
+                                "toDelivered" => $units,
+                                "toReceived" => 0,
                                 "stock" => $product->pivot->stock
                             ],
                             "stocks" => [
@@ -900,10 +906,78 @@ class RequisitionController extends Controller{
                         ]
                     ]);
                 }else{
-                    return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
+                    $product = Product::
+                    selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    ->with(['stocks' => function($query) use($requisition){
+                        $query->where('_workpoint', $requisition->_workpoint_from)->distinct();
+                    }, 'prices' => function($query){
+                        $query->where('_type', 7);
+                    }])
+                    ->find($request->_product);
+                    if($product){
+                        $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
+                        $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                        $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                        $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                        $total = $cost * $units;
+                        $comments = isset($request->comments) ? $request->comments : "";
+
+                        $requisition->products()->syncWithoutDetaching([
+                            $request->_product => [
+                                'units' => 0,
+                                'amount' => $amount,
+                                'comments' => $comments,
+                                '_supply_by' => $_supply_by,
+                                'toDelivered' => $units,
+                                "total" => $total
+                            ]
+                        ]);
+                        return response()->json([
+                            "success" => true,
+                            "server_status" => 200,
+                            "msg" => "ok",
+                            "data" => [
+                                "id" => $product->id,
+                                "code" => $product->code,
+                                "name" => $product->name,
+                                "description" => $product->description,
+                                "dimensions" => $product->dimensions,
+                                "section" => $product->section,
+                                "family" => $product->family,
+                                "category" => $product->category,
+                                "pieces" => $product->pieces,
+                                "units" => $product->units,
+                                "ordered" => [
+                                    "amount" => $amount,
+                                    "_supply_by" => $_supply_by,
+                                    "units" => 0,
+                                    "cost" => $cost,
+                                    "total" => $total,
+                                    'toDelivered' => $units,
+                                    "toReceived" => 0,
+                                    "comments" => $comments,
+                                    "stock" => 0
+                                ],
+                                "stocks" => [
+                                    [
+                                        "_workpoint" => count($product->stocks)>0 ? $product->stocks[0]->id : "",
+                                        "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
+                                        "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
+                                        "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
+                                        "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
+                                        "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
+                                        "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                        "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
+                                    ]
+                                ]
+                            ]
+                        ]);
+                    }else{
+                        return response()->json(["msg" => "El producto no se encuentra", "server_status" => 404, "success" => false]);
+                    }
                 }
             }else{
-                return response()->json(["msg" => "No se pueden agregar valores de validación de salida en este momento", "server_status" => 404]);
+                return response()->json(["msg" => "No se pueden agregar valores de validación de salida en este momento", "server_status" => 404, "success" => false]);
             }
         }catch(Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
