@@ -571,7 +571,7 @@ class RequisitionController extends Controller{
     }
 
     public function nextStep(Request $request){
-        $requisition = Requisition::find($request->id);
+        $requisition = Requisition::with(["to", "from", "created_by"])->find($request->id);
         $server_status = 200;
         if($requisition){
             $_status = isset($request->_status) ? $request->_status : $requisition->_status+1;
