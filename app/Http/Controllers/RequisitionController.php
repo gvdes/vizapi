@@ -352,11 +352,11 @@ class RequisitionController extends Controller{
                 $requisition->_status = 5;
                 $requisition->save();
             break;
-            /* case 6: */ /* POR ENVIAR */
+            case 6: /* POR ENVIAR */
             /* break; */
             case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 $requisition->load(['products']);
-                if($requisition->_workpoint_from == 1 && $requisition->_workpoint_to == 2){
+                if($requisition->_workpoint_from === 1 && $requisition->_workpoint_to === 2){
                     $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
                     $miniprinter = new MiniPrinterController($printer->ip, 9100);
                     $miniprinter->requisition_transfer($requisition);
@@ -399,8 +399,8 @@ class RequisitionController extends Controller{
                     "order" => $response
                 ])]);
                 $requisition->_status = 7;
-                $requisition->save();
-            break; */
+                $requisition->save(); */
+            break;
             case 8: /* POR VALIDAR RECEPCIÓN */
                 $requisition->log()->attach(8, [ 'details' => json_encode([
                     "responsable" => $responsable
