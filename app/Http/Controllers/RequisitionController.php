@@ -352,7 +352,9 @@ class RequisitionController extends Controller{
                 $requisition->_status = 5;
                 $requisition->save();
             break;
-            case 6: /* POR ENVIAR */
+            /* case 6: */ /* POR ENVIAR */
+            /* break; */
+            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 $requisition->load(['products']);
                 if($requisition->_workpoint_from == 1 && $requisition->_workpoint_to == 2){
                     $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
@@ -391,8 +393,6 @@ class RequisitionController extends Controller{
                         $requisition->save();
                     }
                 }
-            break;
-            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 /* $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable,
                     "actors" => $actors,
