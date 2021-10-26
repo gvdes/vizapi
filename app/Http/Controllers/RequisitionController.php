@@ -375,7 +375,7 @@ class RequisitionController extends Controller{
                 }else{
                     $access = new AccessController($requisition->to->dominio);
                     $response = $access->createClientRequisition(new RequisitionResource($requisition));
-                    if($response && $response["status"] = 200){
+                    if($response && $response["status"] == 200){
                         $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
                         $miniprinter = new MiniPrinterController($printer->ip, 9100);
                         $miniprinter->validationTicketRequisition($response, $requisition);
@@ -448,23 +448,24 @@ class RequisitionController extends Controller{
             break;
         }
         $requisition->refresh('log');
+        $log = $requisition->log->filter(function($event) use($case){
+            return $event->id >= $case;
+        })->values()->map(function($event){
+            return [
+                "id" => $event->id,
+                "name" => $event->name,
+                "active" => $event->active,
+                "allow" => $event->allow,
+                "details" => json_decode($event->pivot->details),
+                "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
+                "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
+            ];
+        });
         return [
-            "success" => true,
+            "success" => (count($log)>0),
             "printed" => $requisition->printed,
             "status" => $requisition->status,
-            "log" => $requisition->log->filter(function($event) use($case){
-                return $event->id >= $case;
-            })->values()->map(function($event){
-                return [
-                    "id" => $event->id,
-                    "name" => $event->name,
-                    "active" => $event->active,
-                    "allow" => $event->allow,
-                    "details" => json_decode($event->pivot->details),
-                    "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
-                    "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
-                ];
-            })
+            "log" => $log
         ];
     }
 
