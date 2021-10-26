@@ -354,6 +354,7 @@ class RequisitionController extends Controller{
                     $requisition->log()->attach(7, [ 
                         'details' => json_encode([
                             "responsable" => $responsable,
+                            "actors" => $actors,
                             "order" => $response
                         ])
                     ]);
