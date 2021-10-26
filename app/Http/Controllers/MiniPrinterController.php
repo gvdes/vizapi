@@ -90,6 +90,7 @@ class MiniPrinterController extends Controller{
             $printer->close();
             return true;
         } catch(\Exception $e){
+            $printer->close();
             return false;
         }
     }
@@ -914,24 +915,24 @@ class MiniPrinterController extends Controller{
             return '';
         })->groupBy(function($product){
             return $product->pivot->_supply_by;
-        })->sortKeysDesc()->values()->all();
-        
+        })->sortKeysDesc();
+        $x = 1;
         foreach($products as $key => $el){
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setReverseColors(true);
             $printer->setTextSize(2,1);
             switch($key){
                 case 1:
-                    $printer->text(" Piezas - ".$key."/".count($products));
+                    $printer->text(" Piezas - ".$x."/".count($products));
                     break;
                 case 2:
-                    $printer->text(" Docenas - ".$key."/".count($products));
+                    $printer->text(" Docenas - ".$x."/".count($products));
                     break;
                 case 3:
-                    $printer->text(" Cajas - ".$key."/".count($products));
+                    $printer->text(" Cajas - ".$x."/".count($products));
                     break;
                 case 4:
-                    $printer->text(" Medias cajas - ".$key."/".count($products));
+                    $printer->text(" Medias cajas - ".$x."/".count($products));
                     break;
             }
             $printer->setReverseColors(false);
@@ -944,6 +945,7 @@ class MiniPrinterController extends Controller{
             $printer->text("----------------------------------------\n");
             $printer->text("----------------------------------------\n");
             $printer->feed(1);
+            $x++;
         }
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setBarcodeHeight($this->barcode_height);
@@ -968,8 +970,8 @@ class MiniPrinterController extends Controller{
             if(!$product->pivot->toDelivered){
                 $summary['models'] = $summary['models'] + 1;
                 $summary['articles'] = $summary['articles'] + $product->pivot->units;
-                return $summary;
             }
+            return $summary;
         }, ["models" => 0, "articles" => 0]);
 
         if($order->_order){
@@ -980,14 +982,24 @@ class MiniPrinterController extends Controller{
             $printer->setEmphasis(false);
             $printer->setReverseColors(false);
         }
-
-        $printer->setReverseColors(true);
-        $printer->text(" Productos faltante ");
-        $printer->setReverseColors(false);
-        $printer->text(" del pedido para ".$order->name." \n");
-        $printer->setTextSize(1,1);
-        $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setTextSize(2,1);
+        $printer->setReverseColors(true);
+        $printer->text(" Productos faltantes \n");
+        $printer->setReverseColors(false);
+        $printer->setTextSize(1,1);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text(" Pedido para: ");
+        $printer->setEmphasis(true);
+        $printer->text($order->name." \n");
+        $printer->setEmphasis(false);
+        $printer->setTextSize(1,1);
+        $printer->text(" Vendedor: ");
+        $printer->setEmphasis(true);
+        $printer->text($order->created_by->names. " ".$order->created_by->surname_pat." \n");
+        $printer->setEmphasis(false);
+        $printer->setTextSize(2,1);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("--  ".$cash->pivot->responsable->name."  --\n");
         $printer->setTextSize(1,1);
         $printer->text("----------------------------------------\n");
@@ -1027,24 +1039,24 @@ class MiniPrinterController extends Controller{
             return '';
         })->groupBy(function($product){
             return $product->pivot->_supply_by;
-        })->sortKeysDesc()->values()->all();
-        
+        })->sortKeysDesc();
+        $x = 1;
         foreach($products as $key => $el){
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setReverseColors(true);
             $printer->setTextSize(2,1);
             switch($key){
                 case 1:
-                    $printer->text(" Piezas - ".$key."/".count($products));
+                    $printer->text(" Piezas - ".$x."/".count($products));
                     break;
                 case 2:
-                    $printer->text(" Docenas - ".$key."/".count($products));
+                    $printer->text(" Docenas - ".$x."/".count($products));
                     break;
                 case 3:
-                    $printer->text(" Cajas - ".$key."/".count($products));
+                    $printer->text(" Cajas - ".$x."/".count($products));
                     break;
                 case 4:
-                    $printer->text(" Medias cajas - ".$key."/".count($products));
+                    $printer->text(" Medias cajas - ".$x."/".count($products));
                     break;
             }
             $printer->setReverseColors(false);
@@ -1057,6 +1069,7 @@ class MiniPrinterController extends Controller{
             $printer->text("----------------------------------------\n");
             $printer->text("----------------------------------------\n");
             $printer->feed(1);
+            $x++;
         }
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setBarcodeHeight($this->barcode_height);

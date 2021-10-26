@@ -163,7 +163,7 @@ class OrderController extends Controller{
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
                 /* $cash_ = $cash_[0]->pivot->responsable; */
-                $cellerPrinter->orderTicket($order, $cash_);
+                $cellerPrinter->orderTicket2($order, $cash_);
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
                 $log = $this->createLog($order->id, 5, []);
@@ -949,7 +949,7 @@ class OrderController extends Controller{
         })->values()->all()[0];
         $printer = Printer::find($request->_printer);
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
-        $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
+        $res = $cellerPrinter->orderTicket2($order, $cash_, $in_coming);
         /* $res = $cellerPrinter->orderTicket2($order, $cash_, $in_coming); */
         if($res){
             $order->printed = $order->printed +1;
@@ -958,7 +958,7 @@ class OrderController extends Controller{
         return response()->json(["success" => $res, "server_status" => 200]);
     }
 
-    /* public function printNotDelivered(Request $request){
+    public function printNotDelivered(Request $request){
         $order = Order::find($request->_order);
         $_workpoint_to = $order->_workpoint_from;
         $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
@@ -976,15 +976,12 @@ class OrderController extends Controller{
         $in_coming = $order->history->filter(function($log){
             return $log->pivot->_status == 5;
         })->values()->all()[0];
-        $printer = Printer::find($request->_printer);
+
+        $printer = isset($request->_printer) ? Printer::find($request->_printer) : Priter::where([["_workpoint", $this->account->_workpoint], ["_type", 2]])->first();
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
-        $res = $cellerPrinter->orderTicket($order, $cash_, $in_coming);
-        if($res){
-            $order->printed = $order->printed +1;
-            $order->save();
-        }
+        $res = $cellerPrinter->orderTicketToDelivered($order, $cash_, $in_coming);
         return response()->json(["success" => $res, "server_status" => 200]);
-    } */
+    }
 
     public function reimpresionClientTicket(Request $request){
         $order = Order::with((['created_by', 'products', 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']))->find($request->_order);
@@ -1124,6 +1121,7 @@ class OrderController extends Controller{
                     if($product){
                         $amount = isset($product_code["amount"]) ? $product_code["amount"] : 1; /* CANTIDAD EN UNIDAD */
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                        $comments = isset($product_code["comments"]) ? $product_code["comments"] : 1;
                         $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                         if($order->_client==0){
                             $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
@@ -1134,7 +1132,7 @@ class OrderController extends Controller{
                         if($index_price === 0 || $index_price>0){
                             $price = $product->prices[$index_price]->pivot->price;
                             if($price > 0){
-                                $order->products()->syncWithoutDetaching([$product->id => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $product_code["comments"], 'price' => $price, "total" => ($units * $price)]]);
+                                $order->products()->syncWithoutDetaching([$product->id => ['kit' => "", 'amount' => $amount ,'units' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'comments' => $comments, 'price' => $price, "total" => ($units * $price)]]);
                                 $added[] = [
                                     "id" => $product->id,
                                     "code" => $product->code,
@@ -1154,7 +1152,7 @@ class OrderController extends Controller{
                                     }),
                                     "pieces" => $product->pieces,
                                     "ordered" => [
-                                        "comments" => $product_code["comments"],
+                                        "comments" => $comments,
                                         "amount" => $amount,
                                         "units" => $units,
                                         "stock" => 0,

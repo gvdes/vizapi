@@ -159,6 +159,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->post('/changeConfig', 'OrderController@changeConfig');
         $router->post('/reimpresion', 'OrderController@reimpresion');
         $router->post('/printTicket', 'OrderController@reimpresionClientTicket');
+        $router->post('/printNotDelivered', 'OrderController@printNotDelivered');
         
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
         $router->post('/exportExcel', 'OrderController@exportExcel');
