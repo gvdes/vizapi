@@ -351,24 +351,25 @@ class RequisitionController extends Controller{
                     $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                     $miniprinter = new MiniPrinterController($printer->ip, 9100);
                     $miniprinter->validationTicketRequisition($response, $requisition);
-                    $requisition->log()->attach(6, [ 
+                    $requisition->log()->attach(7, [ 
                         'details' => json_encode([
                             "responsable" => $responsable,
                             "order" => $response
                         ])
                     ]);
-                    $requisition->_status = 6;
+                    $requisition->_status = 7;
                     $requisition->save();
                 }
-            break;
+            /* break; */
             case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
-                $requisition->log()->attach(7, [ 'details' => json_encode([
+                /* $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable,
-                    "actors" => $actors
+                    "actors" => $actors,
+                    "order" => $response
                 ])]);
                 $requisition->_status = 7;
                 $requisition->save();
-            break;
+            break; */
             case 8: /* POR VALIDAR RECEPCIÓN */
                 $requisition->log()->attach(8, [ 'details' => json_encode([
                     "responsable" => $responsable
