@@ -48,6 +48,8 @@ class Requisition extends JsonResource{
                         "code" => $product->code,
                         "name" => $product->name,
                         "cost" => $product->cost,
+                        'barcode' => $product->barcode,
+                        'label' => $product->label,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
                         "section" => $product->section,

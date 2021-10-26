@@ -133,6 +133,8 @@ class RequisitionController extends Controller{
                     "code" => $product->code,
                     "name" => $product->name,
                     "cost" => $product->cost,
+                    'barcode' => $product->barcode,
+                    'label' => $product->label,
                     "description" => $product->description,
                     "dimensions" => $product->dimensions,
                     "section" => $product->section,
@@ -223,6 +225,8 @@ class RequisitionController extends Controller{
                         "code" => $product->code,
                         "name" => $product->name,
                         "cost" => $product->cost,
+                        'barcode' => $product->barcode,
+                        'label' => $product->label,
                         "description" => $product->description,
                         "dimensions" => $product->dimensions,
                         "section" => $product->section,
@@ -303,7 +307,12 @@ class RequisitionController extends Controller{
                 $requisition->save();
                 $requisition->fresh(['log']);
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
-                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                if($requisition->_workpoint_to == 2){
+                    $port = 4065;
+                }else{
+                    $port = 9100;
+                }
+                $miniprinter = new MiniPrinterController($printer->ip, $port);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
             break;
             case 3: /* SURTIENDO */
@@ -582,7 +591,12 @@ class RequisitionController extends Controller{
             }]);
         }]);
         $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
-        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
+        if($this->account->_workpoint == 2){
+            $port = 4065;
+        }else{
+            $port = 9100;
+        }
+        $cellerPrinter = new MiniPrinterController($printer->ip, $port);
         $res = $cellerPrinter->requisitionTicket($requisition);
         $requisition->printed = $requisition->printed +1;
         $requisition->save();
@@ -878,6 +892,8 @@ class RequisitionController extends Controller{
                             "code" => $product->code,
                             "name" => $product->name,
                             "cost" => $product->cost,
+                            'barcode' => $product->barcode,
+                            'label' => $product->label,
                             "description" => $product->description,
                             "dimensions" => $product->dimensions,
                             "section" => $product->section,
@@ -946,6 +962,8 @@ class RequisitionController extends Controller{
                                 "code" => $product->code,
                                 "name" => $product->name,
                                 "cost" => $product->cost,
+                                'barcode' => $product->barcode,
+                                'label' => $product->label,
                                 "description" => $product->description,
                                 "dimensions" => $product->dimensions,
                                 "section" => $product->section,
