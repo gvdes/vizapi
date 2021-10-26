@@ -361,7 +361,7 @@ class RequisitionController extends Controller{
                     $requisition->_status = 7;
                     $requisition->save();
                 }
-            /* break; */
+            break;
             case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 /* $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable,
