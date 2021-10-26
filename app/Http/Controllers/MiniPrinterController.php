@@ -846,6 +846,61 @@ class MiniPrinterController extends Controller{
         }
     }
 
+    public function requisition_transfer($requisition){
+        $printer = $this->printer;
+        if(!$printer){
+            return false;
+        }
+        
+        $summary = $requisition->products->reduce(function($summary, $product){
+            if($product->pivot->toDelivered && $product->pivot->toDelivered > 0){
+                $summary['models'] = $summary['models'] + 1;
+            }
+            $summary['articles'] = $summary['articles'] + $product->pivot->toDelivered;
+            return $summary;
+        }, ["models" => 0, "articles" => 0]);
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(2,1);
+        $printer->setReverseColors(true);
+        $printer->text(" ".$requisition->id." \n");
+        $printer->setReverseColors(false);
+        $printer->setFont(Printer::FONT_B);
+        $printer->setTextSize(3,1);
+        $printer->text($requisition->notes."\n");
+        $printer->setFont(Printer::FONT_A);
+        $printer->setTextSize(1,1);
+        $printer->text("Al entregar la mercancía en ".$requisition->from->alias." se hará el\n");
+        $printer->setTextSize(2,2);
+        $printer->setReverseColors(true);
+        $printer->text(" traspaso \n");
+        $printer->setReverseColors(false);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(1,1);
+        $printer->text("Modelos: ");
+        $printer->setTextSize(2,1);
+        $printer->text($summary['models']);
+        $printer->setTextSize(1,1);
+        $printer->text(" Piezas: ");
+        $printer->setTextSize(2,1);
+        $printer->text(round($summary['articles'])."\n");
+        $printer->feed(1);
+        $printer->setBarcodeHeight($this->barcode_height);
+        $printer->setBarcodeWidth($this->barcode_width);
+        $printer->barcode($requisition->id);
+        $printer->feed(1);
+        $printer->setTextSize(2,1);
+        $printer->setFont(Printer::FONT_B);
+        $printer->text("GRUPO VIZCARRA - ".$requisition->id."\n");
+        $printer->cut();
+        $printer->close();
+        return true;
+        try{
+        }catch(\Exception $e){
+            return false;
+        }
+    }
+
     public function orderTicket2(Order $order, $cash, $in_coming = null){
         $printer = $this->printer;
         if(!$printer){

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class WorkPoint extends Model{
     
     protected $table = 'workpoints';
-    protected $fillable = ['fullname', 'alias', '_type'];
+    protected $fillable = ['fullname', 'alias', '_type', '_client'];
     protected $hidden = ['_type'];
     protected $dateFormat = 'U';
     public $timestamps = false;

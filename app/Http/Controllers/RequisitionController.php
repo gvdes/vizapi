@@ -353,22 +353,43 @@ class RequisitionController extends Controller{
                 $requisition->save();
             break;
             case 6: /* POR ENVIAR */
-                $access = new AccessController($requisition->from->dominio);
                 $requisition->load(['products']);
-                $response = $access->createClientRequisition(new RequisitionResource($requisition));
-                if($response && $response["status"] = 200){
-                    $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                if($requisition->_workpoint_from == 1 && $requisition->_workpoint_to == 2){
+                    $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
                     $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                    $miniprinter->validationTicketRequisition($response, $requisition);
-                    $requisition->log()->attach(7, [ 
+                    $miniprinter->requisition_transfer($requisition);
+                    $requisition->log()->attach(7, [
                         'details' => json_encode([
                             "responsable" => $responsable,
                             "actors" => $actors,
-                            "order" => $response
+                            "order" => [
+                                "status" => 200,
+                                "serie" => "N/A",
+                                "ticket" => "N/A"
+                            ],
+                            "document" => "Traspaso"
                         ])
                     ]);
                     $requisition->_status = 7;
                     $requisition->save();
+                }else{
+                    $access = new AccessController($requisition->to->dominio);
+                    $response = $access->createClientRequisition(new RequisitionResource($requisition));
+                    if($response && $response["status"] = 200){
+                        $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
+                        $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                        $miniprinter->validationTicketRequisition($response, $requisition);
+                        $requisition->log()->attach(7, [
+                            'details' => json_encode([
+                                "responsable" => $responsable,
+                                "actors" => $actors,
+                                "order" => $response,
+                                "document" => "Pedido a cliente"
+                            ])
+                        ]);
+                        $requisition->_status = 7;
+                        $requisition->save();
+                    }
                 }
             break;
             case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
