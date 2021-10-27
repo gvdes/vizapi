@@ -1121,7 +1121,7 @@ class OrderController extends Controller{
                     if($product){
                         $amount = isset($product_code["amount"]) ? $product_code["amount"] : 1; /* CANTIDAD EN UNIDAD */
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                        $comments = isset($product_code["comments"]) ? $product_code["comments"] : 1;
+                        $comments = isset($product_code["comments"]) ? $product_code["comments"] : "";
                         $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
                         if($order->_client==0){
                             $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */

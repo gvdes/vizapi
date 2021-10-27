@@ -39,7 +39,7 @@ class RequisitionController extends Controller{
                         $folio = count($cadena)>1 ? $cadena[1] : '0';
                         $caja = count($cadena)>0 ? $cadena[0] : '0';
                         $data = $this->getVentaFromStore($folio, $_workpoint_from, $caja, $_workpoint_to);
-                        /* $request->notes = $request->notes; */
+                        $request->notes = $request->notes ? $request->notes." ".$data['notes'] : $data['notes'];
                     break;
                     case 4:
                         $data = $this->getPedidoFromStore($request->folio, $_workpoint_from, $_workpoint_to);
