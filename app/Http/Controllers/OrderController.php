@@ -977,7 +977,7 @@ class OrderController extends Controller{
             return $log->pivot->_status == 5;
         })->values()->all()[0];
 
-        $printer = isset($request->_printer) ? Printer::find($request->_printer) : Priter::where([["_workpoint", $this->account->_workpoint], ["_type", 2]])->first();
+        $printer = isset($request->_printer) ? Printer::find($request->_printer) : Printer::where([["_workpoint", $this->account->_workpoint], ["_type", 2]])->first();
         $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
         $res = $cellerPrinter->orderTicketToDelivered($order, $cash_, $in_coming);
         return response()->json(["success" => $res, "server_status" => 200]);
