@@ -353,14 +353,12 @@ class RequisitionController extends Controller{
                 $requisition->save();
             break;
             case 6: /* POR ENVIAR */
-            /* break; */
-            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
                 $requisition->load(['products']);
                 if($requisition->_workpoint_from === 1 && $requisition->_workpoint_to === 2){
                     $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
                     $miniprinter = new MiniPrinterController($printer->ip, 9100);
                     $miniprinter->requisition_transfer($requisition);
-                    $requisition->log()->attach(7, [
+                    $requisition->log()->attach(6, [
                         'details' => json_encode([
                             "responsable" => $responsable,
                             "actors" => $actors,
@@ -372,7 +370,7 @@ class RequisitionController extends Controller{
                             "document" => "Traspaso"
                         ])
                     ]);
-                    $requisition->_status = 7;
+                    $requisition->_status = 6;
                     $requisition->save();
                 }else{
                     $access = new AccessController($requisition->to->dominio);
@@ -381,7 +379,7 @@ class RequisitionController extends Controller{
                         $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
                         $miniprinter = new MiniPrinterController($printer->ip, 9100);
                         $miniprinter->validationTicketRequisition($response, $requisition);
-                        $requisition->log()->attach(7, [
+                        $requisition->log()->attach(6, [
                             'details' => json_encode([
                                 "responsable" => $responsable,
                                 "actors" => $actors,
@@ -389,17 +387,19 @@ class RequisitionController extends Controller{
                                 "document" => "Pedido a cliente"
                             ])
                         ]);
-                        $requisition->_status = 7;
+                        $requisition->_status = 6;
                         $requisition->save();
                     }
                 }
-                /* $requisition->log()->attach(7, [ 'details' => json_encode([
+            break;
+            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
+                $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable,
                     "actors" => $actors,
                     "order" => $response
                 ])]);
                 $requisition->_status = 7;
-                $requisition->save(); */
+                $requisition->save();
             break;
             case 8: /* POR VALIDAR RECEPCIÓN */
                 $requisition->log()->attach(8, [ 'details' => json_encode([
@@ -863,7 +863,8 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function getAmount($product, $amount, $_supply_by){
+    public function getAmount($product, $amount, $_supply_by, $pieces = false){
+        $pieces = $pieces ? $pieces : $product->pieces;
         switch ($_supply_by){
             case 1:
                 return $amount;
@@ -872,10 +873,10 @@ class RequisitionController extends Controller{
                 return $amount * 12;
             break;
             case 3:
-                return ($amount * $product->pieces);
+                return ($amount * $pieces);
             break;
             case 4:
-                return round($amount * ($product->pieces/2));
+                return round($amount * ($pieces/2));
             break;
         }
     }
@@ -895,7 +896,8 @@ class RequisitionController extends Controller{
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                    $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                    $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
+                    $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
                     $total = $product->pivot->cost * $units;
                     $requisition->products()->syncWithoutDetaching([
                         $request->_product => [
@@ -958,10 +960,11 @@ class RequisitionController extends Controller{
                     }])
                     ->find($request->_product);
                     if($product){
+                        $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                         $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
                         $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                        $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                        $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
                         $total = $cost * $units;
                         $comments = isset($request->comments) ? $request->comments : "";
 
