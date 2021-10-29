@@ -49,7 +49,11 @@ class Requisition extends JsonResource{
                         }else if($product->pivot->toDelivered){
                             $pieces = $product->pivot->toDelivered / $product->pivot->amount;
                         }else{
-                            $pieces = $product->pivot->units / $product->pivot->amount;
+                            if($product->pivot->amount){
+                                $pieces = $product->pivot->units / $product->pivot->amount;
+                            }else{
+                                $pieces = $product->pieces;
+                            }
                         }
                     }else{
                         $pieces = $product->pieces;
