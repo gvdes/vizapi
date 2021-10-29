@@ -619,8 +619,10 @@ class RequisitionController extends Controller{
         }
         $cellerPrinter = new MiniPrinterController($printer->ip, $port);
         $res = $cellerPrinter->requisitionTicket($requisition);
-        //$requisition->printed = $requisition->printed +1;
-        //$requisition->save();
+        if($requisition->_workpoint_to == $this->account->_workpoint){
+            $requisition->printed = $requisition->printed +1;
+            $requisition->save();
+        }
         return response()->json(["success" => $res]);
     }
 
