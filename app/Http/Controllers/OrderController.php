@@ -483,8 +483,9 @@ class OrderController extends Controller{
                 }])->where('id', $request->_product)->first();
                 if($product){
                     $new_amount = $amount ? $amount : $product->pivot->amount;
+                    $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                    $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                    $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
                         $price_list = $this->calculatePriceList($product, $units, $order, 7); /* PRICE LIST */
                     }else{
@@ -502,7 +503,7 @@ class OrderController extends Controller{
                                 "family" => $product->family,
                                 "category" => $product->category,
                                 "barcode" => $product->barcode,
-                                "pieces" => $product->pieces,
+                                "pieces" => $pieces,
                                 "prices" => $product->prices->map(function($price){
                                     return [
                                         "id" => $price->id,
@@ -543,9 +544,10 @@ class OrderController extends Controller{
                         $query->where('_workpoint', $this->account->_workpoint);
                     }])->find($request->_product);
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
+                    $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                     $new_amount = $amount ? $amount : $product->pivot->amount;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
-                    $units = $this->getAmount($product, $amount, $_supply_by); /* CANTIDAD EN PIEZAS */
+                    $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
                         $price_list = $this->calculatePriceList($product, $units, $order); /* PRICE LIST */
                     }else{
@@ -565,7 +567,7 @@ class OrderController extends Controller{
                                 "family" => $product->family,
                                 "category" => $product->category,
                                 "barcode" => $product->barcode,
-                                "pieces" => $product->pieces,
+                                "pieces" => $pieces,
                                 "prices" => $product->prices->map(function($price){
                                     return [
                                         "id" => $price->id,
@@ -623,7 +625,8 @@ class OrderController extends Controller{
         }
     }
 
-    public function getAmount($product, $amount, $_supply_by){
+    public function getAmount($product, $amount, $_supply_by, $pieces = false){
+        $pieces = $pieces ? $pieces : $product->pieces;
         switch ($_supply_by){
             case 1:
                 return $amount;
@@ -632,10 +635,10 @@ class OrderController extends Controller{
                 return $amount * 12;
             break;
             case 3:
-                return ($amount * $product->pieces);
+                return ($amount * $pieces);
             break;
             case 4:
-                return round($amount * ($product->pieces/2));
+                return round($amount * ($pieces/2));
             break;
         }
     }

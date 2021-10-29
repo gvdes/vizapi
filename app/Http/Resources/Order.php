@@ -55,6 +55,19 @@ class Order extends JsonResource{
             }),
             'products' => $this->whenLoaded('products', function(){
                 return $this->products->map(function($product){
+                    if($product->pivot->_supply_by == 3){
+                        if($product->pivot->toDelivered){
+                            $pieces = $product->pivot->toDelivered / $product->pivot->amount;
+                        }else{
+                            if($product->pivot->amount){
+                                $pieces = $product->pivot->units / $product->pivot->amount;
+                            }else{
+                                $pieces = $product->pieces;
+                            }
+                        }
+                    }else{
+                        $pieces = $product->pieces;
+                    }
                     return [
                         "id" => $product->id,
                         "code" => $product->code,
@@ -73,7 +86,7 @@ class Order extends JsonResource{
                                 "price" => $price->pivot->price,
                             ];
                         }),
-                        "pieces" => $product->pieces,
+                        "pieces" => $pieces,
                         "ordered" => [
                             "comments" => $product->pivot->comments,
                             "amount" => $product->pivot->amount,
