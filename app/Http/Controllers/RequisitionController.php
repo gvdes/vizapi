@@ -908,6 +908,7 @@ class RequisitionController extends Controller{
                             "total" => $total
                         ]
                     ]);
+
                     return response()->json([
                         "success" => true,
                         "server_status" => 200,
@@ -924,7 +925,7 @@ class RequisitionController extends Controller{
                             "section" => $product->section,
                             "family" => $product->family,
                             "category" => $product->category,
-                            "pieces" => $product->pieces,
+                            "pieces" => $pieces,
                             "units" => $product->units,
                             "ordered" => [
                                 "amount" => $amount,
@@ -995,7 +996,7 @@ class RequisitionController extends Controller{
                                 "section" => $product->section,
                                 "family" => $product->family,
                                 "category" => $product->category,
-                                "pieces" => $product->pieces,
+                                "pieces" => $pieces,
                                 "units" => $product->units,
                                 "ordered" => [
                                     "amount" => $amount,

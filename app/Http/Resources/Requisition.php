@@ -43,6 +43,17 @@ class Requisition extends JsonResource{
             }),
             'products' => $this->whenLoaded('products', function(){
                 return $this->products->map(function($product){
+                    if($product->pivot->_supply_by == 3){
+                        if($product->pivot->toReceived){
+                            $pieces = $product->pivot->toReceived / $product->pivot->amount;
+                        }else if($product->pivot->toDelivered){
+                            $pieces = $product->pivot->toDelivered / $product->pivot->amount;
+                        }else{
+                            $pieces = $product->pivot->units / $product->pivot->amount;
+                        }
+                    }else{
+                        $pieces = $product->pieces;
+                    }
                     return [
                         "id" => $product->id,
                         "code" => $product->code,
@@ -55,7 +66,7 @@ class Requisition extends JsonResource{
                         "section" => $product->section,
                         "family" => $product->family,
                         "category" => $product->category,
-                        "pieces" => $product->pieces,
+                        "pieces" => $pieces,
                         "ordered" => [
                             "amount" => $product->pivot->amount,
                             "_supply_by" => $product->pivot->_supply_by,
