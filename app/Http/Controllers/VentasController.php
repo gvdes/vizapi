@@ -634,6 +634,7 @@ class VentasController extends Controller{
     $_workpoints = range(3,13);
     $_workpoints[] = 17;
     $_workpoints[] = 1;
+    $_workpoints[] = 19;
     $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
     /* $workpoints = WorkPoint::where('id', 1)->get(); */
     /* return $workpoints; */

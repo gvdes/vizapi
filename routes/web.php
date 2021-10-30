@@ -23,7 +23,6 @@ $router->group(['prefix' => 'account'], function () use ($router){
         $router->get('/', 'AccountController@me');
         $router->get('/dataToCreate', 'AccountController@dataToCreateUser');
         $router->get('/all', 'AccountController@getAccounts');
-        $router->get('/printers', 'AccountController@getPrinters');
         $router->post('/users', 'AccountController@getUsers');
         $router->get('/general', 'AccountController@getAllUsers');
         $router->get('/profile', 'AccountController@profile');
@@ -220,6 +219,10 @@ $router->group(['middleware' => 'auth'], function() use($router){
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'RequisitionController@demoImpresion');
+            $router->get('/all', 'AccountController@getPrinters');
+            $router->post('/create', 'PrinterController@create');
+            $router->post('/update', 'PrinterController@update');
+            $router->post('/delete', 'PrinterController@delete');
         });
 
         $router->group(['prefix' => 'sdelsol'], function () use ($router){
