@@ -374,4 +374,19 @@ class AccountController extends Controller{
         }
         return response()->json($users);
     }
+
+    public function getPrinters(){
+        if($this->account->_rol == 1){
+            $workpoints = \App\WorkPoint::whereHas('printers')->get();
+        }else{
+            $workpoints = \App\WorkPoint::where('id', $this->account->_workpoint)->get();
+        }
+        $result = $workpoints->map(function($workpoint){
+            $printers = \App\PrinterType::with(['printers' => function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            }])->orderBy('id')->get();
+            $workpoint->printers = $printers;
+        });
+        return response()->json($workpoints);
+    }
 }
