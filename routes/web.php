@@ -136,6 +136,7 @@ $router->group(['middleware' => 'auth'], function() use($router){
         $router->get('/', 'RequisitionController@index');
         $router->get('/dashboard', 'RequisitionController@dashboard');
         $router->get('/{id}', 'RequisitionController@find');
+        $router->post('/updateStocks', 'RequisitionController@updateStocks');
         $router->post('/', 'RequisitionController@create');
         $router->post('/add', 'RequisitionController@addProduct');
         $router->post('/addMassive', 'RequisitionController@addMassiveProduct');

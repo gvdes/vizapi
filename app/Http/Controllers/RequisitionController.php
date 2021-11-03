@@ -12,6 +12,7 @@ use App\Product;
 use App\WorkPoint;
 use App\Account;
 use App\Http\Resources\Requisition as RequisitionResource;
+use App\Http\Resources\ProductRequired as ProductResource;
 
 class RequisitionController extends Controller{
     /**
@@ -596,9 +597,28 @@ class RequisitionController extends Controller{
             "updates" =>[
                 "status" => isset($result) ? $result["status"] : null,
                 "log" => isset($result) ? $result["log"] : null,
-                "printed" =>  isset($result) ? $result["printed"] : null,
+                "printed" =>  isset($result) ? $result["printed"] : null
             ]
         ]);
+    }
+
+    public function updateStocks(Request $request){
+        $requisition = Requisition::with(['products'])->find($request->id);
+        if($requisition){
+            $this->refreshStocks($requisition);
+            $requisition->load(["products" => function($query){
+                $query
+                ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                ->with(['units', 'variants', 'prices' => function($query){
+                    return $query->where('_type', 1);
+                }, 'stocks' => function($query){
+                    return $query->where('_workpoint', $this->account->_workpoint);
+                }]);
+            }]);
+            return response()->json(["products" => ProductResource::collection($requisition->products), "success" => true, "msg" => "ok", "server_status" => 200]);
+        }else{
+            return response()->json(["success" => false, "msg" => "Pedido no encontrado", "server_status" => 404]);
+        }
     }
 
     public function reimpresion(Request $request){
