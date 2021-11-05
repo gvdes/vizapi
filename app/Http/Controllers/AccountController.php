@@ -382,8 +382,8 @@ class AccountController extends Controller{
             $workpoints = \App\WorkPoint::where('id', $this->account->_workpoint)->get();
         }
         $result = $workpoints->map(function($workpoint){
-            $printers = \App\PrinterType::with(['printers' => function($query){
-                $query->where('_workpoint', $this->account->_workpoint);
+            $printers = \App\PrinterType::with(['printers' => function($query) use($workpoint){
+                $query->where('_workpoint', $workpoint->id);
             }])->orderBy('id')->get();
             $workpoint->printers = $printers;
         });

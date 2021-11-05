@@ -100,9 +100,8 @@ class RequisitionController extends Controller{
             if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
                 $to = $requisition->_workpoint_to;
                 $product = Product::
-                selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                ->with(['units', 'stocks' => function($query) use ($to){
-                    $query->whereIn('_workpoint', [$to, $this->account->_workpoint]);
+                with(['stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $to);
                 }, 'prices' => function($query){
                     $query->where('_type', 7);
                 }])->find($request->_product);
@@ -110,12 +109,7 @@ class RequisitionController extends Controller{
                 $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : $product->_unit;
                 $units = $this->getAmount($product, $amount, $_supply_by);
-                $_workpoint_stock = $product->stocks->map(function($stock){
-                    return $stock->id;
-                })->toArray();
-                $key_stock = array_search($to, $_workpoint_stock); //Tienda a la que se le pide la mercancia
-                $key_stock_from = array_search($this->account->_workpoint, $_workpoint_stock); //Tienda que pide la mercancia
-                $stock = ($key_stock > 0 || $key_stock === 0) ? $product->stocks[$key_stock]->pivot->stock : 0;
+                $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0;
                 $total = $cost * $units;
 
                 $requisition->products()->syncWithoutDetaching([
@@ -129,43 +123,13 @@ class RequisitionController extends Controller{
                         'stock' => $stock
                     ]
                 ]);
-                return response()->json([
-                    "id" => $product->id,
-                    "code" => $product->code,
-                    "name" => $product->name,
-                    "cost" => $product->cost,
-                    'barcode' => $product->barcode,
-                    'label' => $product->label,
-                    "description" => $product->description,
-                    "dimensions" => $product->dimensions,
-                    "section" => $product->section,
-                    "family" => $product->family,
-                    "category" => $product->category,
-                    "pieces" => $product->pieces,
-                    "units" => $product->units,
-                    "ordered" => [
-                        "amount" => $amount,
-                        "_supply_by" => $_supply_by,
-                        "units" => $units,
-                        "cost" => $cost,
-                        "total" => $total,
-                        "comments" => isset($request->comments) ? $request->comments : "",
-                        "stock" => $stock,
-                        "toDelivered" => null,
-                        "toReceived" => null
-                    ],
-                    "stocks" => [
-                        [
-                            "alias" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->alias : "",
-                            "name" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->name : "",
-                            "stock"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->stock : 0,
-                            "gen" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->gen : 0,
-                            "exh" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->exh : 0,
-                            "min" => ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
-                            "max"=> ($key_stock_from > 0 || $key_stock_from === 0) ? $product->stocks[$key_stock_from]->pivot->min : 0,
-                        ]
-                    ]
-                ]);
+                $productAdded = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                ->with(['units', 'stocks' => function($query) use ($to){
+                    $query->where('_workpoint', $this->account->_workpoint);
+                }, 'prices' => function($query){
+                    $query->where('_type', 7);
+                }])->where("id", $request->_product)->first();
+                return response()->json(new ProductResource($productAdded));
             }else{
                 return response()->json(["msg" => "No puedes agregar productos", "success" => false]);
             }
@@ -908,10 +872,6 @@ class RequisitionController extends Controller{
             if(/* $requisition->_status == 5 */ 1 == 1){
                 $product = $requisition
                     ->products()
-                    ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                    ->with(['stocks' => function($query) use($requisition){
-                        $query->where('_workpoint', $requisition->_workpoint_from)->distinct();
-                    }])
                     ->where('id', $request->_product)
                     ->first();
                 if($product){
@@ -929,53 +889,22 @@ class RequisitionController extends Controller{
                         ]
                     ]);
 
+                    $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                    ->with(['units', 'stocks' => function($query) use ($to){
+                        $query->where('_workpoint', $this->account->_workpoint);
+                    }, 'prices' => function($query){
+                        $query->where('_type', 7);
+                    }])->where("id", $request->_product)->first();
+
                     return response()->json([
                         "success" => true,
                         "server_status" => 200,
                         "msg" => "ok",
-                        "data" => [
-                            "id" => $product->id,
-                            "code" => $product->code,
-                            "name" => $product->name,
-                            "cost" => $product->cost,
-                            'barcode' => $product->barcode,
-                            'label' => $product->label,
-                            "description" => $product->description,
-                            "dimensions" => $product->dimensions,
-                            "section" => $product->section,
-                            "family" => $product->family,
-                            "category" => $product->category,
-                            "pieces" => $pieces,
-                            "units" => $product->units,
-                            "ordered" => [
-                                "amount" => $amount,
-                                "_supply_by" => $_supply_by,
-                                "units" => $product->pivot->units,
-                                "cost" => $product->pivot->cost,
-                                "total" => $total,
-                                "comments" => $product->pivot->comments,
-                                "toDelivered" => $units,
-                                "toReceived" => 0,
-                                "stock" => $product->pivot->stock
-                            ],
-                            "stocks" => [
-                                [
-                                    "_workpoint" => count($product->stocks)>0 ? $product->stocks[0]->id : "",
-                                    "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
-                                    "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
-                                    "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
-                                    "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
-                                    "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
-                                    "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
-                                    "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
-                                ]
-                            ]
-                        ]
+                        "data" => new ProductResource($productUpdated)
                     ]);
                 }else{
                     $product = Product::
-                    selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                    ->with(['stocks' => function($query) use($requisition){
+                    with(['stocks' => function($query) use($requisition){
                         $query->where('_workpoint', $requisition->_workpoint_from)->distinct();
                     }, 'prices' => function($query){
                         $query->where('_type', 7);
@@ -987,6 +916,7 @@ class RequisitionController extends Controller{
                         $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                         $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                         $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
+                        $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0;
                         $total = $cost * $units;
                         $comments = isset($request->comments) ? $request->comments : "";
 
@@ -994,54 +924,27 @@ class RequisitionController extends Controller{
                             $request->_product => [
                                 'units' => 0,
                                 'amount' => $amount,
+                                'cost' => $cost,
                                 'comments' => $comments,
                                 '_supply_by' => $_supply_by,
                                 'toDelivered' => $units,
-                                "total" => $total
+                                'total' => $total,
+                                'stock' => $stock
                             ]
                         ]);
+
+                        $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                        ->with(['units', 'stocks' => function($query) use ($to){
+                            $query->where('_workpoint', $this->account->_workpoint);
+                        }, 'prices' => function($query){
+                            $query->where('_type', 7);
+                        }])->where("id", $request->_product)->first();
+
                         return response()->json([
                             "success" => true,
                             "server_status" => 200,
                             "msg" => "ok",
-                            "data" => [
-                                "id" => $product->id,
-                                "code" => $product->code,
-                                "name" => $product->name,
-                                "cost" => $product->cost,
-                                'barcode' => $product->barcode,
-                                'label' => $product->label,
-                                "description" => $product->description,
-                                "dimensions" => $product->dimensions,
-                                "section" => $product->section,
-                                "family" => $product->family,
-                                "category" => $product->category,
-                                "pieces" => $pieces,
-                                "units" => $product->units,
-                                "ordered" => [
-                                    "amount" => $amount,
-                                    "_supply_by" => $_supply_by,
-                                    "units" => 0,
-                                    "cost" => $cost,
-                                    "total" => $total,
-                                    'toDelivered' => $units,
-                                    "toReceived" => 0,
-                                    "comments" => $comments,
-                                    "stock" => 0
-                                ],
-                                "stocks" => [
-                                    [
-                                        "_workpoint" => count($product->stocks)>0 ? $product->stocks[0]->id : "",
-                                        "alias" => count($product->stocks)>0 ? $product->stocks[0]->alias : "",
-                                        "name" => count($product->stocks)>0 ? $product->stocks[0]->name : "",
-                                        "stock"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : 0,
-                                        "gen" => count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : 0,
-                                        "exh" => count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : 0,
-                                        "min" => count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
-                                        "max"=> count($product->stocks)>0 ? $product->stocks[0]->pivot->min : 0,
-                                    ]
-                                ]
-                            ]
+                            "data" => new ProductResource($productUpdated)
                         ]);
                     }else{
                         return response()->json(["msg" => "El producto no se encuentra", "server_status" => 404, "success" => false]);
