@@ -42,7 +42,7 @@ class ClientController extends Controller{
           );
         }
 
-        $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
+        $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17,18,19])->get();
         $raw_clients = $access->getRawClients($date);
         if($raw_clients){
           foreach($stores as $store){

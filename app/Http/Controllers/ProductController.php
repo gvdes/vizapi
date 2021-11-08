@@ -30,7 +30,9 @@ class ProductController extends Controller{
     public function restoreProducts(){
         try{
             $start = microtime(true);
-            $CEDIS = \App\WorkPoint::find(1);
+            $_cedis = env("CEDIS") ? env("CEDIS") : 1;
+            $CEDIS = \App\WorkPoint::find($_cedis);
+            return response()->json(["value" => $CEDIS]);
             $access = new AccessController($CEDIS->dominio);
             $products = $access->getAllProducts();
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
@@ -151,7 +153,8 @@ class ProductController extends Controller{
         try{
             $start = microtime(true);
             $products = Product::all()->toArray();
-            $workpoint = \App\WorkPoint::find(1);
+            $_cedis = env("CEDIS") ? env("CEDIS") : 1;
+            $workpoint = \App\WorkPoint::find($_cedis);
             $access = new AccessController($workpoint->dominio);
             $prices = $access->getPrices(); /* AGREGAR METODO */
             if($products && $prices){
@@ -190,7 +193,8 @@ class ProductController extends Controller{
     public function updateTable(Request $request){
         $start = microtime(true);
         $date = isset($request->date) ? $request->date : null;
-        $workpoint = \App\WorkPoint::find(1);
+        $_cedis = env("CEDIS") ? env("CEDIS") : 1;
+        $workpoint = \App\WorkPoint::find($_cedis);
         $access = new AccessController($workpoint->dominio);
         $required_products = $request->products ? : false;
         $required_prices = $request->prices ? : false;
@@ -258,13 +262,15 @@ class ProductController extends Controller{
             $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
         }
         if($raw_data){
-            foreach($stores as $store){
-                $access_store = new AccessController($store->dominio);
-                $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
-                if($result){
-                    $store_success[] = $store->alias;
-                }else{
-                    $store_fail[] = $store->alias;
+            if($_cedis == 1){
+                foreach($stores as $store){
+                    $access_store = new AccessController($store->dominio);
+                    $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
+                    if($result){
+                        $store_success[] = $store->alias;
+                    }else{
+                        $store_fail[] = $store->alias;
+                    }
                 }
             }
             return response()->json([
