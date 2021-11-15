@@ -500,7 +500,7 @@ class RequisitionController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $date= new \DateTime();
+        $date = new \DateTime();
         $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log', 'products' => function($query){
                                         $query->with(['prices' => function($query){
                                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
@@ -770,44 +770,6 @@ class RequisitionController extends Controller{
     }
 
     public function categoriesByStore($_workpoint){
-        /**
-         * MOC => 405 - 447
-         * PAP => 515 - 552
-         * CAL => 588 - 628
-         * HOG => 752 - 779
-         * ELE => 629 - 669
-         * JUG => 448 - 514
-         * PAR => 553 - 587 AND 780 - 786
-         * */
-        /* switch($_workpoint){
-            case 1:
-            case 4:
-            case 5:
-            case 7:
-            case 13:
-            case 9:
-                $arr = range(405, 447);
-                $arr[] = 791;
-                return $arr;
-                break;
-            case 6:
-            case 10:
-            case 12:
-                $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669)];
-                return array_merge_recursive(...$_categories);
-                break;
-            case 11:
-                return range(448, 514);
-                break;
-            case 8:
-                $_categories = [range(515,552), range(588, 628), range(448, 514)];
-                return array_merge_recursive(...$_categories);
-                break;
-            case 3:
-                $_categories = [range(515,552), range(588, 628), range(752, 779), range(629, 669), range(448, 514), range(553, 587), range(780, 786)];
-                return array_merge_recursive(...$_categories);
-                break;
-        } */
 
         switch($_workpoint){
             case 1:

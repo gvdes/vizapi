@@ -26,7 +26,7 @@ class VentasController extends Controller{
   public function __construct(){
   }
 
-  public function index(Request $request){
+  public function index2(Request $request){
     if(isset($request->date_from) && isset($request->date_to)){
       $date_from = new \DateTime($request->date_from);
       $date_to = new \DateTime($request->date_to);
@@ -98,6 +98,77 @@ class VentasController extends Controller{
       "ticket_promedio" => round($tickets_promedio, 2),
       "metodos_de_pago" => $method,
       "sucursales" => $ventas
+    ]);
+  }
+
+  public function index(Request $request){
+    if(isset($request->date_from) && isset($request->date_to)){
+      $date_from = new \DateTime($request->date_from);
+      $date_to = new \DateTime($request->date_to);
+      if($request->date_from == $request->date_to){
+        $date_from->setTime(0,0,0);
+        $date_to->setTime(23,59,59);
+      }
+    }else{
+      $date_from = new \DateTime();
+      $date_from->setTime(0,0,0);
+      $date_to = new \DateTime();
+      $date_to->setTime(23,59,59);
+    }
+
+    $sales = Sales::where([
+      ["created_at", ">=", $date_from],
+      ["created_at", "<=", $date_to]
+    ])->with(["cash", "paid_by"])->get();
+
+    $venta = $sales->sum("total");
+    $tickets = count($sales);
+    $paidMethods = PaidMethod::where('id', ">", 0)->get();
+    $sales_groupBy_paid_methods = $sales->groupBy("_paid_by");
+
+    $total_paid_methods = $paidMethods->map(function($method) use($sales_groupBy_paid_methods){
+      $result = array_key_exists($method->id, $sales_groupBy_paid_methods->toArray());
+      $total = $result ? $sales_groupBy_paid_methods[$method->id]->sum("total") : 0;
+      return [
+        "id" => $method->id,
+        "name" => $method->name,
+        "alias" => $method->alias,
+        "total" => $total
+      ];
+    });
+
+    $workpoints = WorkPoint::whereIn("_type", [1,2])->get();
+    $sales_groupBy_workpoint = $sales->groupBy(function($sale){
+      return $sale->cash->_workpoint;
+    });
+    $result_workpoints = $workpoints->map(function($workpoint) use($sales_groupBy_workpoint, $paidMethods){
+      $result = array_key_exists($workpoint->id, $sales_groupBy_workpoint->toArray());
+      $workpoint->venta = $result ? $sales_groupBy_workpoint[$workpoint->id]->sum("total") : 0;
+      $workpoint->tickets = $result ? count($sales_groupBy_workpoint[$workpoint->id]) : 0;
+      $workpoint->ticket_promedio = round($workpoint->venta / ($workpoint->tickets>0 ? $workpoint->tickets : 1), 2);
+      $sales_groupBy_paid_methods = $result ? $sales_groupBy_workpoint[$workpoint->id]->groupBy('_paid_by') : false;
+      if($sales_groupBy_paid_methods){
+        $workpoint->metodos_de_pago = $paidMethods->map(function($method) use($sales_groupBy_paid_methods){
+          $result = array_key_exists($method->id, $sales_groupBy_paid_methods->toArray());
+          $total = $result ? $sales_groupBy_paid_methods[$method->id]->sum("total") : 0;
+          return [
+            "id" => $method->id,
+            "name" => $method->name,
+            "alias" => $method->alias,
+            "total" => $total
+          ];
+        });
+      }else{
+      }
+      $workpoint->metodos_de_pago = $paidMethods;
+      return $workpoint;
+    });
+    return response()->json([
+      "venta" => $venta,
+      "tickets" => $tickets,
+      "ticket_promedio" => round($venta / ($tickets>0 ? $tickets : 1), 2),
+      "metodos_de_pago" => $total_paid_methods,
+      "sucursales" => $result_workpoints
     ]);
   }
 
@@ -914,10 +985,12 @@ class VentasController extends Controller{
             $query->where('barcode', $code);
           })->with(['stocks', 'prices', 'provider', 'status'])->first();
           if($product){
+            $product->original = $code;
             $products[] = $product;
           }else{
             $product = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->where([['code', $code]/* , ['_status', '!=', 4] */])->orWhere([['name', $code], ['_status', '!=', 4]])->with(['stocks', 'prices', 'provider', 'status'])->first();
             if($product){
+              $product->original = $code;
               $products[] = $product;
             }else{
               $notFound[] = $code;
@@ -951,6 +1024,7 @@ class VentasController extends Controller{
       }, $prepare_stocks);
       $provider = $product->provider ? $product->provider->name : "";
       $a = [
+        "original" => $product->original,
         "Modelo" => $product->code,
         "Código" => $product->name,
         "Fecha alta" => $product->created_at,
