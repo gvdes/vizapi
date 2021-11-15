@@ -148,7 +148,7 @@ class VentasController extends Controller{
       $workpoint->ticket_promedio = round($workpoint->venta / ($workpoint->tickets>0 ? $workpoint->tickets : 1), 2);
       $sales_groupBy_paid_methods = $result ? $sales_groupBy_workpoint[$workpoint->id]->groupBy('_paid_by') : false;
       if($sales_groupBy_paid_methods){
-        $workpoint->metodos_de_pago = $paidMethods->map(function($method) use($sales_groupBy_paid_methods){
+        $workpoint->metodos_pago = $paidMethods->map(function($method) use($sales_groupBy_paid_methods){
           $result = array_key_exists($method->id, $sales_groupBy_paid_methods->toArray());
           $total = $result ? $sales_groupBy_paid_methods[$method->id]->sum("total") : 0;
           return [
@@ -159,8 +159,8 @@ class VentasController extends Controller{
           ];
         });
       }else{
+        $workpoint->metodos_de_pago = $paidMethods;
       }
-      $workpoint->metodos_de_pago = $paidMethods;
       return $workpoint;
     });
     return response()->json([
