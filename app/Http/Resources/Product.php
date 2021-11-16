@@ -14,12 +14,12 @@ class Product extends JsonResource{
      * @return array
      */
     public function toArray($request){
-        /* $_account = Auth::payload()['workpoint'];
+        $_account = Auth::payload()['workpoint'];
         $stock = $this->whenLoaded('stocks', function() use($_account){
             return $this->stocks->filter(function($stock) use($_account){
                 return $stock->id == $_account->_workpoint;
             });
-        }); */
+        });
         return [
             'id' => $this->id,
             'code' => $this->code,
@@ -61,12 +61,12 @@ class Product extends JsonResource{
                     ];
                 });
             }),
-            /* 'status' => $this->whenLoaded('stocks', function(){
+            'status' => $this->whenLoaded('stocks', function(){
                 return \App\ProductStatus::find($this->stocks[0]->pivot->_status);
-            }), */
-            'status' => $this->whenLoaded('status', function(){
-                return $this->status;
             }),
+            /* 'status' => $this->whenLoaded('status', function(){
+                return $this->status;
+            }), */
             'variants' => $this->whenLoaded('variants', function(){
                 return $this->variants;
             }),
@@ -86,13 +86,17 @@ class Product extends JsonResource{
             'stocks' => $this->whenLoaded('stocks', function(){
                 return $this->stocks->map(function($stock){
                     return [
+                        "_workpoint" => $stock->id,
                         "alias" => $stock->alias,
                         "name" => $stock->name,
                         "stock" => $stock->pivot->stock,
                         "gen" => $stock->pivot->gen,
                         "exh" => $stock->pivot->exh,
+                        "des" => $stock->pivot->des,
+                        "fdt" => $stock->pivot->fdt,
                         "min" => $stock->pivot->min,
                         "max" => $stock->pivot->max,
+                        "status" => \App\ProductStatus::find($stock->pivot->_status)
                     ];
                 });
             })/* ,

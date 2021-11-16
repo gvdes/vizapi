@@ -598,7 +598,8 @@ class ProductController extends Controller{
     public function updateStatus(Request $request){
         $product = Product::find($request->_product);
         if($product){
-            $product->_status = $request->_status;
+            /* $product->_status = $request->_status; */
+            $product->stocks()->updateExistingPivot($workpoint->id, ['_status' => $request->_status]);
             return response()->json(["success" => $product->save()]);
         }
         return response()->json(["success" => false]);
@@ -685,9 +686,19 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        $query = $query->with(['units', 'status', 'stocks' => function($query){
-            $query = $query->where('_workpoint', $this->account->_workpoint);
-        }]);
+        $query = $query->with(['units', 'status']);
+
+        if(isset($request->_workpoint_status) && $request->_workpoint_status){
+            $workpoints = $request->_workpoint_status;
+            $workpoints[] = $this->account->_workpoint;
+            $query = $query->with(['stocks' => function($query) use($workpoints){
+                $query->whereIn('_workpoint', $workpoints);
+            }]);
+        }else{
+            $query = $query->with(['stocks' => function($query){
+                $query->where('_workpoint', $this->account->_workpoint);
+            }]);
+        }
         /* if(isset($request->with_stock) && $request->with_stock){
         } */
 
