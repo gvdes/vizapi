@@ -692,11 +692,11 @@ class ProductController extends Controller{
             $workpoints = $request->_workpoint_status;
             $workpoints[] = $this->account->_workpoint;
             $query = $query->with(['stocks' => function($query) use($workpoints){
-                $query->whereIn('_workpoint', $workpoints);
+                $query->whereIn('_workpoint', $workpoints)->distinct();
             }]);
         }else{
             $query = $query->with(['stocks' => function($query){
-                $query->where('_workpoint', $this->account->_workpoint);
+                $query->where('_workpoint', $this->account->_workpoint)->distinct();
             }]);
         }
         /* if(isset($request->with_stock) && $request->with_stock){

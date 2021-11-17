@@ -18,7 +18,7 @@ class Product extends JsonResource{
         $stock = $this->whenLoaded('stocks', function() use($_account){
             return $this->stocks->filter(function($stock) use($_account){
                 return $stock->id == $_account->_workpoint;
-            });
+            })->values()->all();
         });
         return [
             'id' => $this->id,
