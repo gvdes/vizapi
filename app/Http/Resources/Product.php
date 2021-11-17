@@ -62,8 +62,8 @@ class Product extends JsonResource{
                 });
             }),
             'status' => $this->whenLoaded('stocks', function(){
-                if(count($this->stocks)>0){
-                    return \App\ProductStatus::find($this->stocks[0]->pivot->_status);
+                if(count($stock)>0){
+                    return \App\ProductStatus::find($stock[0]->pivot->_status);
                 }else{
                     return $this->status;
                 }

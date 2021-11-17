@@ -599,8 +599,8 @@ class ProductController extends Controller{
         $product = Product::find($request->_product);
         if($product){
             /* $product->_status = $request->_status; */
-            $product->stocks()->updateExistingPivot($this->account->_workpoint, ['_status' => $request->_status]);
-            return response()->json(["success" => $product->save()]);
+            $result =  $product->stocks()->updateExistingPivot($this->account->_workpoint, ['_status' => $request->_status]);
+            return response()->json(["success" => $result]);
         }
         return response()->json(["success" => false]);
     }
