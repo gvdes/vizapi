@@ -379,7 +379,7 @@ class LocationController extends Controller{
      */
     public function setMax(Request $request){
         $workpoint = WorkPoint::find($this->account->_workpoint);
-        $product = Product::where('code', $request->code)->first();
+        $product = Product::find($request->id);
         if($product){
             $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
             return response()->json(["success" => true]);
