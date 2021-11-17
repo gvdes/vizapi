@@ -97,7 +97,7 @@ class RequisitionController extends Controller{
                 return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]);
             }
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3,6])){
                 $to = $requisition->_workpoint_to;
                 $product = Product::
                 with(['stocks' => function($query) use ($to){
