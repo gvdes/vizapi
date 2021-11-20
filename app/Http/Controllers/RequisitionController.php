@@ -234,7 +234,7 @@ class RequisitionController extends Controller{
     public function removeProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
-            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3])){
+            if($this->account->_account == $requisition->_created_by || in_array($this->account->_rol, [1,2,3,6])){
                 $requisition->products()->detach([$request->_product]);
                 return response()->json(["success" => true]);
             }else{

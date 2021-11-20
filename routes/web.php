@@ -236,6 +236,11 @@ $router->group(['middleware' => 'auth'], function() use($router){
             $router->get('/new', 'SalidasController@LastSalidas');
         });
 
+        $router->group(['prefix' => 'entradas'], function () use ($router){
+            $router->get('/', 'SalidasController@seederEntradas');
+            $router->get('/new', 'SalidasController@LastSalidas');
+        });
+
         $router->group(['prefix' => 'withdrawals'], function () use ($router){
             $router->get('/', 'WithdrawalsController@seeder');
             $router->get('/new', 'WithdrawalsController@getLatest');

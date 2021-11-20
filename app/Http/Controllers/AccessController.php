@@ -81,6 +81,22 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    /****************
+     *** ENTRADAS ***
+     ****************/
+    public function getEntradas($store){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/entradas/all');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client,CURLOPT_TIMEOUT, 30);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["_workpoint" => $store]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);
+    }
+
     public function getRelatedCodes(){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/product/related');

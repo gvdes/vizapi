@@ -1,6 +1,0 @@
-{
-    "id": 1, //INT|required, Id del pedido de CEDIS que se quiere modificar
-    "_status": 1, //INT|not required, Id del status al que se quiere cambiar | en automatico se pone el siguiente status
-    "_printer": 1, //INT|not required, Id de la impresora (Se utiliza al pasar a: Surtiendo, Completado)
-    "actors": {}//JSON| not required, sirve para almacenar a detalle quien hizo o hara x proceso (Se utiliza al pasa a: Surtiendo, En camino, Inicio de validación)
-}
