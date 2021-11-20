@@ -279,7 +279,7 @@ class RequisitionController extends Controller{
                 }
                 $miniprinter = new MiniPrinterController($printer->ip, $port);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
-            break;
+            /* break; */
             case 3: /* SURTIENDO */
                 $requisition->log()->attach(3, [ 'details' => json_encode([
                     "responsable" => $responsable,

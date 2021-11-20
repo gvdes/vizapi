@@ -32,7 +32,7 @@ class ProductController extends Controller{
             $start = microtime(true);
             $_cedis = env("CEDIS") ? env("CEDIS") : 1;
             $CEDIS = \App\WorkPoint::find($_cedis);
-            return response()->json(["value" => $CEDIS]);
+            /* return response()->json(["value" => $CEDIS]); */
             $access = new AccessController($CEDIS->dominio);
             $products = $access->getAllProducts();
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
