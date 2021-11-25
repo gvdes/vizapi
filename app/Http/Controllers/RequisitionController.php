@@ -295,7 +295,7 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
-                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_to]])->first();
+                $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
                 $miniprinter = new MiniPrinterController($printer->ip, 9100);
                 if($miniprinter->requisitionTicket($requisition)){
                     $requisition->printed = $requisition->printed + 1;
@@ -595,7 +595,7 @@ class RequisitionController extends Controller{
                 });
             }]);
         }]);
-        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+        $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $this->account->_workpoint);
         if($this->account->_workpoint == 2){
             $port = 4065;
         }else{
@@ -935,6 +935,14 @@ class RequisitionController extends Controller{
             }
         }catch(Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
+        }
+    }
+
+    public function getPrinterDefault($_workpoint_from, $_workpoint){
+        if($_workpoint == 1 && in_array($_workpoint_from, [8,11,19])){
+            return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%2%"]])->first();
+        }else{
+            return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
         }
     }
 }
