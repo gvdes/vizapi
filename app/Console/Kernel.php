@@ -37,6 +37,7 @@ class Kernel extends ConsoleKernel
             $_workpoints = range(3,13);
             $_workpoints[] = 1;
             $_workpoints[] = 17;
+            $_workpoints[] = 18;
             $_workpoints[] = 19;
             $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
             $resumen = [];
