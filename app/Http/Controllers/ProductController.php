@@ -890,7 +890,7 @@ class ProductController extends Controller{
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 7);
         }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])
-        ->havingRaw('section = ?', ["Navidad"])
+        ->havingRaw('section = ?', ["Juguete"])
         ->get()->map(function($product) use($categories, $ids_categories){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;

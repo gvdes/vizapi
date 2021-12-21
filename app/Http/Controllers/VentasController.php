@@ -702,7 +702,7 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){
-    $_workpoints = range(3,13);
+    $_workpoints = range(3,12);
     $_workpoints[] = 17;
     $_workpoints[] = 1;
     $_workpoints[] = 18;

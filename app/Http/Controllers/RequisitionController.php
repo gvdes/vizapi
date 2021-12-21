@@ -939,7 +939,7 @@ class RequisitionController extends Controller{
     }
 
     public function getPrinterDefault($_workpoint_from, $_workpoint){
-        if($_workpoint == 1 && in_array($_workpoint_from, [8,11,19])){
+        if($_workpoint == 1 && in_array($_workpoint_from, [6,8,11,12,13,19])){
             return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%2%"]])->first();
         }else{
             return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
