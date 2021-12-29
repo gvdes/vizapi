@@ -257,7 +257,8 @@ class ProductController extends Controller{
             /* if($required_prices && count($products) >= 1000){
                 $this->restorePrices();
             } */
-            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17,19])->get();
+            // $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17,19])->get();
+            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,17,19])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
         }
