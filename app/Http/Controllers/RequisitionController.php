@@ -607,7 +607,7 @@ class RequisitionController extends Controller{
             $requisition->printed = $requisition->printed +1;
             $requisition->save();
         }
-        return response()->json(["success" => $res]);
+        return response()->json(["success" => $res, "printer" => $printer, [$requisition->_workpoint_from, $this->account->_workpoint]]);
     }
 
     public function demoImpresion(Request $request){
@@ -939,10 +939,10 @@ class RequisitionController extends Controller{
     }
 
     public function getPrinterDefault($_workpoint_from, $_workpoint){
-        if($_workpoint == 1/*  && in_array($_workpoint_from, [3,4,5,6,8,11,12,13,19]) */){
+        /* if($_workpoint == 1 && in_array($_workpoint_from, [3,4,5,6,8,11,12,13,19])){
             return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%2%"]])->first();
         }else{
-            return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
-        }
+        } */
+        return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
     }
 }
