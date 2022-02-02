@@ -17,11 +17,12 @@ class AccountingController extends Controller{
 
     }
 
-    public function updateConcepts(Request $request){
-        $clouster = \App\WorkPoint::find(1);
-        $access_clouster = new AccessController($clouster->dominio);
-        $concepts = $access_clouster->getConcepts();
+    public function updateConcepts(Request $request){ // Función utilizada para actualizar los conceptos de gastos
+        $clouster = \App\WorkPoint::find(1); // Buscar CEDIS
+        $access_clouster = new AccessController($clouster->dominio); // Conexión al ACCESS de CEDISSP
+        $concepts = $access_clouster->getConcepts(); // Se obtiene todos los conceptos
         if($concepts){
+            // Si hay respuesta de los conceptos se crearan los que no existan y se actualizaran los datos de los existentes
             DB::transaction(function() use ($concepts){
                 foreach($concepts as $concept){
                     $instance = Concept::firstOrCreate([
@@ -40,21 +41,43 @@ class AccountingController extends Controller{
         return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
     }
 
-    public function seederGastos(Request $request){
-        $clouster = \App\WorkPoint::find(1);
-        $access_clouster = new AccessController($clouster->dominio);
-        $gastos = $access_clouster->getAllGastos();
-        if($gastos){
-            DB::transaction(function() use ($gastos){
-                DB::transaction(function() use ($gastos){
-                    foreach (array_chunk($gastos, 1000) as $insert) {
-                        $success = DB::table('gastos')->insert($insert);
-                    }
-                });
-            });
-            return response()->json(["msg" => "Successful"]);
-        }
-        return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
+    public function seederGastos(Request $request){ // Función para traer todos los gastos (Se debe realizar cada cambio de año) para que las actualizaciones sean sobre las nuevas
+        $clouster = \App\WorkPoint::find(1); // Se busca CEDIS
+        $access_clouster = new AccessController($clouster->dominio); // Se hace la conexión a CEDISSP
+        $gastos = $access_clouster->getAllGastos(); // Se obtienen todos los gastos
+        $success = $this->insert($gastos); // Se insertan los gastos mediante la siguiente función
+        return response()->json([
+            "success" => $success,
+            "gastos" => count($gastos)
+        ]);
+    }
+
+    public function getNew(){ // Función para traer los gastos apartir de la ultima fecha de actualización
+        // Se obtiene la ultima fecha de la cual hay gastos
+        $last_date = DB::table('gastos')->select('created_at')->orderByDesc('created_at')->first()->created_at;
+        $clouster = \App\WorkPoint::find(1); // Se busca CEDIS
+        $access_clouster = new AccessController($clouster->dominio); // Se hace la conexión a CEDIS
+        $gastos = $access_clouster->getNewGastos(explode(" ",$last_date)[0]); // Se obtiene los ultimos gastos con base a la última fecha de gastos
+        $success = $this->insert($gastos); // Se insertan los gastos mediante la siguiente función
+        return response()->json([
+            "success" => $success,
+            "gastos" => count($gastos)
+        ]);
+    }
+
+    public function restore(){
+        $day = date('Y-m-d', strtotime("-7 days")); // Se obtiene la fecha de la semana pasada
+        $gastos = DB::table('gastos')->where('created_at', '>=', $day)->count(); // Se obtiene la cantidad de gastos a eliminar
+        $delete = DB::table('gastos')->where('created_at', '>=', $day)->delete(); // Se eliminan los gastos
+        return response()->json(["delete" => $delete,"gastos" => $gastos]);
+    }
+
+    public function insert($gastos){
+        DB::transaction(function() use ($gastos){
+            foreach (array_chunk($gastos, 1000) as $insert) {
+                $success = DB::table('gastos')->insert($insert);
+            }
+        });
     }
 
     public function getAllOrders(){

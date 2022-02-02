@@ -21,19 +21,19 @@ class ProviderController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function updateProviders(Request $request){
-        $date = date("d_m_Y H_i_s", time());
+    public function updateProviders(Request $request){// Función para actualizar el catalogo de proveedores
         $start = microtime(true);
-        $clouster = \App\WorkPoint::find(1);
-        $access_clouster = new AccessController($clouster->dominio);
-        $date = $request->date ? $request->date : null;
-        $providers = $access_clouster->getProviders($date);
-        $rawProviders = $access_clouster->getRawProviders($date);
-        $stores = $request->stores ? $request->stores : range(3,13);
+        $clouster = \App\WorkPoint::find(1); // Se obtienen los datos de CEDIS SP (Lugar donde sacaremos los datos)
+        $access_clouster = new AccessController($clouster->dominio); // Se hace la conexión al ACCESS de CEDISSP
+        $date = $request->date ? $request->date : null; // Se valida si se manda la sucursal
+        $providers = $access_clouster->getProviders($date); // Se obtienen los proveedores para almacenarlos en MySQL
+        $rawProviders = $access_clouster->getRawProviders($date); // Se obtienen los proveedores de forma nativa para mandarlos a todas las sucursales
+        /* $stores = $request->stores ? $request->stores : range(3,13); */
         $sync = [];
         if($providers && $rawProviders){
             DB::transaction(function() use ($providers){
                 foreach($providers as $provider){
+                    // Se obtiene el primer proveedor y si no existe se crea (La busqueda se realiza por ID)
                     $instance = Provider::firstOrCreate([
                         'id'=> $provider['id']
                     ], [
@@ -44,6 +44,7 @@ class ProviderController extends Controller{
                         'adress' => $provider['adress'],
                         'phone' => $provider['phone']
                     ]);
+                    // Datos para actualizar al proveedor
                     $instance->id = $provider['id'];
                     $instance->rfc = $provider['rfc'];
                     $instance->name = $provider['name'];
@@ -51,23 +52,10 @@ class ProviderController extends Controller{
                     $instance->description = $provider['description'];
                     $instance->adress = $provider['adress'];
                     $instance->phone = $provider['phone'];
-                    $instance->save();
+                    $instance->save(); // Se guardan los cambios
                 }
             });
-            /* $workpoints = \App\WorkPoint::whereIn('id', $stores)->get();
-            foreach($workpoints as $workpoint){
-                $access_store = new AccessController($workpoint->dominio);
-                $sync[$workpoint->alias] = $access_store->syncProviders($rawProviders);
-            }
-            $format = [
-                'A' => "NUMBER",
-                'B' => "TEXT",
-                'C' => "TEXT"
-            ];
-            $export = new WithMultipleSheetsExport($sync, $format);
-            return Excel::download($export, "sincronizar_proveedores_".$date.".xlsx"); */
             return response()->json(["msg" => "Successful"]);
-            /* return response()->json($sync); */
         }
         return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
     }

@@ -170,6 +170,19 @@ class AccessController extends Controller{
         return json_decode(curl_exec($client), true);
     }
 
+    public function getNewInvoicesReceived($last_data){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/invoicesReceived/new');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_TIMEOUT, 20);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["last_data" => $last_data]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);        
+    }
+
     /*************
      * PRODUCTOS *
      *************/
@@ -343,7 +356,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client, CURLOPT_POST, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT, 40);
+        curl_setopt($client,CURLOPT_TIMEOUT, 120);
         $data = json_encode(["cash" => $caja_x_ticket]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
@@ -437,6 +450,19 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($client,CURLOPT_TIMEOUT, 20);
         return json_decode(curl_exec($client), true);
+    }
+
+    public function getNewGastos($date){
+        $client = curl_init();
+        curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/accounting/new');
+        curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($client, CURLOPT_TIMEOUT, 20);
+        curl_setopt($client, CURLOPT_POST, 1);
+        $data = json_encode(["date" => $date]);
+        curl_setopt($client, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+        return json_decode(curl_exec($client), true);        
     }
 
     public function getConcepts(){

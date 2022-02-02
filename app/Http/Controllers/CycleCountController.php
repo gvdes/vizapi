@@ -24,7 +24,7 @@ class CycleCountController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function create(Request $request){
+    public function create(Request $request){ // Función para crear un conteo ciclico
         try {
             $payload = Auth::payload();
             $counter = DB::transaction(function() use($payload, $request){
@@ -45,7 +45,7 @@ class CycleCountController extends Controller{
         }
     }
 
-    public function addResponsable(Request $request){
+    public function addResponsable(Request $request){ // Función para agregar personas al conteo ciclico que haran el conteo
         $inventory = CycleCount::find($request->_inventory);
         if($inventory){
             $res = $inventory->responsables()->toggle($request->_responsable);
@@ -54,7 +54,7 @@ class CycleCountController extends Controller{
         return response()->json(["message" => "Folio de inventario no encontrado"]);
     }
 
-    public function index(Request $request){
+    public function index(Request $request){ // Función que nos retorna las conteos ciclicos que hemos realizado en cierto periodo de tiempo, ademas retorna los datos necesarios para seguir creando conteos
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -88,7 +88,7 @@ class CycleCountController extends Controller{
         ]);
     }
 
-    public function find($id){
+    public function find($id){ // Función para agregar un conteo ciclico en especifico con sus repectivos datos para trabajar con el
         $inventory = CycleCount::with(['workpoint', 'created_by', 'type', 'status', 'responsables', 'log', 'products' => function($query){
             $query->with(['locations' => function($query){
                 $query->whereHas('celler', function($query){
@@ -102,7 +102,7 @@ class CycleCountController extends Controller{
         return response()->json(["success" => false, "message" => "El folio no existe"]);
     }
 
-    public function nextStep(Request $request){
+    public function nextStep(Request $request){ // Función para cambiar el status de un conteo ciclico
         $inventory = CycleCount::find($request->_inventory);
         if($inventory){
             $status = isset($request->_status) ? $request->_status : $inventory->_status+1;
@@ -127,7 +127,7 @@ class CycleCountController extends Controller{
         }
     }
 
-    public function addProducts(Request $request){
+    public function addProducts(Request $request){ // Función para agregar producto nuevos a un conteo ciclico
         $_products = $request->_products;
         $inventory = CycleCount::find($request->_inventory);
         $products_add = [];
@@ -180,7 +180,7 @@ class CycleCountController extends Controller{
         return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
     }
 
-    public function removeProducts(Request $request){
+    public function removeProducts(Request $request){ // Función para quitar producto nuevos a un conteo ciclico activo
         $_products = $request->_products;
         $inventory = CycleCount::find($request->_inventory);
         if($inventory){
@@ -190,7 +190,7 @@ class CycleCountController extends Controller{
         return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
     }
 
-    public function saveValue(Request $request){
+    public function saveValue(Request $request){ // Función para poner el valor contado durante el conteo ciclico
         $account = User::find($this->account->_account);
         $inventory = CycleCount::find($request->_inventory);
         $settings = $request->settings;
@@ -201,7 +201,7 @@ class CycleCountController extends Controller{
         return response()->json(["success" => false, "message" => "Folio de inventario no encontrado"]);
     }
 
-    public function saveFinalStock(CycleCount $inventory){
+    public function saveFinalStock(CycleCount $inventory){ // Función para almacenar el inventario final de todos los articulos cuando los vas a dar por concluir
         foreach($inventory->products as $product){
             $stock_store = $product->stocks->filter(function($stock){
                 return $stock->id == $this->account->_workpoint;
@@ -211,7 +211,8 @@ class CycleCountController extends Controller{
         }
     }
 
-    public function log($case, CycleCount $inventory){
+    public function log($case, CycleCount $inventory){ // Función para crear el log de las acción dentro del conteo ciclico
+        // Se guarda la personam hora de la actividad y se almacena el nuevo estatus al que pasara
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         switch($case){

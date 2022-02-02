@@ -28,11 +28,11 @@ class ProductController extends Controller{
     }
 
     public function restoreProducts(){
+        // Restablece el catalgo maestro de productos emparejando el catalogo en CEDIS SP (F_ART) con el de MySQL (products)
         try{
             $start = microtime(true);
-            $_cedis = env("CEDIS") ? env("CEDIS") : 1;
+            $_cedis = env("CEDIS") ? env("CEDIS") : 1; //Validar de donde se optiene la información
             $CEDIS = \App\WorkPoint::find($_cedis);
-            /* return response()->json(["value" => $CEDIS]); */
             $access = new AccessController($CEDIS->dominio);
             $products = $access->getAllProducts();
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
@@ -68,7 +68,7 @@ class ProductController extends Controller{
                         $instance->large = $product['large'];
                         $instance->cost = $product['cost'];
                         $instance->dimensions = $product['dimensions'];
-                        $instance->_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
+                        $instance->_category = $this->getCategoryId(trim($product['_family']), trim($product['_category']), $categories, $families, $array_families);
                         $instance->description = trim($product['description']);
                         $instance->label = trim($product['label']);
                         $instance->reference = trim($product['reference']);
@@ -94,11 +94,13 @@ class ProductController extends Controller{
     }
 
     public function compareCatalog(){
-        $products = Product::where('_status', '!=', 4)->get();
+        // Pasar al status eliminado (4) los productos que ya no se encuetran en Factusol en el catalogo de MySQL
+        $products = Product::where('_status', '!=', 4)->get(); //Todos los productos excepto los eliminados
         $start = microtime(true);
-        $CEDIS = \App\WorkPoint::find(1);
-        $access = new AccessController($CEDIS->dominio);
-        $products_access = $access->getAllProducts();
+        $_cedis = env("CEDIS") ? env("CEDIS") : 1; //Validar de donde se obtiene la información
+        $CEDIS = \App\WorkPoint::find($_cedis);
+        $access = new AccessController($CEDIS->dominio); //Conexión al access de la sucursal
+        $products_access = $access->getAllProducts(); // Obtener todos los productos
         $codes = array_column($products_access, 'code');
         $ok = [];
         $notExits = [];
@@ -108,19 +110,18 @@ class ProductController extends Controller{
                 $ok[] = $product->code;
             }else{
                 $notExits[] = $product->code;
-                $product->_status = 4;
+                $product->_status = 4; //Se 'eliminan' los productos que no existen actualmente en la tabla - products -
                 $product->save();
             }
         }
         return response()->json(["ok" => $ok, "notExits" => $notExits]);
     }
 
-    public function getCategoryId($family, $category, $categories, $families, $array_families/* , $array_categories */){
+    public function getCategoryId($family, $category, $categories, $families, $array_families){// Función para obtener el id de una categoría que viene de access
         $keyFamily = array_search($family, $array_families, true);
         if($keyFamily>0 || $keyFamily === 0){
             $array_categories = array_column($categories[$families[$keyFamily]->id]->toArray(),'alias');
             $keyCategory = array_search($category, $array_categories, true);
-            /* return $keyCategory; */
             if($keyCategory>0 || $keyCategory === 0){
                 return $categories[$families[$keyFamily]->id][$keyCategory]->id;
             }else{
@@ -131,36 +132,18 @@ class ProductController extends Controller{
         }
     }
 
-    public function saveStocks(){
-        $products = Product::whereHas('stocks')->with('stocks')->get();
-        $created_at = new \DateTime();
-        $stocks = $products->map(function($product) use($created_at){
-            $a = $product->stocks->unique('id')->values()->map(function($stock) use($created_at){
-                $res = $stock->pivot;
-                $res->created_at = $created_at;
-                return $res;
-            });
-            return $a;
-        })->toArray();
-        $insert = array_merge(...$stocks);
-        foreach(array_chunk($insert, 1000) as $toInsert){
-            DB::table('stock_history')->insert($toInsert);
-        }
-        return response()->json(["Filas insertadas" => count($insert)]);
-    }
-
     public function restorePrices(){
+        /* Función para empatar los precios del ACCESS de CEDIS con los de MySQL */
         try{
             $start = microtime(true);
             $products = Product::all()->toArray();
-            $_cedis = env("CEDIS") ? env("CEDIS") : 1;
-            $workpoint = \App\WorkPoint::find($_cedis);
-            $access = new AccessController($workpoint->dominio);
-            $prices = $access->getPrices(); /* AGREGAR METODO */
+            $_cedis = env("CEDIS") ? env("CEDIS") : 1; // Validar de donde se obtiene la información
+            $workpoint = \App\WorkPoint::find($_cedis); // Se trae la instación de la sucursal
+            $access = new AccessController($workpoint->dominio); // Se hace la conexión con la sucursal
+            $prices = $access->getPrices(); // Se obtienen todos los precios del access
             if($products && $prices){
                 DB::transaction(function() use ($products, $prices){
-                    DB::table('product_prices')->delete();
-                    //array prices
+                    DB::table('product_prices')->delete(); // Se eliminan todos los precios
                     $codes =  array_column($products, 'code');
                     $prices_insert = collect($prices)->map(function($price) use($products, $codes){
                         $index_product = array_search($price['code'], $codes, true);
@@ -191,18 +174,25 @@ class ProductController extends Controller{
     }
 
     public function updateTable(Request $request){
+        /* 
+            Actualización y replicación de los productos y precios son almacenados en MySQL
+            y se envian a todas las sucursales con excepción de puebla, ya que
+            en esta sucursal solo se dan de alta los productos que habra en su inventario
+            y se manejan otras tarifas.
+            Nota: El precio AAA de CEDIS es el Costo de las sucursales, por lo que este no es replicado a las sucursales
+         */
         $start = microtime(true);
         $date = isset($request->date) ? $request->date : null;
-        $_cedis = env("CEDIS") ? env("CEDIS") : 1;
-        $workpoint = \App\WorkPoint::find($_cedis);
-        $access = new AccessController($workpoint->dominio);
-        $required_products = $request->products ? : false;
-        $required_prices = $request->prices ? : false;
-        $store_success = [];
-        $store_fail = [];
-        $products = $access->getUpdatedProducts($date);
-        $raw_data = $access->getRawProducts($date, $required_prices, $required_products);
-        if($request->stores == "all"){
+        $_cedis = env("CEDIS") ? env("CEDIS") : 1; //Se valida quien es la sucursal de CEDIS del cual se tomaran los datos
+        $workpoint = \App\WorkPoint::find($_cedis); // Se busca la instancia de CEDIS
+        $access = new AccessController($workpoint->dominio); // Se hace la conexión al ACCESS de la sucursal
+        $required_products = $request->products ? : false; // Se valida si se actualizaran los productos
+        $required_prices = $request->prices ? : false; // Se valida si se actualizaran los precios
+        $store_success = []; // Almacena las sucursales que se han actualizado de forma correcta
+        $store_fail = []; // Almacen las sucursales que no se han actualizado correctamente
+        $products = $access->getUpdatedProducts($date); //Se traen los productos actualizados para almacenar en MySQL
+        $raw_data = $access->getRawProducts($date, $required_prices, $required_products); //Se traen los product actualizados para replicar a las sucursales
+        if($request->stores == "all"){ //Se envian los cambios a todas las sucursales
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
             $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
             $array_families = array_column($families->toArray(), 'alias');
@@ -254,11 +244,7 @@ class ProductController extends Controller{
                     }
                 });
             }
-            /* if($required_prices && count($products) >= 1000){
-                $this->restorePrices();
-            } */
-            // $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17,19])->get();
-            $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,17,19])->get();
+            $stores = \App\Workpoint::where([['_type', 2], ['id', '!=', 18], ['active', true]])->get();
         }else{
             $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
         }
@@ -287,41 +273,9 @@ class ProductController extends Controller{
                 "msg" => "No se tuvo conexión a CEDIS"
             ]);
         }
-        /* try{
-        }catch(\Exception $e){
-            return response()->json(["message" => "No se ha podido actualizar la tabla de productos"]);
-        } */
     }
 
-    public function addAtributes(Request $request){
-        $products = $request->products;
-        $total = 0;
-        foreach($products as $row){
-            $product = Product::where('code', $row['codigo'])->first();
-            if($product){
-                $description = mb_convert_encoding($row['descripcion'], "UTF-8");
-                $product->description = ucfirst(mb_strtolower($description));
-                $product->_category = $row['categoria'];
-                $product->save();
-                $remove = ['categoria', 'descripcion', 'codigo'];
-                $arr = collect(array_diff_key($row, array_flip($remove)));
-                $attributes = $arr->filter(function($el){
-                    return $el !='N-A';
-                })->map(function($el, $key){
-                    if($el=='OK'){
-                        return ['value'=> "Si"];    
-                    }
-                    $value = mb_convert_encoding($el, "UTF-8");
-                    return ['value'=> ucfirst(mb_strtolower($value))];
-                })->toArray();
-                $product->attributes()->attach($attributes);
-                $total++;
-            }
-        }
-        return response()->json($total);
-    }
-
-    public function autocomplete(Request $request){
+    public function autocomplete(Request $request){ // Autocomplete antiguo que estaba en la sección de minimos y maximos
         $code = $request->code;
         $esElProducto = Product::with(['prices' => function($query){
             $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
@@ -356,6 +310,7 @@ class ProductController extends Controller{
     }
 
     public function getMassiveProducts(Request $request){
+        // Función para obtener los productos y obtener la lista de los que se encontraron y no
         $codes = $request->codes;
         $products = [];
         $notFound = [];
@@ -392,6 +347,7 @@ class ProductController extends Controller{
     }
 
     public function getProductByCategory(Request $request){
+        /* Función paara traer los productos con sus atributos ya sea por su categoria o no */
         $products = [];
         $filter = null;
         if(!isset($request->_category)){
@@ -430,7 +386,7 @@ class ProductController extends Controller{
         ]);
     }
 
-    public function categoryTree(Request $request){
+    public function categoryTree(Request $request){ /* Función para obtener los decendientes de una categoría o de todas las secciones */
         if(isset($request->_category)){
             $_category = $request->_category;
             $category = ProductCategory::with('attributes')->find($_category);
@@ -478,6 +434,7 @@ class ProductController extends Controller{
     }
 
     public function getProductsByCategory(Request $request){
+        // No recuerdo que realiza, no la eliminare por si acaso
         $category = ProductCategory::find($request->_category);
         $max_stock_cedis = $request->stock;
         if($category){
@@ -574,50 +531,36 @@ class ProductController extends Controller{
         return array_merge($children_ids, $id);
     }
 
-    public function getCategory(Request $request){
-        $products = collect($request->products);
-        $res = $products->map(function($p){
-            $product = Product::with('category')->where('code',$p['pro_code'])->orWhere('name',$p['pro_code'])->first();
-            if($product){
-                return [
-                    'id' => $product->id,
-                    'code' => $product->code,
-                    'location'=> $p['pro_location'],
-                    'description' => $product->description,
-                    'category' => $product->category->name
-                ];
-            }
-            return [
-                'code' => $p['pro_code'],
-                'location'=> $p['pro_location'],
-                'description' => $p['pro_largedesc'],
-            ];
-        });
-        return response()->json($res);
-    }
 
-    public function updateStatus(Request $request){
-        $product = Product::find($request->_product);
+    public function updateStatus(Request $request){ // Función para actualizar el status en la sucursal
+        $product = Product::find($request->_product); // Se valida que el producto exista
         if($product){
-            /* $product->_status = $request->_status; */
-            $result =  $product->stocks()->updateExistingPivot($this->account->_workpoint, ['_status' => $request->_status]);
-            return response()->json(["success" => $result]);
+            $result =  $product->stocks()->updateExistingPivot($this->account->_workpoint, ['_status' => $request->_status]); //Se actualiza el status sin eliminar los datos de la sucursal
+            return response()->json(["success" => $result]); // Se retorna si tuvo exito la operación
         }
         return response()->json(["success" => false]);
     }
 
-    public function getStatus(Request $request){
+    public function getStatus(Request $request){ // Función para obtener todos los status de los productos (Catalogo de status)
         $status = ProductStatus::all();
         return response()->json(["status" => $status]);
     }
 
-    public function getProducts(Request $request){
+    public function getProducts(Request $request){ // Función autocomplete 2.0
+        //Se obtienen todo los datos del producto y se le agrega la sección, familia y categoría
         $query = Product::query()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy');
-        if(isset($request->autocomplete) && $request->autocomplete){
-            $codes = explode('ID-', $request->autocomplete);
+        if(isset($request->autocomplete) && $request->autocomplete){ //Valida si se utilizara la función de autocompletado ?
+            $codes = explode('ID-', $request->autocomplete); // Si el codigo tiene ID- al inicio la busqueda sera por el id que se le asigno en el catalog maestro (tabla products)
             if(count($codes)>1){
                 $query = $query->where('id', $codes[1]);
-            }elseif(isset($request->strict) && $request->strict){
+            }elseif(isset($request->strict) && $request->strict){ //La coincidencia de la busqueda sera exacta
+                /* 
+                    La busqueda se realiza por:
+                    Modelo -> code
+                    Código -> name
+                    Codigo de barras -> barcode
+                    Códigos relacionados -> variants.barcode
+                */
                 if(strlen($request->autocomplete)>1){
                     $query = $query->whereHas('variants', function(Builder $query) use ($request){
                         $query->where('barcode', $request->autocomplete);
@@ -628,7 +571,14 @@ class ProductController extends Controller{
                         ->orWhere('code', $request->autocomplete);
                     });
                 }
-            }else{
+            }else{ //La busqueda se realizara por similitud
+                /* 
+                    La busqueda se realiza por:
+                    Modelo -> code
+                    Código -> name
+                    Codigo de barras -> barcode
+                    Códigos relacionados -> variants.barcode
+                */
                 if(strlen($request->autocomplete)>1){
                     $query = $query->whereHas('variants', function(Builder $query) use ($request){
                         $query->where('barcode', 'like', '%'.$request->autocomplete.'%');
@@ -645,10 +595,16 @@ class ProductController extends Controller{
         }
 
         if(!in_array($this->account->_rol, [1,2,3,8])){
+            /* 
+                Solo las personas que tengan un rol administrativo podran
+                visualizar todo el catalogo de productos.
+                Si no tienes un rol administrativo solo veras los productos vigenten
+                en el catalogo de factusol CEDIS
+             */
             $query = $query->where("_status", "!=", 4);
         }
 
-        if(isset($request->products) && $request->products){
+        if(isset($request->products) && $request->products){ //Se puede buscar mas de un codigo a la vez mendiente el parametro products
             $query = $query->whereHas('variants', function(Builder $query) use ($request){
                 $query->whereIn('barcode', $request->products);
             })
@@ -656,28 +612,28 @@ class ProductController extends Controller{
             ->orWhereIn('code', $request->product);
         }
 
-        if(isset($request->_category)){
-            $_categories = $this->getCategoriesChildren($request->_category);
-            $query = $query->whereIn('_category', $_categories);
+        if(isset($request->_category)){ //Se puede realizar una busqueda con el filtro de sección, familia, categoría mediente el ID de lo que estamos buscando
+            $_categories = $this->getCategoriesChildren($request->_category); // Se obtiene los hijos de esa categoría
+            $query = $query->whereIn('_category', $_categories); // Se añade el filtro de la categoría para realizar la busqueda
         }
 
-        if(isset($request->_status)){
-            $query = $query->where('_status', $request->_status);
+        if(isset($request->_status)){ // Se puede realizar una busqueda con el filtro de status del producto mediante el ID del status que estamos buscando
+            $query = $query->where('_status', $request->_status); // Se añade el filtro de la categoría para realizar la busqueda
         }
         
-        if(isset($request->_location)){
-            $_locations = $this->getSectionsChildren($request->_location);
+        if(isset($request->_location)){ //Se puede realizar una busqueda con filtro de ubicación del producto mediante el ID de la ubicación (sección, pasillo, tarima, etc) que estamos buscando
+            $_locations = $this->getSectionsChildren($request->_location); //Se obtienen todos los hijos de la sección de la busqueda para realizar la busqueda completa
             $query = $query->whereHas('locations', function( Builder $query) use($_locations){
-                $query->whereIn('_location', $_locations);
+                $query->whereIn('_location', $_locations); // Se añade el filtro de la sección para realizar la busqueda
             });
         }
 
-        if(isset($request->_celler) && $request->_celler){
-            $locations = \App\CellerSection::where([['_celler', $request->_celler],['deep', 0]])->get();
+        if(isset($request->_celler) && $request->_celler){ // Se puede realizar una busqueda con filtro de almacen 
+            $locations = \App\CellerSection::where([['_celler', $request->_celler],['deep', 0]])->get(); // Se obtiene todas las ubicaciones dentro del almacen
             $ids = $locations->map(function($location){
                 return $this->getSectionsChildren($location->id);
             });
-            $_locations = array_merge(...$ids);
+            $_locations = array_merge(...$ids); // Se genera un arreglo con solo los ids de las ubicaciones
             $query = $query->whereHas('locations', function( Builder $query) use($_locations){
                 $query->whereIn('_location', $_locations);
             });
@@ -687,23 +643,21 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        $query = $query->with(['units', 'status']);
+        $query = $query->with(['units', 'status']); // por default se obtienen las unidades y el status general
 
-        if(isset($request->_workpoint_status) && $request->_workpoint_status){
+        if(isset($request->_workpoint_status) && $request->_workpoint_status){ // Se obtiene el stock de la tienda se se aplica el filtro
             $workpoints = $request->_workpoint_status;
-            $workpoints[] = $this->account->_workpoint;
-            $query = $query->with(['stocks' => function($query) use($workpoints){
+            $workpoints[] = $this->account->_workpoint; // Siempre se agrega el status de la sucursal
+            $query = $query->with(['stocks' => function($query) use($workpoints){ //Se obtienen los stocks de todas las sucursales que se pasa el arreglo
                 $query->whereIn('_workpoint', $workpoints)->distinct();
             }]);
         }else{
-            $query = $query->with(['stocks' => function($query){
+            $query = $query->with(['stocks' => function($query){ //Se obtiene el stock de la sucursal
                 $query->where('_workpoint', $this->account->_workpoint)->distinct();
             }]);
         }
-        /* if(isset($request->with_stock) && $request->with_stock){
-        } */
 
-        if(isset($request->with_locations) && $request->with_locations){
+        if(isset($request->with_locations) && $request->with_locations){ //Se puede agregar todas las ubicaciones de la sucursal
             $query = $query->with(['locations' => function($query){
                 $query->whereHas('celler', function($query){
                     $query->where('_workpoint', $this->account->_workpoint);
@@ -711,25 +665,26 @@ class ProductController extends Controller{
             }]);
         }
         
-        if(isset($request->check_stock) && $request->check_stock){
+        if(isset($request->check_stock) && $request->check_stock){ //Se puede agregar el filtro de busqueda para validar si tienen o no stocks los productos
             if($request->with_stock){
                 $query = $query->whereHas('stocks', function(Builder $query){
-                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '>', 0);
+                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '>', 0); //Con stock
                 });
             }else{
                 $query = $query->whereHas('stocks', function(Builder $query){
-                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '<=', 0);
+                    $query->where('_workpoint', $this->account->_workpoint)->where('stock', '<=', 0); //Sin stock
                 });
             }
         }
 
-        if(isset($request->with_prices) && $request->with_prices){
+        if(isset($request->with_prices) && $request->with_prices){ //Se puede agregar los precios de lista del producto
             $query = $query->with(['prices' => function($query){
-                $query->whereIn('_type', [1, 2, 3, 4])->orderBy('id');
+                $query->whereIn('_type', [1, 2, 3, 4])->orderBy('id'); //Solo se envian los precios de Menudeo, Mayoreo, Docena o Media caja y caja
+                //Los demas precios no seran mostrados por regla de negocio
             }]);
         }
 
-        if(isset($request->limit) && $request->limit){
+        if(isset($request->limit) && $request->limit){ //Se puede agregar un limite de los resultados mostrados
             $query = $query->limit($request->limit);
         }
 
@@ -775,27 +730,27 @@ class ProductController extends Controller{
         }
     }
 
-    public function seguimientoMercancia(){
-        //Validar si tendran llegadas con sus respectivas fechas
-        //Validar
-    }
-
     public function addProductsLastYears(){
+        /* 
+            CASO ESPECIAL
+            Esta función se hizo para poblar el catalogo maestro de productos con los creados desde 2016, para obtener el historico completo
+        */
+        // Se obtienen los productos del access local
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, "localhost/access/public/product/all");
         curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($client,CURLOPT_TIMEOUT,10);
-        $products = json_decode(curl_exec($client), true);
-        $providers = \App\Provider::all();
-        $ids_providers = array_column($providers->toArray(), "id");
-        curl_close($client);
-        if($products){
-            DB::transaction(function() use ($products, $ids_providers){
+        curl_setopt($client,CURLOPT_TIMEOUT, 10);
+        $products = json_decode(curl_exec($client), true); // Se parsean los datos para poder trabajar con los datos
+        $providers = \App\Provider::all(); // Se obtienen todos los proveedores
+        $ids_providers = array_column($providers->toArray(), "id"); // Se obtienen todos los id de los proveedores
+        curl_close($client); // Se cierra la conexión con el access
+        if($products){ // Se lograron obtener los productos
+            DB::transaction(function() use ($products, $ids_providers){ // Se inizializa la transacción para garantizar que se almacenaron los producto acteriores y los códigos relacionados
                 foreach($products as $product){
-                    $key = array_search($product['_provider'], $ids_providers);
-                    $_provider = ($key === 0 || $key > 0) ? $product['_provider'] : 404;
-                    $instance = Product::firstOrCreate([
+                    $key = array_search($product['_provider'], $ids_providers); // Validar el id del proveedor
+                    $_provider = ($key === 0 || $key > 0) ? $product['_provider'] : 404; // Si no existe el id se asignara el 404 "No encontrado / válido"
+                    $instance = Product::firstOrCreate([ // Se obtiene el primer elemento que coincida con el modelo, sino lo hay se crea y lo retorna
                         'code'=> $product['code']
                     ], [
                         'name' => $product['name'],
@@ -825,51 +780,38 @@ class ProductController extends Controller{
                     $instance->save();
 
                 }
-                DB::table('product_variants')->delete();
-
+                DB::table('product_variants')->delete(); // Eliminamos todos los códigos relacionados
+                // Conexión para obenter los codigos relacionados
                 $client = curl_init();
                 curl_setopt($client, CURLOPT_URL, "localhost/access/public/product/related");
                 curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
                 curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
                 curl_setopt($client,CURLOPT_TIMEOUT,10);
-                $codes = json_decode(curl_exec($client), true);
-                curl_close($client);
-                $products2 = Product::all();
+                $codes = json_decode(curl_exec($client), true); // Se parsean los códigos para trabajarlos
+                curl_close($client); // Se cierra la conexión
+                $products2 = Product::all(); // Se obtienen todos los productos
                 
-                $array_codes = array_column($products2->toArray(), 'code');
-                if($codes){
+                $array_codes = array_column($products2->toArray(), 'code'); // Se hace un arreglo con todos los modelos de los productos
+                if($codes){ // Se obtuvieron los códigos relacionados
                     foreach($codes as $code){
-                        $key = array_search($code["ARTEAN"], $array_codes);
-                        if($key>0 || $key === 0){
-                            $insert[] = ["_product" => $products2[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0];
+                        $key = array_search($code["ARTEAN"], $array_codes);  // Se busca modelo con el que esta relacionado en este momento
+                        if($key>0 || $key === 0){ // Se válida si el código relacionado esta relacionado con un modelo válido
+                            $insert[] = ["_product" => $products2[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0]; // Se crea la relación
                         }
                     }
-                    DB::table('product_variants')->insert($insert);
+                    DB::table('product_variants')->insert($insert); //Se insertan todos los códigos relacionados
                 }
             });
         }
     }
 
-    public function depure(Request $request){
-        $start = microtime(true);
-        /* $arr_codes = array_column($request->products, 'code'); */
-        /* $products = []; */
-        $found = [];
-        $notFound = [];
-        foreach (array_chunk($request->products/* $arr_codes */, 50) as $codes){
-            $fac = new FactusolController();
-            $found = array_merge($found, $fac->depure($codes)["found"]);
-            $notFound = array_merge($notFound, $fac->depure($codes)["notFound"]);
-        }
-        return response()->json([
-            "success" => true,
-            "found" => $found,
-            "notFound" => $notFound,
-            "time" => microtime(true) - $start
-        ]);
-    }
-
     public function getABC(Request $request){
+        /* 
+            Función para obtener reporte de ABC por
+            Valor de inventario
+            Venta ($$$)
+            Unidades vendidas
+         */
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -883,16 +825,15 @@ class ProductController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $categories = \App\ProductCategory::where('deep', "<=" ,2)->get();
-        $ids_categories = array_column($categories->toArray(), 'id');
+        $categories = isset($request->categories) ? $request->categories : ["Navidad"];
         $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
         ->with(['category','sales' => function($query) use($date_from, $date_to){
             $query->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]]);
         }, 'stocks', 'prices' => function($query){
             $query->where('_type', 7);
         }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])
-        ->havingRaw('section = ?', ["Juguete"])
-        ->get()->map(function($product) use($categories, $ids_categories){
+        ->havingRaw('section = ?', $categories)
+        ->get()->map(function($product){
             $unidades_vendidas = $product->sales->sum(function($sale){
                 return $sale->pivot->amount;
             });
@@ -933,7 +874,6 @@ class ProductController extends Controller{
                 "Modelo" => $product->code,
                 "Código" => $product->name,
                 "Descripción" => $product->description,
-                /* "Proveedor" => $product->provider->name, */
                 "Sección" => $product->section,
                 "Familia" => $product->family,
                 "Categoria" => $product->categoryy,
@@ -993,125 +933,30 @@ class ProductController extends Controller{
         return Excel::download($export, "ABCD_PRODUCTOS.xlsx");
     }
 
-    public function getDiferenceBetweenStores(Request $request){
-        $clouster = \App\WorkPoint::find(1);
-        $access_clouster = new AccessController($clouster->dominio);
-        $products = $access_clouster->getAllProducts(["CODART"])['products'];
-        $store = \App\WorkPoint::find($request->_workpoint);
-        $access_store = new AccessController($store->dominio);
-        $differences = $access_store->getDifferencesBetweenCatalog($products);
-        return response()->json($differences);
-    }
-
-    public function syncProducts(Request $required){
-        $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
-        return $stores;
-        $clouster = \App\WorkPoint::find(1);
-        $access_clouster = new AccessController($clouster->dominio);
-        if(strtoupper($request->type) == "COMPLETA"){
-            $data = $access_clouster->getAllProducts();
-        }else{
-            $data = $access_clouster->getAllProducts($request->date);
-        }
-        
-        if(strtoupper($request->stores) == "ALL"){
-            $stores = \App\WorkPoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17])->get();
-        }else{
-            $stores = \App\WorkPoint::whereIn('id', $request->stores)->get();
-        }
-        $result = [];
-        foreach($stores as $store){
-            $access_store = new AccessController($store->dominio);
-            $result[$store->name] = $access_store->syncProducts($data);
-        }
-        return response()->json($result);
-    }
-
     public function getABCStock(Request $request){
-        $categories = \App\ProductCategory::where('deep', 0)->get();
-        $ids_categories = array_column($categories->toArray(), 'id');
-        /* $codes = array_column($request->products, 'Modelo');
-        $products = Product::with(['stocks' => function($query) use($request){
-            $query->where('_workpoint', $request->_workpoint);
-        }, 'category', 'prices', 'locations' => function($query) use($request){
-            $query->whereHas('celler',function($query) use($request){
-                $query->where('_workpoint', $request->_workpoint);
-            });
-        }])->whereIn('code', $codes)->where('_status', '!=', 4)->get()->map(function($product) use($categories, $ids_categories, $request){
-            if($product->category->deep == 0){
-                $family = $product->category->name;
-                $category = "";
-            }else{
-                $key = array_search($product->category->root, $ids_categories, true);
-                if($product->category === 2){
-                    $key = array_search($categories[$key]->root, $ids_categories, true);
-                    $family = $categories[$key]->name;
-                    $category = $product->category->name;
-                }
-                $family = $categories[$key]->name;
-                $category = $product->category->name;
-            }
-            $prices = $product->prices->reduce(function($res, $price){
-                $res[$price->name] = $price->pivot->price;
-                return $res;
-            }, []);
-        
-            $stocks = $product->stocks->unique('id')->values()->reduce(function($res, $stock){
-            $res["stock_".$stock->name] = $stock->pivot->stock;
-            return $res;
-            }, []);
-            $total_stocks = array_reduce($stocks, function($total, $store){
-                return $store['pivot']['stock'] + $total;
-            }, 0);
-
-            $a = [
-                "Modelo" => $product->code,
-                "Código" => $product->name,
-                "Descripción" => $product->description,
-                "Piezas por caja" => $product->pieces,
-                "Costo" => $product->cost,
-                "Familia" => $family,
-                "Categoría" => $category,
-                "stock" => $total_stocks,
-                "Ubicaciones" => implode(',', array_column($product->locations->toArray(), 'path'))
-            ];
-            $x = array_merge($a, $prices);
-            return array_merge($x, $stocks);
-        });
-        $export = new ArrayExport($products->toArray());
-        return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx"); */
-        $workpoints = \App\WorkPoint::whereIn('id', range(1,13))->get();
+        // Función para obtener reporte de ABC por valor de inventario por sucursal
+        $workpoints = \App\WorkPoint::where(['active', true])->get();
         $response = [];
         foreach($workpoints as $workpoint){
-            $products = Product::with(['provider','category', 'stocks' => function($query) use($workpoint){
-                $query->where('_workpoint', $workpoint->id);
+            $products = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+            ->with(['provider','category', 'stocks' => function($query) use($workpoint){
+                $query->where('_workpoint', $workpoint->id)->distinct();
             }, 'prices' => function($query){
                 $query->where('_type', 7);
-            }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])->get()->map(function($product) use($categories, $ids_categories, $workpoint){
+            }])->where([['id', '!=', 7089], ['id', '!=', 5816], ['description', "NOT LIKE", '%CREDITO%'], ['_status', '!=', 4]])
+            ->get()->map(function($product) use($categories, $ids_categories, $workpoint){
                 $stock = count($product->stocks)> 0 ? $product->stocks[0]->pivot->stock : 0;
                 $valor_inventario = $product->cost * $stock;
                 $price = count($product->prices) > 0 ? $product->prices[0]->pivot->price : 0;
-                if($product->category->deep == 0){
-                    $family = $product->category->name;
-                    $category = "";
-                }else{
-                    $key = array_search($product->category->root, $ids_categories, true);
-                    if($product->category === 2){
-                        $key = array_search($categories[$key]->root, $ids_categories, true);
-                        $family = $categories[$key]->name;
-                        $category = $product->category->name;
-                    }
-                    $family = $categories[$key]->name;
-                    $category = $product->category->name;
-                }
                 return [
                     "Sucursal" => $workpoint->name,
                     "Modelo" => $product->code,
                     "Código" => $product->name,
                     "Descripción" => $product->description,
                     "Proveedor" => $product->provider->name,
-                    "Familia" => $family,
-                    "Categoria" => $category,
+                    "Sección" => $product->section,
+                    "Familia" => $product->family,
+                    "Categoria" => $product->categoryy,
                     "Costo" => $product->cost,
                     "Precio AAA" => $price,
                     "stock" => $stock,
@@ -1145,95 +990,23 @@ class ProductController extends Controller{
         return Excel::download($export, "ABCD_PRODUCTOS_STOCK.xlsx");
     }
 
-    public function demo_001(Request $request){
-        $description = "(EV-805SL)(EV-2503SL)(EV-2504SL) AUDIFONOS DE X";
-        /* $split = preg_split("/[\s,]+/", $description); */
-        /* $split = preg_split("/[()]+/", $description);
-        return response()->json($split); */
-
-        $excel_rows = $request->products;
-        $products = [];
-        $problems = [];
-        foreach($excel_rows as $row){
-            $product = Product::select('code', 'name', 'description')->where("code", trim($row["code"]))->first();
-            $variant = isset($row["variant"]) ? Product::select('code', 'name', 'description')->where([["code", trim($row["variant"])], ["_status", "!=", 4]])->first() : false;
-            $variant2 = isset($row["variant2"]) ? Product::select('code', 'name', 'description')->where([["code", trim($row["variant2"])], ["_status", "!=", 4]])->first() : false;
-            $description = preg_split("/[()]+/", $product->description);
-            $el = count($description);
-            $new_description = isset($row["variant"]) ? "(".trim($row["variant"]).")" : "";
-            $new_description = isset($row["variant2"]) ? $new_description."(".trim($row["variant2"]).")" : $new_description;
-            $new_description = $new_description.$description[$el-1];
-            if($variant || $variant2){
-                $eliminar = $variant ? $variant->code : "";
-                $eliminar = $variant2 ? $eliminar." ".$variant2->code : $eliminar;
-                $problems[] = [
-                    "product" => $product->code,
-                    "descripción vieja" => $product->description,
-                    "descripción nueva" => $new_description,
-                    "familiarizado_1" => isset($row["variant"]) ? $row["variant"] : "",
-                    "familiarizado_2" => isset($row["variant2"]) ? $row["variant2"] : "",
-                    "eliminar" => $eliminar
-                ];
-            }else{
-                $products[] = [
-                    "original" => $product->code,
-                    "descripción vieja" => $product->description,
-                    "descripción nueva" => $new_description,
-                    "familiarizado_1" => isset($row["variant"]) ? $row["variant"] : "",
-                    "familiarizado_2" => isset($row["variant2"]) ? $row["variant2"] : ""
-                    
-                ];
-            }
-        }
-        return response()->json(["ok" => $products, "details" => $problems]);
-    }
-
-    public function updateRelatedCodes(){
-        $CEDIS = \App\WorkPoint::find(1);
-        $access = new AccessController($CEDIS->dominio);
-        $codes = $access->getRelatedCodes();
-        if($codes){
-            DB::table('product_variants')->delete();
-            $products = Product::all();
-            $array_codes = array_column($products->toArray(), 'code');
-            foreach($codes as $code){
-                $key = array_search($code["ARTEAN"], $array_codes);
-                if($key>0 || $key === 0){
-                    $insert[] = ["_product" => $products[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0];
+    public function updateRelatedCodes(){ // Función para actualizar los códigos relacionados
+        $CEDIS = \App\WorkPoint::find(1); //Se busca la sucursal de CEDIS
+        $access = new AccessController($CEDIS->dominio); //Se hace la conexión a la base de datos
+        $codes = $access->getRelatedCodes(); //Se obtiene todos los códigos de barras
+        if($codes){ // Se valida que llegaron los codigos de barras
+            DB::transaction(function() use ($products, $codes){
+                DB::table('product_variants')->delete(); //Eliminar todos los códigos relacionados
+                $products = Product::all(); //Se obtienen todos los productos
+                $array_codes = array_column($products->toArray(), 'code'); //Se hace un arreglo de todos los modelos
+                foreach($codes as $code){
+                    $key = array_search($code["ARTEAN"], $array_codes); //Se busca el modelo con los de la base de datos y si esta se agrega el código relacionado
+                    if($key>0 || $key === 0){
+                        $insert[] = ["_product" => $products[$key]->id, 'barcode' => $code['EANEAN'], 'stock' => 0]; // Se da el formato para almacenar en la tabla product_variants
+                    }
                 }
-            }
-            DB::table('product_variants')->insert($insert);
+                DB::table('product_variants')->insert($insert); //Se guardan todos los códigos de barras
+            });
         }
-    }
-
-    public function getOriginal(Request $request){
-        $products = [];
-        foreach($request->codes as $code){
-            $product = DB::table('product_variants')->where('barcode', $code["code"])->first();
-            if($product){
-                $product2 = Product::find($product->_product);
-                $products[] = [
-                    "code" => $code["code"],
-                    "product" => $product2->code,
-                    "state" => "familiarizado"
-                ];
-            }else{
-                $product = Product::where('name', $code["code"])->orWhere('code', $code["code"])->first();
-                if($product){
-                    $products[] = [
-                        "code" => $code["code"],
-                        "product" => $product->code,
-                        "state" => "no familiarizado"
-                    ];
-                }else{
-                    $products[] = [
-                        "code" => $code["code"],
-                        "product" => "",
-                        "state" => "No existe"
-                    ];
-                }
-            }
-        }
-        return response()->json($products);
     }
 }

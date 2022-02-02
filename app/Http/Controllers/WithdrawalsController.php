@@ -17,89 +17,90 @@ class WithdrawalsController extends Controller{
     }
 
     public function seeder(){
-        $_workpoints = range(3,13);
-        $_workpoints[] = 17;
-        $_workpoints[] = 18;
-        $_workpoints[] = 19;
-        $workpoints = \App\WorkPoint::whereIn("id", $_workpoints)->get();
-        $providers = \App\Provider::all();
-        $_providers = array_column($providers->toArray(), "id");
+        //Obtener las retiradas de todos los puntos de trabajo de tipo sucursal activas
+        $workpoints = \App\WorkPoint::where([['_type',2], ['active', true]])->get();
+        $success = [];
         foreach($workpoints as $workpoint){
-            $access = new AccessController($workpoint->dominio);
-            $toInsert = collect($access->getAllWithdrawals())->map(function($row) use($workpoint, $_providers){
-                $key = array_search($row["_provider"], $_providers);
-                if($key === 0 || $key > 0){
-                    return [
-                        "code" => $row["code"],
-                        "_cash" => $row["_cash"],
-                        "description" => $row["description"],
-                        "total" => $row["total"],
-                        "_provider" => $row["_provider"],
-                        "_workpoint" => $workpoint->id,
-                        "created_at" => $row["created_at"]
-                    ];
-                }else{
-                    return [
-                        "code" => $row["code"],
-                        "_cash" => $row["_cash"],
-                        "description" => $row["description"],
-                        "total" => $row["total"],
-                        "_provider" => 404,
-                        "_workpoint" => $workpoint->id,
-                        "created_at" => $row["created_at"]
-                    ];
-                }
-            })->toArray();
-            DB::transaction(
+            $access = new AccessController($workpoint->dominio); //Conexión al servidor de la sucursal
+            $wildrawals = $access->getAllWithdrawals(); //Obtener todas las retiradas
+            $toInsert = $this->toInsertFormat($wildrawals); //Se formatean los datos para su inserción
+            $result = DB::transaction(
                 function() use($toInsert){
-                    Wildrawals::insert($toInsert);
+                    $success = Wildrawals::insert($toInsert);
+                    return $success ? true : false;
                 }
             );
+            $success[] = [
+                "workpoint" => $workpoint->name,
+                "success" => $result
+            ];
         }
-        return response()->json(["sucessful" => true]);
+
+        return response()->json(["report" => $success]);
     }
 
     public function getLatest(){
-        $_workpoint = range(3,13);
-        $_workpoint[] = 1;
-        $workpoints = \App\WorkPoint::where("id", $_workpoints)->get();
-        return response()->json($workpoints);
-        $providers = \App\Provider::all();
-        $_providers = array_column($providers->toArray(), "id");
+        // Obtener las ultimas retiradas de todos los puntos de trabajo de tipo sucursal activas
+        $workpoints = \App\WorkPoint::where([['_type', 2], ['active', true]])->get();
+        $success = [];
         foreach($workpoints as $workpoint){
-            $access = new AccessController($workpoint->dominio);
-            $lastCode = Wildrawals::where('_workpoint', $workpoint->id)->max("code");
-            $toInsert = $access->getLatestWithdrawals($lastCode)->map(function($row) use($workpoint, $_providers){
-                $key = array_search($row["_provider"], $_providers);
-                if($key === 0 || $key > 0){
-                    return [
-                        "code" => $row["code"],
-                        "_cash" => $row["_cash"],
-                        "description" => $row["description"],
-                        "total" => $row["total"],
-                        "_provider" => $row["_provider"],
-                        "_workpoint" => $workpoint->id,
-                        "created_at" => $row["created_at"]
-                    ];
-                }else{
-                    return [
-                        "code" => $row["code"],
-                        "_cash" => $row["_cash"],
-                        "description" => $row["description"],
-                        "total" => $row["total"],
-                        "_provider" => 404,
-                        "_workpoint" => $workpoint->id,
-                        "created_at" => $row["created_at"]
-                    ];
-                }
-            });
-            /* DB::transaction(
+            $access = new AccessController($workpoint->dominio);//Conexión al servidor de la sucursal
+            $lastCode = Wildrawals::where([['_workpoint', $workpoint->id],['created_at', '>=', '2022-01-12']])->max("code"); //Se puso una fecha estatica, se tendra que actualizar cada cambio de temporada
+            $wildrawals = $access->getLatestWithdrawals($lastCode);//Obtener las ultimas retiradas de la sucursal
+            $toInsert = $this->toInsertFormat(collect($wildrawals), $workpoint);//Se formatean los datos para su inserción
+            $result = DB::transaction(
                 function() use($toInsert){
-                    Wildrawals::insert($toInsert);
+                    $success = Wildrawals::insert($toInsert);
+                    return $success ? true : false;
                 }
-            ); *//*  */
-            return response()->json(["sucessful" => $toInsert]);
+            );
+            $success[] = [
+                "workpoint" => $workpoint->name,
+                "success" => $result
+            ];
         }
-        return response()->json(["sucessful" => true]);
+        return response()->json(["report" => $success]);
+    }
+
+    public function restore(){ // Función para eliminar las retiradas de los ultimos 7 días
+        $day = date('Y-m-d', strtotime("-7 days")); // Se obtiene la fecha (Hace 7 días)
+        $retiradas = Wildrawals::where("created_at", ">=", $day)->get(); // Se obtienen las retiradas que se eliminaran
+        $success = DB::transaction(function() use($day){ // Transacción para validar que todas las retiradas seran eliminadas
+            $delete = Wildrawals::where("created_at", ">=", $day)->delete(); // Eliminar datos
+            return $delete ? true : false; // Se logro
+        });
+        return response()->json([
+            "facturas" => count($retiradas),
+            "success" => $success
+        ]);
+    }
+
+    public function toInsertFormat($rows, $workpoint){ // Función para dar formato a las retiradas que seran insertadas
+        $providers = \App\Provider::all(); // Se obtienen todos los proveedores
+        $_providers = array_column($providers->toArray(), "id"); // Se obtiene un <array> con los ids de todos los proveedores
+        return $rows->map(function($row) use($workpoint, $_providers){ // Se retorna un formato con las retiradas
+            $key = array_search($row["_provider"], $_providers); // Se busca el proveedor
+            if($key === 0 || $key > 0){
+                return [
+                    "code" => $row["code"],
+                    "_cash" => $row["_cash"],
+                    "description" => $row["description"],
+                    "total" => $row["total"],
+                    "_provider" => $row["_provider"],
+                    "_workpoint" => $workpoint->id,
+                    "created_at" => $row["created_at"]
+                ];
+            }else{
+                return [
+                    "code" => $row["code"],
+                    "_cash" => $row["_cash"],
+                    "description" => $row["description"],
+                    "total" => $row["total"],
+                    "_provider" => 404,
+                    "_workpoint" => $workpoint->id,
+                    "created_at" => $row["created_at"]
+                ];
+            }
+        })->toArray();
     }
 }

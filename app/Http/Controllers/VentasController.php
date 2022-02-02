@@ -701,15 +701,8 @@ class VentasController extends Controller{
     return $res;
   }
 
-  public function getLastVentas(){
-    $_workpoints = range(3,12);
-    $_workpoints[] = 17;
-    $_workpoints[] = 1;
-    $_workpoints[] = 18;
-    $_workpoints[] = 19;
-    $workpoints = WorkPoint::whereIn('id', $_workpoints)->get();
-    /* $workpoints = WorkPoint::where('id', 1)->get(); */
-    /* return $workpoints; */
+  public function getLastVentas(){ // Función para actualizar las ventas (trae las ultimas ventas)
+    $workpoints = WorkPoint::where([['active', true], ['_type', 2]])->orWhere('id', 1)->get();
     $resumen = [];
     $start = microtime(true);
     $a = 0;
@@ -720,7 +713,7 @@ class VentasController extends Controller{
       $caja_x_ticket = [];
       if(count($cash_registers)>0){
         foreach($cash_registers as $cash){
-          $sale = Sales::where('_cash', $cash->id)/* ->whereDate('created_at', '<' ,'2021-01-27') */->max('created_at');
+          $sale = Sales::where('_cash', $cash->id)->max('created_at');
           if($sale){
             $ticket = $sale ? : 0;
             $date = explode(' ', $sale);
@@ -735,7 +728,7 @@ class VentasController extends Controller{
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
           $ventas = $access->getLastSales($caja_x_ticket);
-          $resumen[$workpoint->alias] = [$caja_x_ticket];
+          $resumen[$workpoint->alias] = $caja_x_ticket;
           if($ventas){
             $products = Product::all()->toArray();
             $codes = array_column($products, 'code');
@@ -756,7 +749,7 @@ class VentasController extends Controller{
                 $insert = [];
                 foreach($venta['body'] as $row){
                   $index = array_search($row['_product'], $codes, true);
-                  if($index === 0 || $index > 0){  
+                  if($index === 0 || $index > 0){
                     $instance->products()->attach($products[$index]['id'], [
                       "amount" => $row['amount'],
                       "price" => $row['price'],
@@ -775,6 +768,21 @@ class VentasController extends Controller{
       "success" => true,
       "time" => microtime(true) - $start,
       "resumen" => $resumen
+    ]);
+  }
+
+  public function restoreSales(){ // Función para eliminar las ventas del día de operación
+    $today = date("Y-m-d");
+    $sales = Sales::where('created_at', '>=', $today)->get();
+    $ids_sales = array_column($sales->toArray(), "id");
+    $success = DB::transaction(function() use($ids_sales, $today){
+      $delete_body = DB::table('product_sold')->whereIn('_sale', $ids_sales)->delete();
+      $delete_header = Sales::where("created_at", ">=", $today)->delete();
+      return $delete_header && $delete_body;
+    });
+    return response()->json([
+        "ventas" => count($sales),
+        "success" => $success
     ]);
   }
 
@@ -922,17 +930,6 @@ class VentasController extends Controller{
     $arr_categories = array_column($categories->toArray(), "id");
     
     $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
-      /* $desgloce = $workpoints->reduce(function($res, $workpoint) use($product){
-        $vendidos = $product->sales->reduce(function($total, $sale) use($workpoint){
-          if($sale->cash->_workpoint == $workpoint->id){
-            return $total + $sale->pivot->amount;
-          }else{
-            return $total;
-          }
-        }, 0);
-        $res["Unidades vendidas ".$workpoint->alias] = $vendidos;
-        return $res;
-      }, []); */
       $vendidos = $product->sales->reduce(function($total, $sale){
         return $total + $sale->pivot->amount;
       }, 0);
@@ -1053,6 +1050,27 @@ class VentasController extends Controller{
     return response()->json($result);
   }
 
+  public function getCompras(Request $request){
+    $products = DB::table('products')
+      ->join('product_received', 'products.id', '=', 'product_received._product')
+      ->join('invoices_received', 'product_received._order', '=', 'invoices_received.id')
+      ->where('products._status', '!=', 4)
+      ->where([['invoices_received.created_at', '>=', $request->date_from], ['invoices_received.created_at', '<=', $request->date_to]])
+      ->groupBy('products.id')
+      ->selectRaw('products.code as "modelo", products.name as "codigo", products.description as "descripcion", sum(product_received.amount) as "unidades", sum(product_received.total) as "compra"')
+      ->get()->map(function($row){
+        return [
+          "Modelo" => $row->modelo,
+          "Código" => $row->codigo,
+          "Descripción" => $row->descripcion,
+          "Unidades adquiridas" => $row->unidades,
+          "Costo de compra" => $row->compra
+        ];
+      })->toArray();
+    $export = new ArrayExport($products);
+    return Excel::download($export, $request->name.".xlsx");
+  }
+
   public function insertVentas(){
     $sales = Sales::with('paid_by')->whereHas("cash", function($query){
       $query->where('_workpoint', 10);
@@ -1127,7 +1145,7 @@ class VentasController extends Controller{
     return response()->json(true);
   }
 
-  public function seederSellers(){
+  public function seederSellers(){ // Función que actualiza el catalogo activo de vendedores
     $start = microtime(true);
     $cedis = \App\WorkPoint::find(1);
     $access = new AccessController($cedis->dominio);
@@ -1135,7 +1153,8 @@ class VentasController extends Controller{
     try{
       if($sellers){
         DB::transaction(function() use ($sellers){
-          $success = DB::table('sellers')->insert($sellers);
+          DB::table('sellers')->delete(); // Eliminar los vendedores
+          $success = DB::table('sellers')->insert($sellers); //Insertarlos de nuevo
         });
         return response()->json([
           "success" => true,

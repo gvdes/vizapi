@@ -17,20 +17,20 @@ class RelatesCodeController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function seeder(){
+    public function seeder(){ // Función para actualizar los códigos relacionados desde 0 (Elimina y guarda los actuales)
         try{
             $start = microtime(true);
-            $workpoint = \App\WorkPoint::find(1);
-            $access = new AccessController($workpoint->dominio);
-            $codes = $access->getRelatedCodes();
-            if($codes){
-                DB::transaction(function() use($codes){
-                    DB::table('product_variants')->delete();
+            $workpoint = \App\WorkPoint::find(1); // Se busca la sucursal de CEDIS
+            $access = new AccessController($workpoint->dominio); // Se hace la conexión a la sucursal de CEDIS para obtener sus datos de ACCESS
+            $codes = $access->getRelatedCodes(); // Se obtienen los códigos relacionados
+            if($codes){ // Se válida que los códigos relacionados llegaron
+                DB::transaction(function() use($codes){ // Trasacción para validar que se eliminan y despues se vuelven a almacenar
+                    DB::table('product_variants')->delete(); // Eliminar los códigos de barra
                     foreach($codes as $code){
-                        $product = Product::where('code', trim($code['ARTEAN']))->first();
-                        if($product){
-                            $variant = new ProductVariant();
-                            $product->variants()->updateOrCreate(['barcode' => $code['EANEAN']], ['stock' => 0]);
+                        $product = Product::where('code', trim($code['ARTEAN']))->first(); // Se busca el producto con el que esta relacionado el código
+                        if($product){ // Si existe el producto
+                            $variant = new ProductVariant(); // Se crea el código relacionado
+                            $product->variants()->updateOrCreate(['barcode' => $code['EANEAN']], ['stock' => 0]); // Se almacena el nuevo código de barras
                         }
                     }
                 });

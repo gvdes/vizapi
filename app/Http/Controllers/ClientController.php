@@ -16,18 +16,19 @@ class ClientController extends Controller{
         //
     }
 
-  public function update(Request $request){
+  public function update(Request $request){ // Función para actualizar el catalogo maestro de clientes en MySQL y los ACCESS de todas las sucursales
     try{
-      $workpoint = \App\WorkPoint::find(1);
+      $workpoint = \App\WorkPoint::find(1); // Se obtienen los clientes de CEDIS
 
-      $access = new AccessController($workpoint->dominio);
-      $date = isset($request->date) ? $request->date : null;
-      $clients = $access->getClients($date);
-      $rows = [];
-      $store_success = [];
-      $store_fail = [];
+      $access = new AccessController($workpoint->dominio); // Se hace la conexión al ACCESS de la base de datos de CEDIS
+      $date = isset($request->date) ? $request->date : null; // Se pregunta por la fecha desde la cual se hará la actualización
+      $clients = $access->getClients($date); // Se obtienen todos los clientes que seran actualizados
+      $rows = []; // <array> para guardar los clientes que fueron modificados
+      $store_success = []; // <array> que alamcena las tiendas que se pudieron actualizar
+      $store_fail = []; // <array> que alamcena las tiendas que no se pudieron actualizar
       if($clients){
         foreach($clients as $client){
+          //Se creara o actualizarán los datos de los clientes
           $rows[] = Client::updateOrCreate(
             ['id' => $client["id"]],
             [
@@ -41,15 +42,15 @@ class ClientController extends Controller{
             ]
           );
         }
-
-        $stores = \App\Workpoint::whereIn('id', [3,4,5,6,7,8,9,10,11,12,13,17,18,19])->get();
+        //Obtener las sucursales que estan activas y son de tipo tienda
+        $stores = \App\Workpoint::whereIn([["active", true], ["_type", 2]])->get();
         $raw_clients = $access->getRawClients($date);
         if($raw_clients){
-          foreach($stores as $store){
-            $access_store = new AccessController($store->dominio);
-            $result = $access_store->syncClients($raw_clients);
+          foreach($stores as $store){ //Para cada una de las tiendas se enviaran los clientes
+            $access_store = new AccessController($store->dominio); // Conexión a la sucursal
+            $result = $access_store->syncClients($raw_clients); // Sincronizar clientes
             if($result){
-              if($result["success"]){
+              if($result["success"]){ // Evaluación de si se ha logrado enviar los clientes
                 $store_success[] = $store->alias;
               }else{
                 $store_fail[] = $store->alias;
@@ -74,24 +75,7 @@ class ClientController extends Controller{
     }
   }
 
-  public function getStoreClients(Request $request){
-    $workpoint = \App\WorkPoint::find($request->_workpoint);
-    $access = new AccessController($workpoint->dominio);
-    $clients = $access->getClients();
-    $notFound = [];
-    foreach($clients as $client){
-      $row = Client::find($client['id']);
-      if($row){
-        $row->store_name = $client['name'];
-        $row->save();
-      }else{
-        $notFound[] = $client;
-      }
-    }
-    return response()->json(["notFound" => $notFound]);
-  }
-
-  public function autocomplete(Request $request){
+  public function autocomplete(Request $request){ // Función para buscar cliente por ID o coincidencia más acertada
     $clientes = Client::where('name', 'LIKE', '%'.$request->name.'%')->orWhere('id', $request->name)->limit(20)->get();
     return response()->json($clientes);
   }

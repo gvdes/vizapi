@@ -55,9 +55,9 @@ class AccountController extends Controller{
      * @param int workpoint[].permissions - permissions_default ROL
      */
 
-    public function create(Request $request){
-        $this->checkData($request);
-        $id = DB::transaction( function() use ($request){
+    public function create(Request $request){ // Función para crear una cuenta de usuario
+        $this->checkData($request); // Validación de los datos 
+        $id = DB::transaction( function() use ($request){ // Se realiza una trasacción para asegurar que todos los cambios sean realizado
             $user = User::create([
                 'nick'=> $request->nick,
                 'password'=> $request->password ? app('hash')->make($request->password) : app('hash')->make($request->nick),
@@ -67,13 +67,15 @@ class AccountController extends Controller{
                 'surname_mat'=> $request->surname_mat ? $request->surname_mat : '',
                 '_wp_principal'=> $request->_wp_principal,
                 '_rol'=> $request->_rol
-            ]);
+            ]); // Se crea el usuario con todos los datos necesarios
             if($user->_rol==1){
+                // Si el usuario sera root se obtiene la info de todas las tiendas para darle el acceso
                 $workpoints = \App\WorkPoint::all();
             }else{
+                // Solo se le dara acceso a la tienda que nos indican en el parametro workpoints
                 $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
             }
-            foreach($workpoints as $workpoint){
+            foreach($workpoints as $workpoint){ // Se crea el acceso para cada una de las sucursales a las que se le dara acceso
                 if($workpoint['id']!=404){
                     $account = \App\Account::create([
                         '_account' => $user->id,
@@ -81,31 +83,20 @@ class AccountController extends Controller{
                         '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
                         '_status' => 1,
                     ]);
+                    //Se buscan los permisos por default para el rol que tendra la cuenta
                     $permissions = isset($workpoint['permissions']) ? (object)$workpoint['permissions'] : \App\Roles::with('permissions_default')->find($account->_rol);
                     //Asociar permisos con cuentas
                     $permissions_default = collect($permissions->permissions_default);
                     $insert = $permissions_default->map(function($permission){
                         return $permission->id;
-                    })->toArray();
-                    $account->permissions()->attach($insert);
+                    })->toArray(); // Se obtienen los IDs de los permisos
+                    $account->permissions()->attach($insert); // Se le otorgan los permisos a la cuenta
                 }
             }
-            /**LOG 1 = CREACIÓN DE CUENTA */
-            /* $payload = Auth::payload();
-            $user->log()->attach(1,[
-                'details' => json_encode([
-                    '_accfrom' => $payload['workpoint']->_account,
-                    'data' => $request
-                ])
-            ]); */
-            return $user->id;
-            /* try{
-            }catch(\Exception $e){
-                return false;
-            } */
+            return $user->id; // Guardamos el ID principal
         });
         return response()->json([
-            'success' => $id
+            'success' => $id // Retorna el ID de la cuenta que se ha creado
         ]);
     }
 
@@ -113,7 +104,7 @@ class AccountController extends Controller{
      ***** CONSULTAS *****
      *********************/
 
-    public function dataToCreateUser(){
+    public function dataToCreateUser(){ // Función que indica los datos necesarios para la vista de creación de usuarios (Puntos de trabajo, roles, modulos con sus permisos)
         $workpoints = \App\WorkPoint::all();
         $modules = new ModuleCollection(\App\Module::all());
         $roles = \App\Roles::all();
@@ -124,24 +115,28 @@ class AccountController extends Controller{
         ]);
     }
 
-    public function me(){
-        $payload = Auth::payload();
-        return response()->json(new AccountResource(\App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id)));
+    public function me(){ // Función para retornar los datos del usuario que paso el TOKEN
+        $payload = Auth::payload(); //En esta variable nos indica los datos del usuario conectado
+        return response()->json(
+            new AccountResource(
+                \App\Account::with('status', 'rol', 'permissions', 'workpoint', 'user')->find($payload['workpoint']->id // Cuenta que buscare en conjunto con todos sus datos
+            ) // Decorador para presentar en la vista a un usuario
+        ));
     }
 
-    public function getAccounts(){
+    public function getAccounts(){ // Función que retorna todas las cuentas de usuario que comparten el punto de trabajo del token
         $payload = Auth::payload();
-        $session = $payload['workpoint'];
+        $session = $payload['workpoint']; //token se obtiene el punto de trabajo
         $accounts = Account::with('rol', 'status', 'workpoint', 'user')->where('_workpoint',$session->_workpoint)->get();
         return response()->json(AccountResource::collection($accounts));
     }
 
-    public function getAllUsers(){
-        $users = User::with('rol', 'wp_principal')->get();
+    public function getAllUsers(){ //Función que retorna todos los usuarios
+        $users = User::with('rol', 'wp_principal')->get(); //Trae todos los usuarios con su rol y punto de trabajo principal
         return response()->json(UserResource::collection($users));
     }
 
-    public function profile(){
+    public function profile(){ // Función que retorna tu perfil (Se necesita un TOKEN para lograrlo)
         $user = Auth::user();
         return response()->json(new UserResource($user->fresh('rol','wp_principal','log', 'workpoints')));
     }
@@ -156,13 +151,13 @@ class AccountController extends Controller{
      *  @param string request[]._status //Nuevo status a poner en la sucursal
      */
 
-    public function updateStatus(Request $request){
+    public function updateStatus(Request $request){// Cambio de status de una cuenta
         $payload = Auth::payload();
-        $account = Account::find($request->id);
-        $account->_status = $request->_status;
-        $success = $account->save();
+        $account = Account::find($request->id); // Se busca la cuenta
+        $account->_status = $request->_status; // Se establece el nuevo estatus
+        $success = $account->save(); // Se guarda el cambio
         /**LOG 6 = CAMBIO DE STATUS */
-        $payload = Auth::payload();
+        $payload = Auth::payload(); //Se guarda el hsitorico
         $user->log()->attach(6,[
             'details' => json_encode([
                 '_accfrom' => $payload['workpoint']->_account,
@@ -219,16 +214,17 @@ class AccountController extends Controller{
      * @param int request[]._rol - null
      */
 
-    public function updateInfo(Request $request){
+    public function updateInfo(Request $request){ //Función para actualizar mi cuenta de usuario
         try{
-            $user = Auth::user();
+            $user = Auth::user(); // Se busca el usuario al que se le aplicaran los datos
+            // Datos que cambiaran
             $user->picture = $request->picture ? $request->picture : $user->picture;
             $user->names = $request->names ? $request->names : $user->names;
             $user->surname_pat = $request->surname_pat ? $request->surname_pat : $user->surname_pat;
             $user->surname_mat = $request->surname_mat ? $request->surname_mat : $user->surname_mat;
             $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
             $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
-            $save = $user->save();
+            $save = $user->save(); // Se guardan los datos
             /**LOG 2 = ACTUALIZACIÓN DE DATOS */
             $payload = Auth::payload();
             $user->log()->attach(2,[
@@ -255,16 +251,17 @@ class AccountController extends Controller{
      * @param int request[]._rol - null
      */
 
-    public function updateProfile(Request $request, $id){
+    public function updateProfile(Request $request, $id){ //Actualización de datos de un usuario
         try{
-            $user = User::find($id);
+            $user = User::find($id); // Se busca al usuario que se le aplicaran los cambios
+            // Datos que cambiaran
             $user->picture = $request->picture ? $request->picture : $user->picture;
             $user->names = $request->names ? $request->names : $user->names;
             $user->surname_pat = $request->surname_pat ? $request->surname_pat : $user->surname_pat;
             $user->surname_mat = $request->surname_mat ? $request->surname_mat : $user->surname_mat;
             $user->_wp_principal = $request->_wp_principal ? $request->_wp_principal : $user->_wp_principal;
             $user->_rol = $request->_rol ? $request->_rol : $user->_rol;
-            $save = $user->save();
+            $save = $user->save(); //Se guardan los cambios
             /**LOG 2 = ACTUALIZACIÓN DE DATOS */
             $payload = Auth::payload();
             $user->log()->attach(2,[
@@ -286,65 +283,75 @@ class AccountController extends Controller{
      * @param int request[]._rol - null
      * @param object request[].permissions[] - null
      */
-    public function updateAccount(Request $request, $id){
+    public function updateAccount(Request $request, $id){ //Función para actualizar los datos de una cuenta
         try{
-            $account = Account::find($id);
+            $account = Account::find($id); //Busqueda de la cuenta a la que se le aplicaran los cambios
+            // Datos que seran modificados
             $account->_status = $request->_status ? $request->_status : $account->_status;
             $account->_rol = $request->_rol ? $request->_rol : $account->_rol;
-            $permissions = $request->permissions ? $request->permissions : $account->permissions;
-            $account->permissions()->sync($permissions);
-            $save = $account->save();
-            /**LOG 2 = ACTUALIZACIÓN DE DATOS */
-            $payload = Auth::payload();
-            /* $user->log()->attach(2,[
-                'details' => json_encode([
-                    '_accfrom' => $payload['workpoint']->_account,
-                    'data' => $request
-                ])
-            ]); */
+            $permissions = $request->permissions ? $request->permissions : $account->permissions; // Cambio de permisos en dado caso que se manden
+            $account->permissions()->sync($permissions); // Se puenden actualizar los permisos
+            $save = $account->save(); //Se guardan los datos de las cuentas
             return response()->json(['sucess' => $save]);
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido actualizar la información de la cuenta']);
         }
     }
 
-    public function deletePermissions(Request $request){
+    public function changeRol(Request $request){
+        $account = \App\User::find($request->_account);
+        $users = Account::with('permissions')->where('_account', $request->_account)->get();
+        $rol = \App\Roles::with('permissions_default')->find($request->_rol);
+        $_permissions = array_column($rol->permissions_default->toArray(), "id");
+        DB::transaction(function() use($account, $users, $request, $_permissions){
+            $account->_rol = $request->_rol;
+            $account->save();
+            foreach($users as $user){
+                $user->permissions()->sync($_permissions);
+            }
+        });
+        return response()->json(["account" => $account, "user" => $users]);
+    }
+
+    public function deletePermissions(Request $request){ // Función para eliminar permisos a un de usuarios de un punto de trabajo en especifico
+        // Se buscan todas las cuentas que tengan el _rol y _workpoint establecido
         $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
         $total = 0;
         foreach($accounts as $account){
+            //Se eliminan los permisos que se mandanron en forma de <array> id int
             $account->permissions()->detach($request->permissions);
             $total++;
         }
         return response()->json(["changed" => $total]);
     }
 
-    public function addPermissions(Request $request){
-        if(isset($request->_workpoint)){
+    public function addPermissions(Request $request){ //Añade permisos a los usuarios de un punto de trabajo en especifico y/o rol tambien mediente los IDs
+        // Es necesario siempre mandar el rol al que se le aplicaran los cambios
+        if(isset($request->_workpoint)){ // Si viene la sucursal se añade a todos los de esta
             $accounts = Account::where([['_rol', $request->_rol], ['_workpoint', $request->_workpoint]])->get();
         }else{
             $accounts = Account::where('_rol', $request->_rol)->get();
         }
         $total = 0;
-        foreach($accounts as $account){
+        foreach($accounts as $account){ // Se le añaden los permisos que se indican a todas las cuentas
             $account->permissions()->syncWithoutDetaching($request->permissions);
             $total++;
         }
-        return response()->json(["changed" => $total]);
+        return response()->json(["changed" => $total]); // Retornamos la cantidad de usuarios a los que se les añadio los permisos
     }
 
     public function addAcceso(Request $request){
         if(isset($request->_account)){
+            //Se busca un usuario en especifico
             $users = User::where('id', $request->_account)->get();
-        }else{
-            $users = User::where('_rol', $request->_rol)->get();
         }
         $total = 0;
         foreach($users as $user){
             $account = \App\Account::where([
                 ["_account", $user->id],
                 ["_workpoint", $request->_workpoint]
-            ])->first();
-            if(!$account){
+            ])->first(); //Se valida si el usuario tiene cuenta
+            if(!$account){ // Si no tiene cuenta se le creara una y se le daran los permisos correspondientes al rol
                 $account = \App\Account::create([
                     '_account' => $user->id,
                     '_workpoint' => $request->_workpoint,
@@ -361,11 +368,11 @@ class AccountController extends Controller{
                 $total++;
             }
         }
-        return response()->json(["add" => $total]);
+        return response()->json(["add" => $total]); //Responde con la cantidad de usuarios a los que se le dio acceso
     }
 
-    public function getUsers(Request $request){
-        if(isset($request->_rol)){
+    public function getUsers(Request $request){ //Función que retorna todos los usuarios que comparte el punto de trabajo del TOKEN y ademas se puede realizar un filtro por rol
+        if(isset($request->_rol)){ //Si se manda el rol se aplica el filtro de rol
             $users = User::with('rol')->whereIn("_rol", $request->_rol)->whereHas('workpoints', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             })->orderBy('names', 'asc')->get();
@@ -373,20 +380,5 @@ class AccountController extends Controller{
             $users = User::with('rol')->orderBy('names', 'asc')->get();
         }
         return response()->json($users);
-    }
-
-    public function getPrinters(){
-        if($this->account->_rol == 1){
-            $workpoints = \App\WorkPoint::whereHas('printers')->get();
-        }else{
-            $workpoints = \App\WorkPoint::where('id', $this->account->_workpoint)->get();
-        }
-        $result = $workpoints->map(function($workpoint){
-            $printers = \App\PrinterType::with(['printers' => function($query) use($workpoint){
-                $query->where('_workpoint', $workpoint->id);
-            }])->orderBy('id')->get();
-            $workpoint->printers = $printers;
-        });
-        return response()->json($workpoints);
     }
 }

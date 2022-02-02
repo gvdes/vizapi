@@ -16,7 +16,7 @@ class CashRegisterController extends Controller{
         //
     }
 
-    public function changeStatus(Request $request){
+    public function changeStatus(Request $request){ // Función para cambiar de status la caja
         $cashRegister = CashRegister::with('status')->find($request->_cash);
         if($cashRegister){
             $cashRegister->_status = $cashRegister->_status == 1 ? 2 : 1;
@@ -27,7 +27,7 @@ class CashRegisterController extends Controller{
         return response()->json(["msg" => "No se encontro la caja", "server_status" => 404, "success" => false]);
     }
 
-    public function changeCashier(Request $request){
+    public function changeCashier(Request $request){ // Función para asignar un nuevo cajero a la caja
         $cashRegister = CashRegister::with('cashier')->find($request->_cash);
         if($cashRegister){
             $account = \App\Account::find($request->_account);
@@ -42,7 +42,7 @@ class CashRegisterController extends Controller{
         return response()->json(["msg" => "No se encontro la caja", "server_status" => 404, "success" => false]);
     }
 
-    public function find($id){
+    public function find($id){ // Función para traer una caje en especifico en conjunto con sus datos de status, cajero y sucursal a la que pertenece
         $cashRegister = CashRegister::with(['status', 'cashier', 'workpoint'])->find($id);
         return response()->json($cashRegister);
     }

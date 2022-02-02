@@ -9,6 +9,7 @@ class AccessController2 extends Controller{
    *
    * @return void
    */
+  // FUNCIONES PARA OBTENER LOS DATOS DE FACTUSOL DE LA NUBE SE OCUPO EN 2020
   public function __construct(){
     try{
       $access = env('ACCESS_FILE');

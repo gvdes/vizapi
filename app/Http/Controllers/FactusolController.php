@@ -5,6 +5,7 @@ use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FactusolController extends Controller{
+  // FUNCIONES PARA OBTENER LOS DATOS DE FACTUSOL DE LA NUBE SE OCUPO EN 2020
   /**
    * Create a new controller instance.
    *

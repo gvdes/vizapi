@@ -16,7 +16,7 @@ class PdfController extends Controller{
     $this->account = Auth::payload()['workpoint'];
   }
 
-  public function getPdfsToEtiquetas(Request $request){
+  public function getPdfsToEtiquetas(Request $request){ // Función para retornar los tipos de etiquetas disponibles
     $types = [
       ["id" => 1, "name" => "Estrella x1"],
       ["id" => 2, "name" => "Estrella x2"],
@@ -40,7 +40,7 @@ class PdfController extends Controller{
     return response()->json(["types" => $types, "price_list" => $priceList]);
   }
 
-  public function generatePdf(Request $request){
+  public function generatePdf(Request $request){ // Función para devolver el formato de PDF que se desea obtener
     switch($request->_pdf){
       case 1:
         return $this->pdf_big_star($request->products, $request->isInnerPack);

@@ -433,11 +433,11 @@ class RequisitionController extends Controller{
         ];
     }
 
-    public function index(Request $request){
-        $workpoints = WorkPoint::where('_type', 1)->get();
-        $account = Account::with(['permissions'])->find($this->account->id);
-        $permissions = array_column($account->permissions->toArray(), 'id');
-        $_types = [];
+    public function index(Request $request){ // Función para traer todos los pedidos que ha levantado la sucursal
+        $workpoints = WorkPoint::where('_type', 1)->get(); // Obtener la lista de sucursales de tipo CEDIS
+        $account = Account::with(['permissions'])->find($this->account->id); // Revisar permisos de la sucursal
+        $permissions = array_column($account->permissions->toArray(), 'id'); //IDs de los permisos
+        $_types = []; // <array> para almacenar los tipo de pedidos que puede levantar el usuario
         if(in_array(29,$permissions)){
             array_push($_types, 1);
         }
@@ -450,14 +450,16 @@ class RequisitionController extends Controller{
         if(in_array(39,$permissions)){
             array_push($_types, 4);
         }
-        $types = Type::whereIn('id', $_types)->get();
-        $status = Process::all();
+        $types = Type::whereIn('id', $_types)->get(); // Se obtiene los tipos de pedidos que se pueden levantar
+        $status = Process::all(); // Se obtienen todos los status de pedidos
         $clause = [
             ['_workpoint_from', $this->account->_workpoint]
         ];
         if($this->account->_rol == 4 ||  $this->account->_rol == 5 || $this->account->_rol == 7){
+            // Se válida el rol, si no eres administrador solo podras ver los pedidos que haz levantado
             array_push($clause, ['_created_by', $this->account->_account]);
         }
+        // Se determina el periodo de busqueda para los pedidos
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -476,17 +478,17 @@ class RequisitionController extends Controller{
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->withCount(["products"])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
-                                    ->get();
+                                    ->get(); // Se traen todos los pedidos que cumplen el filtro
         return response()->json([
-            "workpoints" => WorkPoint::with('type')->whereIn('_type', [1,2])->get()/* $workpoints */,
+            "workpoints" => WorkPoint::with('type')->whereIn('_type', [1,2])->get(), // Lista de todas las sucursales
             "types" => $types,
             "status" => $status,
-            /* "units" => \App\ProductUnit::all(), */
             "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
 
-    public function dashboard(Request $request){
+    public function dashboard(Request $request){ // Función para trer todos los pedidos que le han solicitado a la sucursal
+        // Se determina el periodo de busqueda para los pedidos
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
             $date_to = new \DateTime($request->date_to);
@@ -500,7 +502,6 @@ class RequisitionController extends Controller{
             $date_to = new \DateTime();
             $date_to->setTime(23,59,59);
         }
-        $date = new \DateTime();
         $requisitions = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log', 'products' => function($query){
                                         $query->with(['prices' => function($query){
                                             $query->whereIn('_type', [1,2,3,4,5])->orderBy('_type');
@@ -510,17 +511,18 @@ class RequisitionController extends Controller{
                                     ->withCount(["products"])
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
-                                    ->get();
+                                    ->get(); // Se traen todos los pedidos que cumplen el filtro
                                     
         return response()->json([
-            "workpoints" => WorkPoint::all(),
+            "workpoints" => WorkPoint::all(), // Lista de todas las sucursales
             "types" => Type::all(),
             "status" => Process::all(),
             "requisitions" => RequisitionResource::collection($requisitions)
         ]);
     }
 
-    public function find($id){
+    public function find($id){ // Función para buscar un pedido en especifico
+        // Se repeta la estructure establecida con Geo
         $requisition = Requisition::with(['type', 'status', 'products' => function($query){
             $query
             ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
@@ -610,13 +612,6 @@ class RequisitionController extends Controller{
         return response()->json(["success" => $res, "printer" => $printer, [$requisition->_workpoint_from, $this->account->_workpoint]]);
     }
 
-    public function demoImpresion(Request $request){
-        $printer = \App\Printer::find($request->_printer);
-        $cellerPrinter = new MiniPrinterController($printer->ip, 9100);
-        $res = $cellerPrinter->demo();
-        return response()->json(["success" => $res]);
-    }
-
     public function search(Request $request){
         $folio = '';
         $where = [];
@@ -633,11 +628,12 @@ class RequisitionController extends Controller{
         return response()->json();
     }
 
-    public function getVentaFromStore($folio, $workpoint_id, $caja, $to){
-        $workpoint = WorkPoint::find($workpoint_id);
-        $access = new AccessController($workpoint->dominio);
-        $venta = $access->getSaleStore($folio, $caja);
-        if($venta){
+    public function getVentaFromStore($folio, $workpoint_id, $caja, $to){ // Función que nos ayuda a obtener las ventas de las sucursales
+        // Se necesita saber el folio, la sucursal, la caja y a que sucursal pasaremos el pedido
+        $workpoint = WorkPoint::find($workpoint_id); // Buscamos la sucursal de la que obtendremos la venta
+        $access = new AccessController($workpoint->dominio); // Conexión al ACCESS de la sucursal
+        $venta = $access->getSaleStore($folio, $caja); // Obtenemos las ventas de la sucursal
+        if($venta){ // Validamos si encontramos la venta, de ser el caso adaptamos al formato para insertar los productos
             if(isset($venta['msg'])){
                 return ["msg" => $venta['msg']];
             }
@@ -656,24 +652,23 @@ class RequisitionController extends Controller{
                     }
                 }
             }
+            // Retornamos los siguientes datos para poder trabajar con el pedido
             return ["notes" => "Pedido venta tienda #".$folio, "products" => $toSupply];
         }
         return ["msg" => "No se tenido conexión con la tienda"];
     }
 
-    public function getToSupplyFromStore($workpoint_id, $workpoint_to){
-        $workpoint = WorkPoint::find($workpoint_id);
-        $_categories = $this->categoriesByStore($workpoint_id);
+    public function getToSupplyFromStore($workpoint_id, $workpoint_to){ // Función para hacer el pedido de minimos y máximos de la sucursal
+        $workpoint = WorkPoint::find($workpoint_id); // Obtenemos la sucursal a la que se le realizara el pedido
+        $_categories = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
+        // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
         $products = Product::selectRaw('products.*, getSection(products._category) AS section')
         ->with(['stocks' => function($query) use($workpoint_id){
             $query->where([
                 ['_workpoint', $workpoint_id],
                 ['min', '>', 0],
                 ['max', '>', 0],
-            ])/* ->orWhere([
-                ['_workpoint', $workpoint_to],
-                ['stock', '>', 0]
-            ]) */;
+            ]);
         }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to, $_categories){
             $query->where([
                 ['_workpoint', $workpoint_id],
@@ -681,8 +676,7 @@ class RequisitionController extends Controller{
                 ['max', '>', 0]
             ])->orWhere([
                 ['_workpoint', $workpoint_to],
-                ['stock', '>', 0]/* ,
-                ['_status', '=', 1] */
+                ['stock', '>', 0]
             ]);
         }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
         if(count($_categories)>1){
@@ -698,7 +692,7 @@ class RequisitionController extends Controller{
         
         /**OBTENEMOS STOCKS */
         $toSupply = [];
-        foreach($products as $key => $product){
+        foreach($products as $key => $product){ // Se genera el formato para insertar el los productos al pedido
             $stock = $product->stocks[0]->pivot->gen;
             $min = $product->stocks[0]->pivot->min;
             $max = $product->stocks[0]->pivot->max;
@@ -708,6 +702,15 @@ class RequisitionController extends Controller{
                 $required = 0;
             }
             if($required > 0){
+                /* 
+                    REGLAS DEL NEGOCIO
+                    Para los acticulos que son solicitados por CAJA se debe solicitar al menos 1 caja completa
+                    Para los articulos que son solicitados por PIEZA se debe solicitar al menos 6 unidades
+                    Si no se cumple la condición para pedir el minimo no se agregara el producto al pedido a pesar de que lo necesite la sucursal
+                    ---- SUGERENCIAS ----
+                    Los articulos que salen por piezas deberan tener un rango entre el minimo y maximo de al menos 6 unidades
+                    Los articulos que salen por caja deberan tener un rango entre el minimo y maximo de media caja, y el minimo no deberia ser de menos de media caja
+                */
                 if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
                     if($product->_unit == 3){
                         $pieces = $product->pieces == 0 ? 1 : $product->pieces;
@@ -724,17 +727,17 @@ class RequisitionController extends Controller{
         return ["products" => $toSupply];
     }
 
-    public function getPedidoFromStore($folio, $to){
-        $order = \App\Order::find($folio);
-        if($order){
-            $toSupply = [];
+    public function getPedidoFromStore($folio, $to){ // Función para exportar los productos que un pedido de preventa
+        $order = \App\Order::find($folio); // Se busca el folio del pedido
+        if($order){ // Se encontro el pedido
+            $toSupply = []; // <array> para producto del pedido de preventa
             $products = $order->products()->with(["stocks" => function($query) use($to){
                 $query->where("_workpoint", $to);
             }, 'prices' => function($query){
                 $query->where('_type', 7);
-            }])->get();
-            foreach($products as $product){
-                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
+            }])->get(); // Se obtienen los pedidos
+            foreach($products as $product){ // Se le da formato a los producto para poder ser insertados
+                $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0; // Se obtiene el costo del producto
                 $toSupply[$product->id] = [
                     'amount' => $product->pivot->amount,
                     '_supply_by' => $product->pivot->_supply_by, 
@@ -750,7 +753,7 @@ class RequisitionController extends Controller{
         return ["msg" => "No se encontro el pedido"];
     }
 
-    public function refreshStocks(Requisition $requisition){
+    public function refreshStocks(Requisition $requisition){ // Función para actualizar los stocks de un pedido de resurtido
         $_workpoint_to = $requisition->_workpoint_to;
         $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
             $query->with(['stocks' => function($query) use($_workpoint_to){
@@ -771,6 +774,8 @@ class RequisitionController extends Controller{
 
     public function categoriesByStore($_workpoint){
 
+        /* IMPORTANTE */
+        /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
             case 1:
                 return [];
@@ -810,19 +815,19 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function getAmount($product, $amount, $_supply_by, $pieces = false){
-        $pieces = $pieces ? $pieces : $product->pieces;
+    public function getAmount($product, $amount, $_supply_by, $pieces = false){ // Función para comvertir las unidades a piezas
+        $pieces = $pieces ? $pieces : $product->pieces; // Obtener las piezas por caja
         switch ($_supply_by){
-            case 1:
+            case 1: // Conversión de piezas
                 return $amount;
             break;
-            case 2:
+            case 2: // Conversión de docenas
                 return $amount * 12;
             break;
-            case 3:
+            case 3: // Conversión de cajas
                 return ($amount * $pieces);
             break;
-            case 4:
+            case 4: // Conversión de medias cajas
                 return round($amount * ($pieces/2));
             break;
         }
@@ -920,7 +925,7 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function setReceiveValue(Request $request){
+    public function setReceiveValue(Request $request){ // Función para seetear el valor de mercancia recibida en el pedido (La sucursal debe poner este valor)
         try{
             $requisition = Requisition::find($request->_requisition);
             $product = $order->products()->where('id', $request->_product)->first();
@@ -938,11 +943,15 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function getPrinterDefault($_workpoint_from, $_workpoint){
+    public function getPrinterDefault($_workpoint_from, $_workpoint){ // Función para determinar que impresora imprimira los tickets de resultido en CEDIS
+        // Si se imprime abajo descomentar esta parte
         /* if($_workpoint == 1 && in_array($_workpoint_from, [3,4,5,6,8,11,12,13,19])){
             return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%2%"]])->first();
         }else{
+            return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
         } */
+
+        // con esta función solo saldran las impresiones en la parte de arriba
         return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
     }
 }

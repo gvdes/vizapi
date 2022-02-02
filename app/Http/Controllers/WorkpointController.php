@@ -15,7 +15,7 @@ class WorkpointController extends Controller{
         //
     }
 
-    public function index(){
+    public function index(){ // Función que retorna los puntos de trabajo en conjunto con su tipo
         $workpoint = WorkPoint::with('type')->get();
         return response()->json($workpoint);
     }

@@ -31,7 +31,8 @@ class LocationController extends Controller{
      * @param string request[]._workpoint
      * @param string request[]._type
      */
-    public function createCeller(Request $request){
+    public function createCeller(Request $request){ // Función para crear un almacen
+        // Se crea el almacen con los siguientes datos
         $celler = \App\Celler::create([
             'name' => $request->name,
             '_workpoint' => $this->account->_workpoint,
@@ -43,9 +44,10 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function updateCeller(Request $request){
-        $celler = \App\Celler::find($request->_celler);
+    public function updateCeller(Request $request){ // Función para actualizar los datos de un almacen
+        $celler = \App\Celler::find($request->_celler); // Se válida si es un almacen existente
         if($celler){
+            // Actualización de datos o permanecen los anteriores
             $celler->name = isset($request->name) ? $request->name : $celler->name;
             $celler->_workpoint = isset($request->_workpoint) ? $request->_workpoint : $celler->_workpoint;
             $celler->_type = isset($request->_type) ? $request->_type : $celler->_type;
@@ -55,9 +57,10 @@ class LocationController extends Controller{
         return response()->json([ 'success' => false ]);
     }
 
-    public function updateSection(Request $request){
-        $section = CellerSection::find($request->_section);
+    public function updateSection(Request $request){ // Función para actualizar los datos de una sección
+        $section = CellerSection::find($request->_section); // Se válida si es una sección existente
         if($section){
+            // Actualización de datos o permanecen los anteriores
             $section->name = isset($request->name) ? $request->name : $section->name;
             $section->alias = isset($request->alias) ? $request->alias : $section->alias;
             $section->path = isset($request->path) ? $request->path : $section->path;
@@ -82,14 +85,14 @@ class LocationController extends Controller{
      * @param json request[].details
      * @param int request[].celler
      */
-    public function createSection(Request $request){
+    public function createSection(Request $request){ // Función para crear una nueva sección en los almacenes
         $sections = [];
-        if($request->autoincrement || $request->items > 1){
+        if($request->autoincrement || $request->items > 1){ // Se válida si dara continuidad a la numeración a la sección
             $increment = true;
         }else{
             $increment = false;
         }
-        if($request->root>0){
+        if($request->root>0){ // Se valida si una sección padre
             $siblings = \App\CellerSection::where([['root', $request->root], ["alias", "LIKE", "%".$request->alias."%"]])->count();
             $root = \App\CellerSection::find($request->root);
             $items = isset($request->items) ? $request->items : 1;
@@ -109,7 +112,7 @@ class LocationController extends Controller{
                 ]);
                 array_push($sections, $section);
             }
-        }else{
+        }else{ // Sera una sección hija, por lo que se contemplan a sus hermanos a la hora de crearlos
             $siblings = \App\CellerSection::where([
                 ['root', 0],
                 ['_celler', $request->_celler]
@@ -139,12 +142,12 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function deleteSection(Request $request){
-        $section = CellerSection::find($request->_section);
+    public function deleteSection(Request $request){ // Función para eliminar una sección en conjunto con sus decendientes
+        $section = CellerSection::find($request->_section); // Obtenemos la sección base
         if($section){
-            $section->children = $this->getDescendentsSection($section);
-            $ids = $this->getIdsTree($section);
-            $res = CellerSection::destroy($ids);
+            $section->children = $this->getDescendentsSection($section); // Se busca a todos los decendientes
+            $ids = $this->getIdsTree($section); // Se obtienen todos los ids de los decendientes
+            $res = CellerSection::destroy($ids); // Se 'eliminan' de forma lógica las secciónes, estas seguiran existiendo en la base de datos, para restaurarlas hay que quitar la fecha a deleted_at
             return response()->json(["success" => true, "elementos" => $res]);
         }
         return response()->json([
@@ -153,7 +156,7 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function removeLocations(Request $request){
+    public function removeLocations(Request $request){ // Función para remover ubicaciones por sección o una categoría completa de cierta sucursal
         $res = [];
         if(isset($request->_section) && isset($request->_category)){
             /* ELIMINAR POR SECCION Y CATEGORIAS */
@@ -165,9 +168,6 @@ class LocationController extends Controller{
                 $category->children = $this->getDescendentsCategory($category);
                 $ids_categories = $this->getIdsTree($category);
                 $sections = CellerSection::has('products')->whereIn('id', $ids)->get();
-                /* $products_counted = Product::whereHas('locations', function($query){
-                    $query->where('_workpoint', $this->account->_workpoint);
-                })->whereIn('_category', $ids_categories)->count(); */
                 $products = Product::has('locations')->whereIn('_category', $ids_categories)->get();
                 $ids_sections = array_column($sections->toArray(), 'id');
                 foreach($products as $product){
@@ -213,7 +213,7 @@ class LocationController extends Controller{
      * @param int request[].celler | null
      * @param int request[].section | null
      */
-    public function getSections(Request $request){
+    public function getSections(Request $request){ // Función para obtener todas las secciones en conjunto con los productos que estan ubicados en estas secciones
         $celler = $request->_celler ? $request->_celler : null;
         $section = $request->_section ? CellerSection::find($request->_section) : null;
         $products = [];
@@ -259,7 +259,7 @@ class LocationController extends Controller{
     /**
      * Get cellers in workpoint
      */
-    public function getCellers(){
+    public function getCellers(){ // Función para obtener todos los almacenes de VIZAPP
         $workpoint = $this->account->_workpoint;
         if($workpoint){
             $cellers = \App\Celler::where('_workpoint', $workpoint)->get();
@@ -286,7 +286,7 @@ class LocationController extends Controller{
      * @param object request
      * @param int request[].code
      */
-    public function getProduct(Request $request){
+    public function getProduct(Request $request){ // Función para obtener productos para minimo y maximo antiguo
         $code = $request->id;
         $stocks_required = $request->stocks;
         $date_from = new \DateTime();
@@ -325,12 +325,10 @@ class LocationController extends Controller{
             $product->stock = "Inventario";
             $product->min = $stock[0]->pivot->min;
             $product->max = $stock[0]->pivot->max;
-            /* $_status = $stock[0]->pivot->_status; */
         }else if(count($stock)>0){
             $product->stock = $stock[0]->pivot->stock;
             $product->min = $stock[0]->pivot->min;
             $product->max = $stock[0]->pivot->max;
-            /* $_status = $stock[0]->pivot->_status; */
 
         }else{
             $product->stock = 0;
@@ -338,7 +336,6 @@ class LocationController extends Controller{
             $product->max = 0;
             $_status = $product->_status;
         }
-        /* $product->status = \App\ProductStatus::find($_status); */
         $product->stocks_stores = $product->stocks->filter(function($stocks){
             return $stocks->id != $this->account->_workpoint;
         })->values()->map(function($stock){
@@ -358,11 +355,11 @@ class LocationController extends Controller{
      * @param int request._product
      * @param int request._section
      */
-    public function setLocation(Request $request){
-        $product = \App\Product::find($request->_product);
-        if($product && !is_null($request->_section)){
+    public function setLocation(Request $request){ // Función para poner o quitar una ubicación a un articulo
+        $product = \App\Product::find($request->_product); // Se valida si existe el producto
+        if($product && !is_null($request->_section)){ // Se valida si existe el producto
             return response()->json([
-                'success' => $product->locations()->toggle($request->_section)
+                'success' => $product->locations()->toggle($request->_section) // Se pone o quita la ubicación
             ]);            
         }
         return response()->json([
@@ -377,44 +374,57 @@ class LocationController extends Controller{
      * @param int request.min
      * @param int request.max
      */
-    public function setMax(Request $request){
+    public function setMax(Request $request){ // Función para asignar un minimo y maximo de forma manual mediante el <id>
+        // Se válida la sucursal en la que se aplicara el cambio
         $workpoint = WorkPoint::find($this->account->_workpoint);
+        // Se válida que el articulo que se le quiere poner min/max exista
         $product = Product::find($request->id);
         if($product){
+            //se guardan los valores <min> y <max>
             $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $request->min, 'max' => $request->max]);
             return response()->json(["success" => true]);
         }
         return response()->json(["success" => false]);
     }
 
-    public function setMassiveMax(Request $request){
+    public function setMassiveMax(Request $request){ // Función para asignar un minimo y maximo de forma masiva mediante el código principal
+        /* 
+            Datos necesarios:
+                code -> Modelo del articulo
+                min -> cantidad minima que tendra que tener la sucursal para la operación
+                max -> cantidad maxima que tendra que tener la sucursal para la operación
+         */
         $workpoint = WorkPoint::find($request->_workpoint);
         $found = [];
         $notFound = [];
         foreach($request->products as $row){
-            $product = Product::where('code', $row['Modelo'])->first();
+            $product = Product::where('code', $row['code'])->first();
             if($product){
                 $product->stocks()->updateExistingPivot($workpoint->id, ['min' => $row['min'], 'max' => $row['max']]);
                 $found[] = ["Modelo" => $product["code"], "Min" => $row['min'], "Max" => $row['max']];
             }else{
-                $notFound[] = ["Modelo" => $row["Modelo"], "Min" => $row['min'], "Max" => $row['max']];
+                $notFound[] = ["Modelo" => $row["code"], "Min" => $row['min'], "Max" => $row['max']];
             }
         }
         return response()->json(["found" => $found, "notFound" => $notFound]);
     }
 
-    public function index(){
+    public function index(){ // Función que indica los reportes del modulo de almacenes que pueden ser generados en EXCEL
         /**
          * INDICAR ALMACEN DONDE SE DESEA TRABAJAR
          */
+        // Se obtiene la cantidad de productos actuales del catalogo
         $counterProducts = Product::where('_status', '!=', 4)->count();
+        // Se obtiene la cantidad de articulos con stock en el inventario de la sucursal
         $withStock = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
+        // Se obtiene la cantidad de articulos sin stock en el inventario de la sucursal
         $withoutStock = Product::whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
+        // Se obtiene la cantidad de articulos con stock y ubicación en el inventario de la sucursal
         $withLocation = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -423,6 +433,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->where('_status', '!=', 4)->count();
+        // Se obtiene la cantidad de articulos con stock y sin ubicación en el inventario de la sucursal
         $withoutLocation = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -431,6 +442,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'<=',0)->where('_status', '!=', 4)->count();
+        // Se obtiene la cantidad de articulos sin stock y con ubicación en el inventario de la sucursal
         $withLocationWithoutStock = Product::whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0], ["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
@@ -438,10 +450,15 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         },'>',0)->where('_status', '!=', 4)->count();
-
+        // Se obtiene un comparativo del almacen general vs el de exhibición para saber que mercancia no ha sido exhibida
         $generalVsExhibicion = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
+        // Se valida quien es la sucursal de CEDIS para cada tienda
+        /* Regla
+            El CEDIS de las sucursales es CEDIS SAN PABLO
+            El CEDIS de CEDIS SAN PABLO es CEDIS PANTACO
+         */
         if($this->account->_workpoint == 1){
             $cedis = Product::whereHas('stocks', function($query){
                 $query->where([["stock", ">", 0], ["_workpoint", 2]]);
@@ -451,13 +468,14 @@ class LocationController extends Controller{
                 $query->where([["gen", ">", 0], ["_workpoint", 1]]);
             })->where('_status', '!=', 4)->get();
         }
-
+        // Se obtiene los productos que tiene el alamcen general con stock
         $general = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->get();
         $generalVsCedis = [];
         $arr_general = array_column($general->toArray(), 'code');
         foreach($cedis as $product){
+            // Se compraran todos los articulos para saber si los tiene el almacen general y el de CEDIS
             $key = array_search($product->code, $arr_general);
             if($key === 0 || $key>0){
                 //exist
@@ -466,14 +484,17 @@ class LocationController extends Controller{
             }
         }
 
+        // Se obtiene un reporte de todos los articulos con stock y que no tienen un min/max
         $sinMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
 
+        // Se obtiene la cantidad de articulos con stock y máximo
         $conMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->count();
 
+        //Se obtiene la cantidad de articulos que tienen un inventario negativo y son producto válido para el catalogo
         $negativos = Product::whereHas('stocks', function($query){
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         })->where('_status', '!=', 4)->count();
@@ -494,7 +515,7 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function getSectionsChildren($id){
+    public function getSectionsChildren($id){ // Función que nos retorna las secciones hija de una de nivel inferior
         $sections = CellerSection::where('root', $id)->get();
         if(count($sections)>0){
             $res = $sections->map(function($section){
@@ -514,7 +535,7 @@ class LocationController extends Controller{
         }
     }
 
-    public function getAllSections(Request $request){
+    public function getAllSections(Request $request){ // Función para obtener todas las secciones con sus respectivas sub-secciones
         $sections = \App\CellerSection::where('_celler', $request->_celler)->get();
         $roots = $sections->filter(function($section){
             return $section->root == 0;
@@ -562,36 +583,7 @@ class LocationController extends Controller{
         ]);
     }
 
-    public function updateStocks(){
-        $workpoints = WorkPoint::whereIn('id', [1,13])->get();
-        foreach($workpoints as $workpoint){
-            $client = curl_init();
-            curl_setopt($client, CURLOPT_URL, $workpoint->dominio."/access/public/celler/stock");
-            curl_setopt($client, CURLOPT_SSL_VERIFYPEER, FALSE);
-            curl_setopt($client, CURLOPT_RETURNTRANSFER, 1);
-            $stocks = json_decode(curl_exec($client), true);
-            if($stocks){
-                $products = Product::with(["stocks" => function($query) use($workpoint){
-                    $query->where('_workpoint', $workpoint->id);
-                }])->where('_status', 1)->get();
-                $codes_stocks = array_column($stocks, 'code');
-                foreach($products as $product){
-                    $key = array_search($product->code, $codes_stocks, true);
-                    if($key === 0 || $key > 0){
-                        $stock = count($product->stocks)>0 ? $product->stocks[0]->pivot->stock : false;
-                        if(gettype($stock) == "boolean"){
-                            $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0]);
-                        }elseif($stock != $stocks[$key]["stock"]){
-                            $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"]]);
-                        }
-                    }
-                }
-            }
-        }
-        return response()->json(["success" => true]);
-    }
-
-    public function getReport(Request $request){
+    public function getReport(Request $request){ // Función para obtener el reporte excel con base al index
         switch($request->_type){
             case 1:
                 $res = $this->conStock();
@@ -649,30 +641,6 @@ class LocationController extends Controller{
         $export = new ArrayExport($res);
         $date = new \DateTime();
         return Excel::download($export, $name.".xlsx");
-    }
-
-    public function demo(){
-        $sections = \App\ProductCategory::where([['id', '>', 403], ['deep', 0]])->get();
-
-
-        $families = \App\ProductCategory::where([['id', '>', 403], ['deep', 1]])->get()->groupBy('root');
-        $_families = $families->map(function($family, $key){
-            return array_column($family->toArray(), "id");
-        });
-
-        $categories = \App\ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
-        $_categories = $categories->map(function($category, $key){
-            return array_column($category->toArray(), "id");
-        });
-
-        $product = Product::where("_status", "!=", 4)->first();
-
-        $key = $_families->filter(function($_family) use($product){
-            $key = array_search($product->_category, $_family);
-            return $key === 0 || $key > 0;
-        });
-
-        return response()->json($key);;
     }
 
     public function conStock(){
@@ -1005,7 +973,7 @@ class LocationController extends Controller{
         return $res;
     }
 
-    public function sinMaximos(){
+    public function sinMaximos(){ // Función que retorna todos los productos que no tiene máximo y si stock
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
         with(["stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -1152,38 +1120,45 @@ class LocationController extends Controller{
         return $result;
     }
 
-    public function updateStocks2(){
-        $workpoints = WorkPoint::whereIn('id', [1,2,3,4,5,6,7,8,9,10,11,12,13,17,18,19])->get();
+    public function updateStocks(){
+        /* Función para actualizar constantemente los stocks de todas las tiendas */
+        $workpoints = WorkPoint::where([["active", true]])->get(); // Obtener todas las tiendas activas
         $success = 0;
-        $_success = [];
-        $res = [];
-        foreach($workpoints as $workpoint){
-            $access = new AccessController($workpoint->dominio);
-            $stocks = $access->getStocks($workpoint->id);
-            if($stocks){
+        $fail = 0;
+        $report = [];
+        foreach($workpoints as $workpoint){ // Se solicitan y almacenan los stocks de todas las tiendas
+            $access = new AccessController($workpoint->dominio); // Conexión a los access de las sucursales
+            $stocks = $access->getStocks($workpoint->id); // Se obtienen los stocks
+            if($stocks){ // Se lograron los stocks de todas las tiendas
                 $success++;
-                array_push($_success, $workpoint->alias);
+                $report[] = ["sucursal" => $workpoint->name, "success" => true];
                 $products = Product::with(["stocks" => function($query) use($workpoint){
                     $query->where('_workpoint', $workpoint->id);
-                }])->where('_status', '!=', 4)->get();
-                $codes_stocks = array_column($stocks, 'code');
+                }])->where('_status', '!=', 4)->get(); // Se obtiene el catalogo de todos los productos que no esten eliminados
+                $codes_stocks = array_column($stocks, 'code'); // Se hace un array con todos los codigos de los stocks de las sucursales
                 foreach($products as $product){
-                    $key = array_search($product->code, $codes_stocks, true);
-                    if($key === 0 || $key > 0){
+                    $key = array_search($product->code, $codes_stocks, true); // El código de este producto tuvo una modificación en sus stockss
+                    if($key === 0 || $key > 0){ // Se encontro stock de access en la sucursal
                         $gen = count($product->stocks)>0 ? $product->stocks[0]->pivot->gen : false;
                         $exh = count($product->stocks)>0 ? $product->stocks[0]->pivot->exh : false;
                         $des = count($product->stocks)>0 ? $product->stocks[0]->pivot->des : false;
                         $fdt = count($product->stocks)>0 ? $product->stocks[0]->pivot->fdt : false;
-                        if(gettype($gen) == "boolean" || gettype($exh) == "boolean" || gettype($des) == "boolean" || gettype($fdt) == "boolean"){
+                        if(gettype($gen) == "boolean" || gettype($exh) == "boolean" || gettype($des) == "boolean" || gettype($fdt) == "boolean"){ // Se valida que el producto cuente con al menos un almacen
+                            //Se crea la relación entre la sucursal y el stock por primera vez
                             $product->stocks()->attach($workpoint->id, ['stock' => $stocks[$key]["stock"], 'min' => 0, 'max' => 0, 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"], 'des' => $stocks[$key]["des"], 'fdt' => $stocks[$key]["fdt"]]);
                         }elseif($gen != $stocks[$key]["gen"] || $exh != $stocks[$key]["exh"] || $des != $stocks[$key]["des"] || $fdt != $stocks[$key]["fdt"]){
+                            //Se actualiza el stock de la sucursal
                             $product->stocks()->updateExistingPivot($workpoint->id, ['stock' => $stocks[$key]["stock"], 'gen' => $stocks[$key]["gen"], 'exh' => $stocks[$key]["exh"], 'des' => $stocks[$key]["des"], 'fdt' => $stocks[$key]["fdt"]]);
                         }
                     }
                 }
+            }else{
+                // Incrementa la cantidad de tiendas a las que no se les puedo actualizar el stock y nos indica quienes fueron
+                $fail++;
+                $report[] = ["sucursal" => $workpoint->name, "success" => false];
             }
         }
-        return response()->json(["completados" => $success, "tiendas" => $_success]);
+        return response()->json(["completados" => $success, "fallidos" => $fail, "report" => $report]);
     }
 
     public function getDescendentsSection($section){
@@ -1237,9 +1212,6 @@ class LocationController extends Controller{
                 $sections[] = $section;
             }
         }
-        /* $export = new ArrayExport($sections);
-        $date = new \DateTime();
-        return Excel::download($export,"Tienda".$request->_workpoint.".xlsx"); */
         return response()->json($sections);
     }
 
@@ -1262,6 +1234,8 @@ class LocationController extends Controller{
     }
 
     public function setMassiveLocations(Request $request){
+        // Función para insertar ubicaciones de forma masiva, se tiene que modificar para cada caso
+        // Esta función solo la ocupa pinky, no se ha probado en sucursales
         $_workpoint = $request->_workpoint;
         $locations = CellerSection::whereHas('celler', function($query) use($_workpoint){
             $query->whereHas('workpoint', function($query) use($_workpoint){
@@ -1298,13 +1272,14 @@ class LocationController extends Controller{
         return response()->json($result);
     }
 
-    public function getLocations(Request $request){
+    public function getLocations(Request $request){ // Función para obtener todas las ubicaciones de los productos
         $result = [];
-        foreach($request->products as $product){
+        foreach($request->products as $product){ // Se realiza la busqueda por articulo
             $res = Product::with(['locations' => function($query){
                 $query->with("celler");
             }])->where("code", $product["code"])->first();
             if($res){
+                // Se le da formato a todas las ubicaciones
                 $result[] = $res->locations->map(function($location) use($res){
                     return [
                         "code" => $res->code,
@@ -1317,9 +1292,23 @@ class LocationController extends Controller{
         return response()->json(array_merge_recursive(...$result));
     }
 
-    public function test(){
-        $products = Product::selectRaw('products.*, getSection(products._category) AS Sección, getFamily(products._category) AS Familia, getCategory(products._category) AS Categoría')->where([['_provider', 15], ['_status', '!=', 4]])->get();
-        return response()->json($products);
-
+    public function saveStocks(){ // Función para almacenar el cierre de stocks del día
+        $products = Product::whereHas('stocks')->with('stocks')->get(); // Se traen todos los productos que tienen stock
+        $created_at = new \DateTime(); // Se obtiene la fecha y hora del momento para guardarla como fecha de registro
+        $stocks = $products->map(function($product) use($created_at){
+            // Se le da formato para insertarla
+            $a = $product->stocks->unique('id')->values()->map(function($stock) use($created_at){
+                $res = $stock->pivot;
+                $res->created_at = $created_at;
+                return $res;
+            });
+            return $a;
+        })->toArray();
+        $insert = array_merge(...$stocks);
+        // Se insertan los registros de 1000 en 1000 debido a que son muchos registros
+        foreach(array_chunk($insert, 1000) as $toInsert){
+            DB::table('stock_history')->insert($toInsert);
+        }
+        return response()->json(["Filas insertadas" => count($insert)]);
     }
 }

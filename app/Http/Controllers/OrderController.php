@@ -896,13 +896,13 @@ class OrderController extends Controller{
         }
     }
 
-    public function changeCashRegisterStatus(Request $request){
+    public function changeCashRegisterStatus(Request $request){ // Función para cambiar de status de las cajas de las tiendas para preventa
         $cash = \App\CashRegister::find($request->_cash);
         if($cash){
-            if(in_array($request->_status, range(1,3))){
-                $cash->_status = $request->_status;
-                $cash->fresh('status');
-                $success = $cash->save();
+            if(in_array($request->_status, range(1,3))){ // Se valida que sea un status válido
+                $cash->_status = $request->_status; // Se guarda el status que se mando
+                $cash->fresh('status'); // Se refrescan los status
+                $success = $cash->save(); // Se guardan los status
                 return response()->json(["msg" => "", "success" => $success, "status" => $cash->status]);
             }else{
                 return response()->json(["msg" => "Status no válido", "success" => false]);
@@ -912,12 +912,12 @@ class OrderController extends Controller{
         }
     }
 
-    public function assignCashier(Request $request){
+    public function assignCashier(Request $request){ // Función para asignar cajero para preventa
         $cash = \App\CashRegister::find($request->_cash);
         if($cash){
-            $cash->_account = $request->_account;
-            $cash->fresh('cashier');
-            $success = $cash->save();
+            $cash->_account = $request->_account; // Se para asignar cuenta
+            $cash->fresh('cashier'); // Se traen los datos del nuevo cajero
+            $success = $cash->save(); // Se guardan los cambios
             return response()->json(["msg" => "", "success" => $success, "cashier" => $cash->cashier]);
         }else{
             return response()->json(["msg" => "No se ha encontrado la caja", "success" => false]);
