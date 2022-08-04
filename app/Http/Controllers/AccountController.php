@@ -68,19 +68,23 @@ class AccountController extends Controller{
                 '_wp_principal'=> $request->_wp_principal,
                 '_rol'=> $request->_rol
             ]); // Se crea el usuario con todos los datos necesarios
-            if($user->_rol==1){
+
+            if($user->_rol==1 || $user->_rol==8){
                 // Si el usuario sera root se obtiene la info de todas las tiendas para darle el acceso
                 $workpoints = \App\WorkPoint::all();
             }else{
                 // Solo se le dara acceso a la tienda que nos indican en el parametro workpoints
                 $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
             }
+
             foreach($workpoints as $workpoint){ // Se crea el acceso para cada una de las sucursales a las que se le dara acceso
                 if($workpoint['id']!=404){
+		    $_rool = ($user->_rol==1||$user->_rol==8) ? $user->_rol : $workpoint['_rol'];
                     $account = \App\Account::create([
                         '_account' => $user->id,
                         '_workpoint' => $workpoint['id'],
-                        '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
+                        // '_rol' => $user->_rol == 1 ? 1 :$workpoint['_rol'],
+                        '_rol' => $_rool,
                         '_status' => 1,
                     ]);
                     //Se buscan los permisos por default para el rol que tendra la cuenta

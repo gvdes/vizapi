@@ -191,7 +191,8 @@ class ProductController extends Controller{
         $store_success = []; // Almacena las sucursales que se han actualizado de forma correcta
         $store_fail = []; // Almacen las sucursales que no se han actualizado correctamente
         $products = $access->getUpdatedProducts($date); //Se traen los productos actualizados para almacenar en MySQL
-        $raw_data = $access->getRawProducts($date, $required_prices, $required_products); //Se traen los product actualizados para replicar a las sucursales
+//return response()->json(["products"=>$products]);        
+$raw_data = $access->getRawProducts($date, $required_prices, $required_products); //Se traen los product actualizados para replicar a las sucursales
         if($request->stores == "all"){ //Se envian los cambios a todas las sucursales
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
             $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();

@@ -1,4 +1,4 @@
-<?php
+e<?php
 
 namespace App\Http\Controllers;
 use Mike42\Escpos\Printer;
@@ -932,12 +932,12 @@ class MiniPrinterController extends Controller{
             $printer->setEmphasis(false);
             $printer->setReverseColors(false);
         }
-        
-	$printer->setTextSize(1,2);
-	$printer->text("Pedido para: \n");
-	$printer->setTextSize(2,2);
-	$printer->text($order->name." \n");
-	// $printer->text("Pedido para:".$order->name." \n");
+        $printer->setTextSize(1,1);
+	$printer->serReverseColors(true);
+        $printer->text("Pedido para:"." \n");
+
+	$printer->setTexSize(2,2);
+	$printer->text("".$order->name." /n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
         $printer->setTextSize(2,2);

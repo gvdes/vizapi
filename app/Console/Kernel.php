@@ -47,7 +47,7 @@ class Kernel extends ConsoleKernel
         *  INVENTARIOS  *
         *****************/
         /* Actualización de stock cada 3 minutos */
-        $schedule->call('App\Http\Controllers\LocationController@updateStocks')->everyThreeMinutes()->between('9:00', '23:00');
+        //$schedule->call('App\Http\Controllers\LocationController@updateStocks')->everyThreeMinutes()->between('9:00', '23:00');
         /* Almacenar los stocks al cierre del día */
         $schedule->call('App\Http\Controllers\LocationController@saveStocks')->dailyAt('23:00');
 
@@ -78,10 +78,10 @@ class Kernel extends ConsoleKernel
         $schedule->call('App\Http\Controllers\AccountingController@getNew')->weeklyOn(7,'8:05');
 
         /* Actualización de retiradas de las sucursales al termino del día */
-        $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00');
+       // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
         /* Depuración de retiradas fin de semana */
-        $schedule->call('App\Http\Controllers\WithdrawalsController@restore')->weeklyOn(7,'8:00');
+       // $schedule->call('App\Http\Controllers\WithdrawalsController@restore')->weeklyOn(7,'8:00'); // a peticion del nacho
         /* Se solicita la actualización de las retirafas despues de ser eliminadas */
-        $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->weeklyOn(7,'8:05');
+       // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->weeklyOn(7,'8:05'); // a peticion del nacho
     }
 }

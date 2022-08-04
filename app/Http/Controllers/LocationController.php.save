@@ -1,6 +1,6 @@
-<?php
+<w<?php
 
-namespace App\Http\Controllers;
+na<mespace App\Http\Controllers;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -444,7 +444,7 @@ class LocationController extends Controller{
         },'<=',0)->where('_status', '!=', 4)->count();
         // Se obtiene la cantidad de articulos sin stock y con ubicación en el inventario de la sucursal
         $withLocationWithoutStock = Product::whereHas('stocks', function($query){
-            $query->where([["stock", "<=", 0], ["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0], ["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -823,7 +823,7 @@ class LocationController extends Controller{
                 $query->where('_workpoint', $this->account->_workpoint);
             });
         }, 'category'])->whereHas('stocks', function($query){
-            $query->where([["stock", "<=", 0], ["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
+            $query->where([["gen", "<=", 0], ["gen", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->whereHas('locations', function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
@@ -841,7 +841,7 @@ class LocationController extends Controller{
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
                 "Piezas x caja" => $producto->pieces,
-                "stock" => $producto->stocks[0]->pivot->stock,
+                "stock" => $producto->stocks[0]->pivot->gen,
                 "locations" => $locations
             ];
         })->toArray();
