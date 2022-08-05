@@ -63,12 +63,11 @@ class OrderController extends Controller{
                     },'variants']);
                 }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
             });
-        }catch(\Exception $e){
-            return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500]);
-        }
-        $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
-        $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
-        return response()->json(new OrderResource($order));
+
+            $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
+            $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
+            return response()->json(new OrderResource($order));
+        }catch(\Exception $e){ return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500, "error"=>$e]); }
     }
 
     public function log($case, Order $order, $_printer = null){
@@ -146,7 +145,7 @@ class OrderController extends Controller{
                 }
             case 5: //Surtiendo
                 $_workpoint_to = $order->_workpoint_from;
-                
+
                 $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
                         $query->whereHas('celler', function($query) use ($_workpoint_to){
@@ -663,7 +662,7 @@ class OrderController extends Controller{
                 $units_for_price = $products->sum(function($product){
                     return $product->pivot->units;
                 });
-                
+
                 if(($units_for_price+$units)>=3){
                     /* ACTUALIZAR TODOS LOS PRODUCTOS A PRECIO MAYOREO (2) */
                     foreach($products as $product){
@@ -763,7 +762,7 @@ class OrderController extends Controller{
             }
         }
     }
-    
+
     public function index(Request $request){
         if(isset($request->date_from) && isset($request->date_to)){
             $date_from = new \DateTime($request->date_from);
@@ -927,7 +926,7 @@ class OrderController extends Controller{
     public function migrateToRequesition(Request $request){
         $requisition = App\Requisition::find($request->_requisition);
         if($requisition){
-            
+
         }
         return response()->json(["msg" => "No se encontro el pedido", "success" => false]);
     }
