@@ -1041,38 +1041,21 @@ class OrderController extends Controller{
 
     public function getPrintersTypes(){
         switch($this->account->_rol){
-            case 1:
-            case 2:
-            case 3:
-                return [1,2,3,4];
-            case 4: //vendedor
-                return [1];
-            case 5: //Cajero
-                return [2];
-            case 6: //Administrador de almacenes
-            case 7: //Bodeguero
-                return [3,4];
-            case 9:
-                return [2];
+            case 1: case 2: case 3: return [1,2,3,4];
+            case 4: return [1];//vendedor
+            case 5: return [2]; //Cajero
+            case 6: case 7: return [3,4];//Bodeguero, Administrador de almacenes
+            case 9: return [2];
         }
     }
 
     public function getStatusByRol(){
         switch($this->account->_rol){
-            case 1:
-            case 2:
-            case 3:
-            case 8:
-                return range(1,100);
-            case 4: //vendedor
-                return range(1,100);
-            case 5: //Cajero
-                return range(6,9);
-            case 6: //Administrador de almacenes
-            case 7: //Bodeguero
-                return range(3,5);
-            case 9: //Validador
-                return [5,6,7];
+            case 1: case 2: case 3: case 8: return range(1,100);
+            case 4: return range(1,100); //vendedor
+            case 5: return range(6,9); //Cajero
+            case 6: case 7: return range(3,5); //Bodeguero Administrador de almacenes
+            case 9: return [5,6,7];//Validador
         }
     }
 
