@@ -153,11 +153,12 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/printTicket', 'OrderController@reimpresionClientTicket');
         $router->post('/printNotDelivered', 'OrderController@printNotDelivered');
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
+        $router->post('/checkoutremoveproduct', 'OrderController@checkoutProductRemove');
         $router->post('/exportExcel', 'OrderController@exportExcel');
         $router->post('/edit', 'OrderController@editting');
         $router->post('/demo', 'OrderController@getNextStatus');
         $router->post('/excel', 'OrderController@excel');
-        
+
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){
@@ -199,7 +200,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->post('/tiendasXArticulosFor', 'VentasController@tiendasXArticulosFor');
             $router->post('/provider', 'VentasController@exportExcelByProvider');
             $router->post('/compras', 'VentasController@getCompras');
-            
+
         });
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'PrinterController@test'); // Función para crear una prueba de impresión

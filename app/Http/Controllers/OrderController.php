@@ -10,6 +10,7 @@ use App\Printer;
 use App\PrinterType;
 use App\Account;
 use App\Product;
+use App\ProductOrdered;
 use App\OrderLog;
 use App\User;
 
@@ -17,6 +18,7 @@ use App\Http\Resources\Order as OrderResource;
 use App\Http\Resources\OrderStatus as OrderStatusResource;
 
 use App\Exports\WithMultipleSheetsExport;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller{
@@ -461,7 +463,7 @@ class OrderController extends Controller{
             }else{
                 return response()->json(["msg" => "Producto no encontrado", "success" => false, "server_status" => 404]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
         }
     }
@@ -469,17 +471,20 @@ class OrderController extends Controller{
     public function setDeliveryValue(Request $request){
         try{
             $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
-            if($amount<0){
-                return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]);
-            }
-            $order = Order::find($request->_order);
-            $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];
+            if($amount<0){ return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]); }
+
+            $order = Order::find($request->_order);// se obtiene la orden
+
+            $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];// precios a utilizar, siempre en preventa el 1,2,3,4
+
+            // validamos que sea el propietario del pedido o un rol que permita eliminar o agregar productos en pedidos
             if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
-                $product = $order
-                ->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                ->with(['stocks' => function($query){
-                    $query->where('_workpoint', $this->account->_workpoint);
-                }])->where('id', $request->_product)->first();
+                $product = $order->products()
+                                ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                                ->with(['stocks' => function($query){
+                                    $query->where('_workpoint', $this->account->_workpoint);
+                                }])->where('id', $request->_product)->first();
+
                 if($product){
                     $new_amount = $amount ? $amount : $product->pivot->amount;
                     $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
@@ -609,8 +614,25 @@ class OrderController extends Controller{
             }else{
                 return response()->json(["msg" => "No puedes agregar productos", "success" => false, "server_status" => 400]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
+        }
+    }
+
+    public function checkoutProductRemove(Request $request){
+        try {
+            //code...
+            $now = Carbon::now()->format("Y-m-d H:i:s");
+            $order = Order::find($request->_order);
+            $prod = $request->_product;
+
+            $item = ProductOrdered::where([["_order",$order->id], ["_product",$prod]])->update([ "deleted_at"=>$now ]);
+
+            return response()->json([ "data"=>$request->all(), "order"=>$order, "time"=>$now, "product"=>$item, "wkp"=>$this->account->_workpoint ]);
+
+            // return response()->json($request->all());
+        } catch (\Error $e) {
+            // return response()->json(["msg" => "No se ha podido eliminar el producto", "server_status" => 500]);
         }
     }
 
@@ -619,7 +641,7 @@ class OrderController extends Controller{
             $order = Order::find($request->_order);
             $order->products()->detach([$request->_product]);
             return response()->json(["success" => true, "server_status" => 200]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido eliminar el producto", "server_status" => 500]);
         }
     }
@@ -924,7 +946,7 @@ class OrderController extends Controller{
     }
 
     public function migrateToRequesition(Request $request){
-        $requisition = App\Requisition::find($request->_requisition);
+        $requisition = \App\Requisition::find($request->_requisition);
         if($requisition){
 
         }
@@ -1077,7 +1099,7 @@ class OrderController extends Controller{
         $date_to = new \DateTime();
         $date_to->setTime(23,59,59);
         /*  */
-        //$orders = Order::with(['history'])->where([['_workpoint_from', $this->account->_workpoint],['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->orderBy('num_ticket', 'desc')->first();
+        $orders = Order::with(['history'])->where([['_workpoint_from', $this->account->_workpoint],['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->orderBy('num_ticket', 'desc')->first();
         $order = Order::with(['history'])->where([['_workpoint_from', $this->account->_workpoint],['created_at', '>=', "2021-08-28 00:00:00"], ['created_at', '<=', "2021-08-28 23:59:59"], ['_status', '>', 2]])->orderBy('num_ticket', 'desc')->first();
         $cash = $order->history->filter(function($log){
             return $log->pivot->_status == 2;
@@ -1175,7 +1197,7 @@ class OrderController extends Controller{
                 "notPrices" => $notPrices,
                 "added" => $added
             ]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false]);
         }
     }
