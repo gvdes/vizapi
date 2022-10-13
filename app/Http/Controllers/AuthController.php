@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
@@ -71,7 +72,7 @@ class AuthController extends Controller{
      * @param string request[].workpoint
      * @return object [token|string, workpoint|int]
      */
-    
+
     public function joinWorkpoint(Request $request){
         $user = Auth::user();
         $workpoint = $user->workpoints->filter( function($workpoint) use ($request){

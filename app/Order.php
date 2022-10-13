@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +20,7 @@ class Order extends Model{
     public function history(){
         return $this->belongsToMany('App\OrderProcess', 'order_log', '_order', '_status')->using('App\OrderLog')->withPivot('_responsable', '_type', 'details', 'created_at');
     }
-    
+
     public function status(){
         return $this->belongsTo('App\OrderProcess', '_status');
     }

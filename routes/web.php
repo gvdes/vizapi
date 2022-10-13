@@ -153,7 +153,6 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/printTicket', 'OrderController@reimpresionClientTicket');
         $router->post('/printNotDelivered', 'OrderController@printNotDelivered');
         $router->post('/toDelivered', 'OrderController@setDeliveryValue');
-        $router->post('/checkoutremoveproduct', 'OrderController@checkoutProductRemove');
         $router->post('/exportExcel', 'OrderController@exportExcel');
         $router->post('/edit', 'OrderController@editting');
         $router->post('/demo', 'OrderController@getNextStatus');

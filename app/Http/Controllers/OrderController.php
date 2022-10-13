@@ -478,12 +478,16 @@ class OrderController extends Controller{
             $prices = /* $order->_price_list ? [$order->_price_list] : */ [1,2,3,4];// precios a utilizar, siempre en preventa el 1,2,3,4
 
             // validamos que sea el propietario del pedido o un rol que permita eliminar o agregar productos en pedidos
-            if($this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9])){
+            $canedit = $this->account->_account == $order->_created_by || in_array($this->account->_rol, [1,2,3,9]);
+
+            if($canedit){
                 $product = $order->products()
                                 ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
                                 ->with(['stocks' => function($query){
                                     $query->where('_workpoint', $this->account->_workpoint);
                                 }])->where('id', $request->_product)->first();
+
+                // return response()->json($product);
 
                 if($product){
                     $new_amount = $amount ? $amount : $product->pivot->amount;
@@ -616,23 +620,6 @@ class OrderController extends Controller{
             }
         }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
-        }
-    }
-
-    public function checkoutProductRemove(Request $request){
-        try {
-            //code...
-            $now = Carbon::now()->format("Y-m-d H:i:s");
-            $order = Order::find($request->_order);
-            $prod = $request->_product;
-
-            $item = ProductOrdered::where([["_order",$order->id], ["_product",$prod]])->update([ "deleted_at"=>$now ]);
-
-            return response()->json([ "data"=>$request->all(), "order"=>$order, "time"=>$now, "product"=>$item, "wkp"=>$this->account->_workpoint ]);
-
-            // return response()->json($request->all());
-        } catch (\Error $e) {
-            // return response()->json(["msg" => "No se ha podido eliminar el producto", "server_status" => 500]);
         }
     }
 
@@ -820,7 +807,11 @@ class OrderController extends Controller{
             ['_workpoint_from', $this->account->_workpoint]
         ];
 
-        $orders = Order::withCount('products')->with(['status', 'created_by', 'workpoint', 'history'])->where($clause)->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])->whereIn('_status', $status_by_rol)->get();
+        $orders = Order::withCount('products')
+                    ->with(['status', 'created_by', 'workpoint', 'history'])
+                    ->where($clause)
+                    ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
+                    ->whereIn('_status', $status_by_rol)->get();
 
         return response()->json([
             'status' => $status,
@@ -832,15 +823,23 @@ class OrderController extends Controller{
     }
 
     public function find($id){
-        $order = Order::with(['products' => function($query){
-            $query
-            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-            ->with(['prices' => function($query){
-                $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-            },'variants', 'stocks' => function($query){
-                $query->where('_workpoint', $this->account->_workpoint);
-            }]);
-        }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history'])->find($id);
+        $order = Order::with([
+                    'products' => function($query){
+                            $query
+                            ->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
+                            ->with([
+                                'prices' => function($query){ $query->whereIn('_type', [1,2,3,4])->orderBy('_type');},
+                                'stocks' => function($query){ $query->where('_workpoint', $this->account->_workpoint);},
+                                'variants',
+                            ]);
+                    },
+                    'client',
+                    'price_list',
+                    'status',
+                    'created_by',
+                    'workpoint',
+                    'history'
+                ])->find($id);
 
         $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
         $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
