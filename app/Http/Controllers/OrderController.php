@@ -469,6 +469,9 @@ class OrderController extends Controller{
     }
 
     public function setDeliveryValue(Request $request){
+
+        // return response()->json($request->all());
+
         try{
             $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
             if($amount<0){ return response()->json(["msg" => "No se puede agregar esta unidad", "success" => false, "server_status" => 400]); }
@@ -493,6 +496,7 @@ class OrderController extends Controller{
                     $new_amount = $amount ? $amount : $product->pivot->amount;
                     $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
+                    $ripack = $request->ripack; /* Piezas X Caja */
                     $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
                         $price_list = $this->calculatePriceList($product, $units, $order, 7); /* PRICE LIST */
@@ -501,7 +505,7 @@ class OrderController extends Controller{
                     }
                     $index_price = array_search($price_list, array_column($product->prices->toArray(), 'id'));
                     $price = $product->prices[$index_price]->pivot->price;
-                    $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $new_amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price)]]);
+                    $order->products()->syncWithoutDetaching([$request->_product => ['kit' => "", 'amount' => $new_amount ,'toDelivered' => $units, "_supply_by" => $_supply_by, "_price_list" => $price_list, 'price' => $price, "total" => ($units * $price), "ipack"=>$ripack, ]]);
                     return response()->json(["msg" => "ok", "success" => true, "server_status" => 200, "data" => [
                                 "id" => $product->id,
                                 "code" => $product->code,
@@ -530,6 +534,7 @@ class OrderController extends Controller{
                                     "price" => $price,
                                     "total" => $units * $price,
                                     "kit" => "",
+                                    "ripack" => $ripack
                                 ],
                                 "stocks" => [
                                     [
