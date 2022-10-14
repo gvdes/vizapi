@@ -73,6 +73,7 @@ class OrderController extends Controller{
     }
 
     public function log($case, Order $order, $_printer = null){
+        // return $_printer;
         // Instance or OrderLog to save data
         $events = 0;
         switch($case){
@@ -195,21 +196,22 @@ class OrderController extends Controller{
             case 8: //En caja
                 $workpoint = \App\WorkPoint::find($order->_workpoint_from);
                 $access = new AccessController($workpoint->dominio);
+
                 /* $types = [
                     ["_type" => 1, "serie" => 1, "ticket" => 13],
                     ["_type" => 2, "serie" => 1, "ticket" => 14],
                     ["_type" => 3, "serie" => 1, "ticket" => 15]
                 ]; */
                 /* $a = $cellerPrinter->validationTicket($series, $order); */
-                $productos = $order->products->groupBy(function($product){
-                    return $product->pivot->_supply_by;
-                });
+                $productos = $order->products->groupBy(function($product){ return $product->pivot->_supply_by; });
+
                 $series = [];
+
                 foreach($productos as $key => $p){
-                    $a = $order->load(["products" => function($query) use($key){
-                        return $query->where('_supply_by', $key);
-                    }]);
+                    $a = $order->load(["products" => function($query) use($key){ return $query->where('_supply_by', $key); }]);
+
                     $response = $access->createClientOrder(new OrderResource($a));
+
                     if($response && $response["status"] = 200){
                         $series[] = ["_type" => $key, "serie" => $response["serie"], "ticket" => $response["ticket"]];
                     }
@@ -222,12 +224,15 @@ class OrderController extends Controller{
                     $order->_status = 8;
                     $order->save();
                     $events++;
+
                     if(!$_printer){
                         $printer = Printer::where([['_type', 4], ['_workpoint', $this->account->_workpoint]])->first();
                     }else{
                         $printer = Printer::find($_printer);
                     }
+
                     $_workpoint_to = $order->_workpoint_from;
+
                     $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
                         $query->with(['locations' => function($query)  use ($_workpoint_to){
                             $query->whereHas('celler', function($query) use ($_workpoint_to){
@@ -235,6 +240,7 @@ class OrderController extends Controller{
                             });
                         }]);
                     }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+
                     $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
                     /* $cellerPrinter->validationTicket($response["serie"], $response["ticket"], $order); */
                     $cellerPrinter->validationTicket($series, $order);
