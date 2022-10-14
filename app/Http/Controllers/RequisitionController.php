@@ -85,7 +85,7 @@ class RequisitionController extends Controller{
                 "success" => true,
                 "order" => new RequisitionResource($requisition)
             ]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["message" => "No se ha podido crear el pedido"]);
         }
     }
@@ -133,7 +133,7 @@ class RequisitionController extends Controller{
             }else{
                 return response()->json(["msg" => "No puedes agregar productos", "success" => false]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false]);
         }
     }
@@ -240,7 +240,7 @@ class RequisitionController extends Controller{
             }else{
                 return response()->json(["msg" => "No puedes eliminar productos"]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido eliminar el producto"]);
         }
     }
@@ -512,7 +512,7 @@ class RequisitionController extends Controller{
                                     ->whereIn('_status', [1,2,3,4,5,6,7,8,9,10])
                                     ->where([['created_at', '>=', $date_from], ['created_at', '<=', $date_to]])
                                     ->get(); // Se traen todos los pedidos que cumplen el filtro
-                                    
+
         return response()->json([
             "workpoints" => WorkPoint::all(), // Lista de todas las sucursales
             "types" => Type::all(),
@@ -675,10 +675,10 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ])->orWhere([
-                ['_workpoint', $workpoint_to],
-                ['stock', '>', 0]
+                ['_workpoint', $workpoint_to]
             ]);
         }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
+
         if(count($_categories)>1){
             $products = $products->orHavingRaw('section = ?', [$_categories[1]]);
         }
@@ -689,7 +689,7 @@ class RequisitionController extends Controller{
             $products = $products->orHavingRaw('section = ?', [$_categories[3]]);
         }
         $products = $products->get();
-        
+
         /**OBTENEMOS STOCKS */
         $toSupply = [];
         foreach($products as $key => $product){ // Se genera el formato para insertar el los productos al pedido
@@ -702,7 +702,7 @@ class RequisitionController extends Controller{
                 $required = 0;
             }
             if($required > 0){
-                /* 
+                /*
                     REGLAS DEL NEGOCIO
                     Para los acticulos que son solicitados por CAJA se debe solicitar al menos 1 caja completa
                     Para los articulos que son solicitados por PIEZA se debe solicitar al menos 6 unidades
@@ -740,7 +740,7 @@ class RequisitionController extends Controller{
                 $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0; // Se obtiene el costo del producto
                 $toSupply[$product->id] = [
                     'amount' => $product->pivot->amount,
-                    '_supply_by' => $product->pivot->_supply_by, 
+                    '_supply_by' => $product->pivot->_supply_by,
                     'units' => $product->pivot->units,
                     'cost' => $cost,
                     'total' => $cost * $product->pivot->units,
@@ -778,22 +778,22 @@ class RequisitionController extends Controller{
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
             case 1:
-                return ["Mochila","Juguete"];
+                return ["Navidad","Juguete"];
                 break;
             case 4:
-                return ["Mochila"];
+                return ["Navidad"];
                 break;
             case 5:
-                return ["Mochila"];
+                return ["Navidad"];
                 break;
             case 7:
-                return ["Mochila"];
+                return ["Navidad"];
                 break;
             case 13:
-                return ["Mochila"];
+                return ["Navidad"];
                 break;
             case 9:
-                return ["Mochila"];
+                return ["Navidad"];
                 break;
             case 6:
                 return ["Calculadora", "Electronico", "Hogar"];
@@ -813,7 +813,7 @@ class RequisitionController extends Controller{
                 return ["Navidad", "Paraguas", "Juguete"];
                 break;
             case 19:
-		return ["Mochila"];
+		return ["Navidad"];
 		break;
         }
     }
