@@ -213,7 +213,7 @@ class OrderController extends Controller{
                     $response = $access->createClientOrder(new OrderResource($a));
 
                     if($response && $response["status"] = 200){
-                        $series[] = ["_type" => $key, "serie" => $response["serie"], "ticket" => $response["ticket"]];
+                        $series[] = [ "_type" => $key, "serie" => $response["serie"], "ticket" => $response["ticket"] ];
                     }
                 }
 
@@ -503,7 +503,7 @@ class OrderController extends Controller{
                     $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
                     $ripack = $request->ripack; /* Piezas X Caja */
-                    $units = $this->getAmount($product, $amount, $_supply_by, $pieces); /* CANTIDAD EN PIEZAS */
+                    $units = $this->getAmount($product, $amount, $_supply_by, $ripack); /* CANTIDAD EN PIEZAS */
                     if($order->_client==0){
                         $price_list = $this->calculatePriceList($product, $units, $order, 7); /* PRICE LIST */
                     }else{
