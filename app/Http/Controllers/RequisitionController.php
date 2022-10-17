@@ -297,28 +297,28 @@ class RequisitionController extends Controller{
             break;
 
             case 3: // SURTIENDO
+                $requisition->log()->attach(3, [ 'details' => json_encode([
+                                    "responsable" => $responsable,
+                                    "actors" => $actors
+                                ])
+                            ]);
 
-                return [ "msg"=>"Cambiar a SURTIENDO" ];
+                $requisition->_status = 3;
+                $requisition->save();
 
-                // $requisition->log()->attach(3, [ 'details' => json_encode([
-                //     "responsable" => $responsable,
-                //     "actors" => $actors
-                // ])]);
-                // $requisition->_status = 3;
-                // $requisition->save();
                 // $_workpoint_to = $requisition->_workpoint_to;
-                // $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
-                //     $query->with(['locations' => function($query)  use ($_workpoint_to){
-                //         $query->whereHas('celler', function($query) use ($_workpoint_to){
-                //             $query->where('_workpoint', $_workpoint_to);
-                //         });
-                //     }]);
-                // }]);
-                // $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
-                // $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                // if($miniprinter->requisitionTicket($requisition)){
-                //     $requisition->printed = $requisition->printed + 1;
-                //     $requisition->save();
+                    // $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                    //     $query->with(['locations' => function($query)  use ($_workpoint_to){
+                    //         $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    //             $query->where('_workpoint', $_workpoint_to);
+                    //         });
+                    //     }]);
+                    // }]);
+                    // $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
+                    // $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                    // if($miniprinter->requisitionTicket($requisition)){
+                    //     $requisition->printed = $requisition->printed + 1;
+                    //     $requisition->save();
                 // }
             break;
         //     case 4: // POR VALIDAR EMBARQUE
@@ -376,14 +376,14 @@ class RequisitionController extends Controller{
         //             }
         //         }
         //     break;
-        //     case 7: // EN CAMINO => SELECCIONAR VEHICULOS
-        //         $requisition->log()->attach(7, [ 'details' => json_encode([
-        //             "responsable" => $responsable,
-        //             "actors" => $actors
-        //         ])]);
-        //         $requisition->_status = 7;
-        //         $requisition->save();
-        //     break;
+            case 7: // EN CAMINO => SELECCIONAR VEHICULOS
+                $requisition->log()->attach(7, [ 'details' => json_encode([
+                    "responsable" => $responsable,
+                    "actors" => $actors
+                ])]);
+                $requisition->_status = 7;
+                $requisition->save();
+            break;
         //     case 8: // POR VALIDAR RECEPCIÓN
         //         $requisition->log()->attach(8, [ 'details' => json_encode([
         //             "responsable" => $responsable
@@ -572,7 +572,7 @@ class RequisitionController extends Controller{
                 $result = $this->log($_status, $requisition, $_printer, $_actors);
 
                 $msg = $result["success"] ? "" : "No se pudo cambiar el status";
-                $server_status = $result["success"] ? 200 : 500;
+                $server_status = $result ["success"] ? 200 : 500;
             }else{
                 $msg = "Status no válido";
                 $server_status = 400;
@@ -702,7 +702,7 @@ class RequisitionController extends Controller{
                 ['max', '>', 0]
             ])->orWhere([
                 ['_workpoint', $workpoint_to],
-                ['stock', '>', 0]
+                ['stock', '>=', 0]
             ]);
         }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
 
@@ -723,11 +723,9 @@ class RequisitionController extends Controller{
             $stock = $product->stocks[0]->pivot->gen;
             $min = $product->stocks[0]->pivot->min;
             $max = $product->stocks[0]->pivot->max;
-            if($max>$stock){
-                $required = $max - $stock;
-            }else{
-                $required = 0;
-            }
+
+            $required = ($max>$stock) ? ($max-$stock) : 0;
+
             if($required > 0){
                 /*
                     REGLAS DEL NEGOCIO
