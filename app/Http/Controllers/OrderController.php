@@ -299,6 +299,7 @@ class OrderController extends Controller{
     }
 
     public function nextStep(Request $request){
+        // return response()->json($request->all());
         $order = Order::find($request->_order);
         $_workpoint_to = $order->_workpoint_from;
         if($order){
@@ -312,16 +313,14 @@ class OrderController extends Controller{
             $_status = $this->getNextStatus($order);
             $_printer = isset($request->_printer) ? $request->_printer : null;
             $_process = array_column(OrderProcess::all()->toArray(), 'id');
+
             if(in_array($_status, $_process)){
                 $result = $this->log($_status, $order, $_printer);
                 if($result){
                     return response()->json(['success' => true, 'status' => $result, "server_status" => 200]);
-                }
-                return response()->json(['success' => false, 'status' => null, 'msg' => "No se ha podido cambiar el status", "server_status" => 500]);
-            }
-            return response()->json(['success' => false, 'msg' => "Status no válido", "server_status" => 400]);
-        }
-        return response()->json(['success' => false, 'msg' => "Orden desconocida", "server_status" => 404]);
+                } return response()->json(['success' => false, 'status' => null, 'msg' => "No se ha podido cambiar el status", "server_status" => 500]);
+            } return response()->json(['success' => false, 'msg' => "Status no válido", "server_status" => 400]);
+        } return response()->json(['success' => false, 'msg' => "Orden desconocida", "server_status" => 404]);
     }
 
     public function cancelled(Request $request){

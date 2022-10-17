@@ -249,44 +249,35 @@ class RequisitionController extends Controller{
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
+
         if($case != 1){
             $logs = $requisition->log->toArray();
             $end = end($logs);
             $previous = $end['pivot']['_status'];
         }
+
         if($previous){
             $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
         }
+
         switch($case){
-            case 1: /* LEVANTAR PEDIDO*/
-                $requisition->log()->attach(1, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                return true;
+            case 1: // LEVANTAR PEDIDO
+                $requisition->log()->attach(1, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);
             break;
-            case 2: /* POR SURTIR */ //IMPRESION DE COMPROBANTE EN TIENDA
-                $requisition->log()->attach(2, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                    ])]);
-                $requisition->_status = 2;
-                $requisition->save();
-                $requisition->fresh(['log']);
+
+            case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
+                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);// se inserta el log dos al pedido con su responsable
+                $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
+                $requisition->save(); // se guardan los cambios
+                $requisition->fresh(['log']); // se refresca el log del pedido
+
+                // buscamos la miniprinter del tipo dos de la sucursal que solicito el pedido
+                $port = $requisition->_workpoint_to==2 ? 4065:9100;
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
-                if($requisition->_workpoint_to == 2){
-                    $port = 4065;
-                }else{
-                    $port = 9100;
-                }
                 $miniprinter = new MiniPrinterController($printer->ip, $port);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
-            /* break; */
-            case 3: /* SURTIENDO */
-                $requisition->log()->attach(3, [ 'details' => json_encode([
-                    "responsable" => $responsable,
-                    "actors" => $actors
-                ])]);
-                $requisition->_status = 3;
-                $requisition->save();
+
+                // traemos el cuerpo del pedido con las ubicaciones del workpoint destino
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
@@ -295,123 +286,153 @@ class RequisitionController extends Controller{
                         });
                     }]);
                 }]);
+
+                // imprimimos en el workpoint destino (a donde se solicita la mercancia con sus ubicaciones y stocks)
                 $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
-                $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                $miniprinter = new MiniPrinterController($printer->ip, $port);
                 if($miniprinter->requisitionTicket($requisition)){
-                    $requisition->printed = $requisition->printed + 1;
+                    $requisition->printed = ($requisition->printed+1);
                     $requisition->save();
                 }
             break;
-            case 4: /* POR VALIDAR EMBARQUE */
-                /* $requisition->log()->attach(4, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                $requisition->_status = 4;
-                $requisition->save();
-            break; */
-            case 5: /* VALIDANDO EMBARQUE */
-                $requisition->log()->attach(5, [ 'details' => json_encode([
-                    "responsable" => $responsable,
-                    "actors" => $actors
-                ])]);
-                $requisition->_status = 5;
-                $requisition->save();
+
+            case 3: // SURTIENDO
+
+                return [ "msg"=>"Cambiar a SURTIENDO" ];
+
+                // $requisition->log()->attach(3, [ 'details' => json_encode([
+                //     "responsable" => $responsable,
+                //     "actors" => $actors
+                // ])]);
+                // $requisition->_status = 3;
+                // $requisition->save();
+                // $_workpoint_to = $requisition->_workpoint_to;
+                // $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                //     $query->with(['locations' => function($query)  use ($_workpoint_to){
+                //         $query->whereHas('celler', function($query) use ($_workpoint_to){
+                //             $query->where('_workpoint', $_workpoint_to);
+                //         });
+                //     }]);
+                // }]);
+                // $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
+                // $miniprinter = new MiniPrinterController($printer->ip, 9100);
+                // if($miniprinter->requisitionTicket($requisition)){
+                //     $requisition->printed = $requisition->printed + 1;
+                //     $requisition->save();
+                // }
             break;
-            case 6: /* POR ENVIAR */
-                $requisition->load(['products']);
-                if($requisition->_workpoint_from === 1 && $requisition->_workpoint_to === 2){
-                    $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
-                    $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                    $miniprinter->requisition_transfer($requisition);
-                    $requisition->log()->attach(6, [
-                        'details' => json_encode([
-                            "responsable" => $responsable,
-                            "actors" => $actors,
-                            "order" => [
-                                "status" => 200,
-                                "serie" => "N/A",
-                                "ticket" => "N/A"
-                            ],
-                            "document" => "Traspaso"
-                        ])
-                    ]);
-                    $requisition->_status = 6;
-                    $requisition->save();
-                }else{
-                    $access = new AccessController($requisition->to->dominio);
-                    $response = $access->createClientRequisition(new RequisitionResource($requisition));
-                    if($response && $response["status"] == 200){
-                        $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
-                        $miniprinter = new MiniPrinterController($printer->ip, 9100);
-                        $miniprinter->validationTicketRequisition($response, $requisition);
-                        $requisition->log()->attach(6, [
-                            'details' => json_encode([
-                                "responsable" => $responsable,
-                                "actors" => $actors,
-                                "order" => $response,
-                                "document" => "Pedido a cliente"
-                            ])
-                        ]);
-                        $requisition->_status = 6;
-                        $requisition->save();
-                    }
-                }
-            break;
-            case 7: /* EN CAMINO */ //SELECCIONAR VEHICULOS
-                $requisition->log()->attach(7, [ 'details' => json_encode([
-                    "responsable" => $responsable,
-                    "actors" => $actors
-                ])]);
-                $requisition->_status = 7;
-                $requisition->save();
-            break;
-            case 8: /* POR VALIDAR RECEPCIÓN */
-                $requisition->log()->attach(8, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                $requisition->_status = 8;
-                $requisition->save();
-            break;
-            case 9: /* VALIDANDO RECEPCIÓN */
-                $requisition->log()->attach(9, [ 'details' => json_encode([
-                    "responsable" => $responsable,
-                    "actors" => $actors
-                ])]);
-                $requisition->_status = 9;
-                $requisition->save();
-                $_workpoint_from = $requisition->_workpoint_from;
-                $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
-                    $query->with(['locations' => function($query)  use ($_workpoint_from){
-                        $query->whereHas('celler', function($query) use ($_workpoint_from){
-                            $query->where('_workpoint', $_workpoint_from);
-                        });
-                    }]);
-                }]);
-                $printer = $printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_from]])->first();
-                $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
-                $storePrinter->requisitionTicket($requisition);
-            break;
-            case 10:
-                $requisition->log()->attach(10, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                $requisition->_status = 10;
-                $requisition->save();
-            break;
-            case 100:
-                $requisition->log()->attach(100, [ 'details' => json_encode([
-                    "responsable" => $responsable
-                ])]);
-                $requisition->_status = 100;
-                $requisition->save();
-            break;
-            case 101:
-                $requisition->log()->attach(101, [ 'details' => json_encode([])]);
-                $requisition->_status = 101;
-                $requisition->save();
-            break;
+        //     case 4: // POR VALIDAR EMBARQUE
+        //         //     $requisition->log()->attach(4, [ 'details' => json_encode([
+        //         //         "responsable" => $responsable
+        //         //     ])]);
+        //         //     $requisition->_status = 4;
+        //         //     $requisition->save();
+        //     // break;
+        //     case 5: // VALIDANDO EMBARQUE
+        //         $requisition->log()->attach(5, [ 'details' => json_encode([
+        //             "responsable" => $responsable,
+        //             "actors" => $actors
+        //         ])]);
+        //         $requisition->_status = 5;
+        //         $requisition->save();
+        //     break;
+        //     case 6: // POR ENVIAR
+        //         $requisition->load(['products']);
+        //         if($requisition->_workpoint_from === 1 && $requisition->_workpoint_to === 2){
+        //             $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
+        //             $miniprinter = new MiniPrinterController($printer->ip, 9100);
+        //             $miniprinter->requisition_transfer($requisition);
+        //             $requisition->log()->attach(6, [
+        //                 'details' => json_encode([
+        //                     "responsable" => $responsable,
+        //                     "actors" => $actors,
+        //                     "order" => [
+        //                         "status" => 200,
+        //                         "serie" => "N/A",
+        //                         "ticket" => "N/A"
+        //                     ],
+        //                     "document" => "Traspaso"
+        //                 ])
+        //             ]);
+        //             $requisition->_status = 6;
+        //             $requisition->save();
+        //         }else{
+        //             $access = new AccessController($requisition->to->dominio);
+        //             $response = $access->createClientRequisition(new RequisitionResource($requisition));
+        //             if($response && $response["status"] == 200){
+        //                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->to->id]])->first();
+        //                 $miniprinter = new MiniPrinterController($printer->ip, 9100);
+        //                 $miniprinter->validationTicketRequisition($response, $requisition);
+        //                 $requisition->log()->attach(6, [
+        //                     'details' => json_encode([
+        //                         "responsable" => $responsable,
+        //                         "actors" => $actors,
+        //                         "order" => $response,
+        //                         "document" => "Pedido a cliente"
+        //                     ])
+        //                 ]);
+        //                 $requisition->_status = 6;
+        //                 $requisition->save();
+        //             }
+        //         }
+        //     break;
+        //     case 7: // EN CAMINO => SELECCIONAR VEHICULOS
+        //         $requisition->log()->attach(7, [ 'details' => json_encode([
+        //             "responsable" => $responsable,
+        //             "actors" => $actors
+        //         ])]);
+        //         $requisition->_status = 7;
+        //         $requisition->save();
+        //     break;
+        //     case 8: // POR VALIDAR RECEPCIÓN
+        //         $requisition->log()->attach(8, [ 'details' => json_encode([
+        //             "responsable" => $responsable
+        //         ])]);
+        //         $requisition->_status = 8;
+        //         $requisition->save();
+        //     break;
+        //     case 9: // VALIDANDO RECEPCIÓN
+        //         $requisition->log()->attach(9, [ 'details' => json_encode([
+        //             "responsable" => $responsable,
+        //             "actors" => $actors
+        //         ])]);
+        //         $requisition->_status = 9;
+        //         $requisition->save();
+        //         $_workpoint_from = $requisition->_workpoint_from;
+        //         $requisition->load(['log', 'products' => function($query) use ($_workpoint_from){
+        //             $query->with(['locations' => function($query)  use ($_workpoint_from){
+        //                 $query->whereHas('celler', function($query) use ($_workpoint_from){
+        //                     $query->where('_workpoint', $_workpoint_from);
+        //                 });
+        //             }]);
+        //         }]);
+        //         $printer = $printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $requisition->_workpoint_from]])->first();
+        //         $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
+        //         $storePrinter->requisitionTicket($requisition);
+        //     break;
+        //     case 10:
+        //         $requisition->log()->attach(10, [ 'details' => json_encode([
+        //             "responsable" => $responsable
+        //         ])]);
+        //         $requisition->_status = 10;
+        //         $requisition->save();
+        //     break;
+        //     case 100:
+        //         $requisition->log()->attach(100, [ 'details' => json_encode([
+        //             "responsable" => $responsable
+        //         ])]);
+        //         $requisition->_status = 100;
+        //         $requisition->save();
+        //     break;
+        //     case 101:
+        //         $requisition->log()->attach(101, [ 'details' => json_encode([])]);
+        //         $requisition->_status = 101;
+        //         $requisition->save();
+        //     break;
         }
+
         $requisition->refresh('log');
+
         $log = $requisition->log->filter(function($event) use($case){
             return $event->id >= $case;
         })->values()->map(function($event){
@@ -425,6 +446,7 @@ class RequisitionController extends Controller{
                 "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
             ];
         });
+
         return [
             "success" => (count($log)>0),
             "printed" => $requisition->printed,
@@ -437,19 +459,19 @@ class RequisitionController extends Controller{
         $workpoints = WorkPoint::where('_type', 1)->get(); // Obtener la lista de sucursales de tipo CEDIS
         $account = Account::with(['permissions'])->find($this->account->id); // Revisar permisos de la sucursal
         $permissions = array_column($account->permissions->toArray(), 'id'); //IDs de los permisos
-        $_types = []; // <array> para almacenar los tipo de pedidos que puede levantar el usuario
-        if(in_array(29,$permissions)){
-            array_push($_types, 1);
-        }
-        if(in_array(30,$permissions)){
-            array_push($_types, 2);
-        }
-        if(in_array(38,$permissions)){
-            array_push($_types, 3);
-        }
-        if(in_array(39,$permissions)){
-            array_push($_types, 4);
-        }
+        $_types = [1,2,3,4]; // <array> para almacenar los tipo de pedidos que puede levantar el usuario
+        // if(in_array(29,$permissions)){
+        //     array_push($_types, 1);
+        // }
+        // if(in_array(30,$permissions)){
+        //     array_push($_types, 2);
+        // }
+        // if(in_array(38,$permissions)){
+        //     array_push($_types, 3);
+        // }
+        // if(in_array(39,$permissions)){
+        //     array_push($_types, 4);
+        // }
         $types = Type::whereIn('id', $_types)->get(); // Se obtiene los tipos de pedidos que se pueden levantar
         $status = Process::all(); // Se obtienen todos los status de pedidos
         $clause = [
@@ -543,9 +565,12 @@ class RequisitionController extends Controller{
             $_status = isset($request->_status) ? $request->_status : $requisition->_status+1;
             $_printer = isset($request->_printer) ? $request->_printer : null;
             $_actors = isset($request->_actors) ? $request->_actors : [];
+
             $process = Process::all()->toArray();
+
             if(in_array($_status, array_column($process, "id"))){
                 $result = $this->log($_status, $requisition, $_printer, $_actors);
+
                 $msg = $result["success"] ? "" : "No se pudo cambiar el status";
                 $server_status = $result["success"] ? 200 : 500;
             }else{
@@ -556,6 +581,7 @@ class RequisitionController extends Controller{
             $msg = "Pedido no encontrado";
             $server_status = 404;
         }
+
         return response()->json([
             "success" => isset($result) ? $result["success"] : false,
             "serve_status" => $server_status,
@@ -675,7 +701,8 @@ class RequisitionController extends Controller{
                 ['min', '>', 0],
                 ['max', '>', 0]
             ])->orWhere([
-                ['_workpoint', $workpoint_to]
+                ['_workpoint', $workpoint_to],
+                ['stock', '>', 0]
             ]);
         }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
 
