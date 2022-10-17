@@ -887,7 +887,7 @@ class RequisitionController extends Controller{
                     ]);
 
                     $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                    ->with(['units', 'stocks' => function($query) use ($to){
+                    ->with(['units', 'stocks' => function($query){
                         $query->where('_workpoint', $this->account->_workpoint);
                     }, 'prices' => function($query){
                         $query->where('_type', 7);
@@ -931,7 +931,7 @@ class RequisitionController extends Controller{
                         ]);
 
                         $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                        ->with(['units', 'stocks' => function($query) use ($to){
+                        ->with(['units', 'stocks' => function($query){
                             $query->where('_workpoint', $this->account->_workpoint);
                         }, 'prices' => function($query){
                             $query->where('_type', 7);
@@ -950,7 +950,7 @@ class RequisitionController extends Controller{
             }else{
                 return response()->json(["msg" => "No se pueden agregar valores de validación de salida en este momento", "server_status" => 404, "success" => false]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
         }
     }
@@ -958,7 +958,7 @@ class RequisitionController extends Controller{
     public function setReceiveValue(Request $request){ // Función para seetear el valor de mercancia recibida en el pedido (La sucursal debe poner este valor)
         try{
             $requisition = Requisition::find($request->_requisition);
-            $product = $order->products()->where('id', $request->_product)->first();
+            $product = $requisition->products()->where('id', $request->_product)->first();
             if($product){
                 $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                 $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
@@ -968,7 +968,7 @@ class RequisitionController extends Controller{
             }else{
                 return response()->json(["msg" => "El producto no existe", "success" => true, "server_status" => 404]);
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             return response()->json(["msg" => "No se ha podido agregar el producto", "success" => false, "server_status" => 500]);
         }
     }
