@@ -127,9 +127,7 @@ class ProductController extends Controller{
             }else{
                 return $families[$keyFamily]->id;
             }
-        }else{
-            return 404;
-        }
+        }else{ return 404; }
     }
 
     public function restorePrices(){
@@ -174,7 +172,7 @@ class ProductController extends Controller{
     }
 
     public function updateTable(Request $request){
-        /* 
+        /*
             Actualización y replicación de los productos y precios son almacenados en MySQL
             y se envian a todas las sucursales con excepción de puebla, ya que
             en esta sucursal solo se dan de alta los productos que habra en su inventario
@@ -191,7 +189,7 @@ class ProductController extends Controller{
         $store_success = []; // Almacena las sucursales que se han actualizado de forma correcta
         $store_fail = []; // Almacen las sucursales que no se han actualizado correctamente
         $products = $access->getUpdatedProducts($date); //Se traen los productos actualizados para almacenar en MySQL
-//return response()->json(["products"=>$products]);        
+//return response()->json(["products"=>$products]);
 $raw_data = $access->getRawProducts($date, $required_prices, $required_products); //Se traen los product actualizados para replicar a las sucursales
         if($request->stores == "all"){ //Se envian los cambios a todas las sucursales
             $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
@@ -220,7 +218,8 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
                             '_unit' => $product['_unit'],
                             'created_at' => new \DateTime(),
                             'updated_at' => new \DateTime(),
-                            'cost' => $product['cost']
+                            'cost' => $product['cost'],
+                            'refillable' => $product['refillable']
                         ]);
                         $instance->barcode = $product['barcode'];
                         $instance->large = $product['large'];
@@ -402,7 +401,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
         }
         return response()->json($category);
 
-        if(isset($request->attributes)){    
+        if(isset($request->attributes)){
             $attributes = $request->attributes;
             $products = Product::with('attributes')->whereHas('attributes', function(Builder $query) use($attributes){
                 foreach($atributes as $attribute){
@@ -555,7 +554,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
             if(count($codes)>1){
                 $query = $query->where('id', $codes[1]);
             }elseif(isset($request->strict) && $request->strict){ //La coincidencia de la busqueda sera exacta
-                /* 
+                /*
                     La busqueda se realiza por:
                     Modelo -> code
                     Código -> name
@@ -573,7 +572,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
                     });
                 }
             }else{ //La busqueda se realizara por similitud
-                /* 
+                /*
                     La busqueda se realiza por:
                     Modelo -> code
                     Código -> name
@@ -596,7 +595,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
         }
 
         if(!in_array($this->account->_rol, [1,2,3,8])){
-            /* 
+            /*
                 Solo las personas que tengan un rol administrativo podran
                 visualizar todo el catalogo de productos.
                 Si no tienes un rol administrativo solo veras los productos vigenten
@@ -621,7 +620,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
         if(isset($request->_status)){ // Se puede realizar una busqueda con el filtro de status del producto mediante el ID del status que estamos buscando
             $query = $query->where('_status', $request->_status); // Se añade el filtro de la categoría para realizar la busqueda
         }
-        
+
         if(isset($request->_location)){ //Se puede realizar una busqueda con filtro de ubicación del producto mediante el ID de la ubicación (sección, pasillo, tarima, etc) que estamos buscando
             $_locations = $this->getSectionsChildren($request->_location); //Se obtienen todos los hijos de la sección de la busqueda para realizar la busqueda completa
             $query = $query->whereHas('locations', function( Builder $query) use($_locations){
@@ -629,7 +628,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
             });
         }
 
-        if(isset($request->_celler) && $request->_celler){ // Se puede realizar una busqueda con filtro de almacen 
+        if(isset($request->_celler) && $request->_celler){ // Se puede realizar una busqueda con filtro de almacen
             $locations = \App\CellerSection::where([['_celler', $request->_celler],['deep', 0]])->get(); // Se obtiene todas las ubicaciones dentro del almacen
             $ids = $locations->map(function($location){
                 return $this->getSectionsChildren($location->id);
@@ -665,7 +664,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
                 });
             }]);
         }
-        
+
         if(isset($request->check_stock) && $request->check_stock){ //Se puede agregar el filtro de busqueda para validar si tienen o no stocks los productos
             if($request->with_stock){
                 $query = $query->whereHas('stocks', function(Builder $query){
@@ -732,7 +731,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
     }
 
     public function addProductsLastYears(){
-        /* 
+        /*
             CASO ESPECIAL
             Esta función se hizo para poblar el catalogo maestro de productos con los creados desde 2016, para obtener el historico completo
         */
@@ -791,7 +790,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
                 $codes = json_decode(curl_exec($client), true); // Se parsean los códigos para trabajarlos
                 curl_close($client); // Se cierra la conexión
                 $products2 = Product::all(); // Se obtienen todos los productos
-                
+
                 $array_codes = array_column($products2->toArray(), 'code'); // Se hace un arreglo con todos los modelos de los productos
                 if($codes){ // Se obtuvieron los códigos relacionados
                     foreach($codes as $code){
@@ -807,7 +806,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
     }
 
     public function getABC(Request $request){
-        /* 
+        /*
             Función para obtener reporte de ABC por
             Valor de inventario
             Venta ($$$)
@@ -964,7 +963,7 @@ $raw_data = $access->getRawProducts($date, $required_prices, $required_products)
                     "Valor del inventario" => $valor_inventario
                 ];
             })->sortByDesc('Valor del inventario');
-    
+
             $valor_inventario = $products->sum(function($product){
                 return $product['Valor del inventario'] > 0 ? $product['Valor del inventario'] : 0;
             });
