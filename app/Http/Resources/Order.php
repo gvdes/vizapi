@@ -97,7 +97,7 @@ class Order extends JsonResource{
                             "price" => $product->pivot->price,
                             "total" => $product->pivot->total,
                             "kit" => $product->pivot->kit,
-                            "ripack" => $product->pivot->ipack
+                            "ripack" => $product->pivot->ripack
                         ],
                         "units" => $product->units,
                         'stocks' => $product->stocks->map(function($stock){
