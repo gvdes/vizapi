@@ -224,8 +224,6 @@ class LRestockController extends Controller{
         } catch (\Error $e) { return response()->json($e, 500); }
     }
 
-
-
     private function accessGenInvoice($oid){
         $data = json_encode([ "id"=>$oid ]);
         $curl = curl_init();
@@ -277,7 +275,7 @@ class LRestockController extends Controller{
         $id = $req->id;
         $store = $req->from["alias"];
 
-        $printer = new MiniPrinterController("192.168.10.176", 9100);
+        $printer = new MiniPrinterController("192.168.12.232", 9100);
         $printed = $printer->printKey($id, $store, $key);
 
         return response()->json($printed);
