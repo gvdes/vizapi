@@ -19,9 +19,7 @@ date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
 |
 */
 
-$app = new Laravel\Lumen\Application(
-    dirname(__DIR__)
-);
+$app = new Laravel\Lumen\Application( dirname(__DIR__) );
 
 $app->withFacades();
 
@@ -96,6 +94,7 @@ $app->middleware([
 */
 
 // $app->register(App\Providers\AppServiceProvider::class);
+// s
 $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);

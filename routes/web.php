@@ -201,6 +201,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->post('/compras', 'VentasController@getCompras');
 
         });
+
         $router->group(['prefix' => 'printer'], function () use ($router){
             $router->get('/demo', 'PrinterController@test'); // Función para crear una prueba de impresión
             $router->get('/all', 'PrinterController@getPrinters'); // Función para obtener todas las impresoras disponibles para el usuario
@@ -230,4 +231,21 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->get('/seederGastos', 'AccountingController@seederGastos'); // Función para traer todos los gastos (Se debe realizar cada cambio de año) para que las actualizaciones sean sobre las nuevas
             $router->post('/update', 'AccountingController@getNew'); // Función para traer los gastos apartir de la ultima fecha de actualización
             $router->post('/restore', 'AccountingController@restore'); // Se obtiene la fecha de la semana pasada
+        });
+
+        $router->group(['prefix' => 'L'], function() use($router){
+            $router->group(['prefix' => 'restock'], function() use($router){
+                $router->get('/', 'LRestockController@index');
+                $router->get('/crypt', 'LRestockController@crypt');
+                $router->get('/{oid}', 'LRestockController@order');
+                $router->get('/{oid}/locations', 'LRestockController@orderLocs');
+                $router->get('/{oid}/newinvoice', 'LRestockController@newinvoice');
+                $router->get('/{oid}/newentry', 'LRestockController@newentry');
+                $router->get('/{oid}/printkey', 'LRestockController@printkey');
+                $router->post('/changestate', 'LRestockController@changestate');
+                $router->post('/setdelivery', 'LRestockController@setdelivery');
+                $router->post('/setreceived', 'LRestockController@setreceived');
+                $router->post('/checkin', 'LRestockController@checkin');
+                $router->post('/checkininit', 'LRestockController@checkininit');
+            });
         });

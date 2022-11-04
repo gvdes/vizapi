@@ -47,12 +47,14 @@ class RequisitionController extends Controller{
                         $request->notes = $request->notes ? $request->notes." ".$data['notes'] : $data['notes'];
                     break;
                 }
+
                 if(isset($data['msg'])){
                     return response()->json([
                         "success" => false,
                         "msg" => $data['msg']
                     ]);
                 }
+
                 $now = new \DateTime();
                 $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
                                             ->whereDate('created_at', $now)
@@ -72,13 +74,13 @@ class RequisitionController extends Controller{
                     "time_life" => "00:15:00",
                     "_status" => 1
                 ]);
+
                 $this->log(1, $requisition);
-                if(isset($data['products'])){
-                    $requisition->products()->attach($data['products']);
-                }
-                if($request->_type != 1){
-                    $this->refreshStocks($requisition);
-                }
+
+                if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+
+                if($request->_type != 1){ $this->refreshStocks($requisition); }
+
                 return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             });
             return response()->json([
@@ -276,7 +278,6 @@ class RequisitionController extends Controller{
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 $miniprinter = new MiniPrinterController($printer->ip, $port);
                 $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
-
                 // traemos el cuerpo del pedido con las ubicaciones del workpoint destino
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -290,10 +291,15 @@ class RequisitionController extends Controller{
                 // imprimimos en el workpoint destino (a donde se solicita la mercancia con sus ubicaciones y stocks)
                 $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
                 $miniprinter = new MiniPrinterController($printer->ip, $port);
-                if($miniprinter->requisitionTicket($requisition)){
-                    $requisition->printed = ($requisition->printed+1);
-                    $requisition->save();
+
+                if($miniprinter->notifyNewOrder($requisition)){
+
                 }
+
+                // if($miniprinter->requisitionTicket($requisition)){
+                //     $requisition->printed = ($requisition->printed+1);
+                //     $requisition->save();
+                // }
             break;
 
             case 3: // SURTIENDO
@@ -686,70 +692,62 @@ class RequisitionController extends Controller{
 
     public function getToSupplyFromStore($workpoint_id, $workpoint_to){ // Función para hacer el pedido de minimos y máximos de la sucursal
         $workpoint = WorkPoint::find($workpoint_id); // Obtenemos la sucursal a la que se le realizara el pedido
-        $_categories = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
+        $cats = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
         // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
-        $products = Product::selectRaw('products.*, getSection(products._category) AS section')
-        ->with(['stocks' => function($query) use($workpoint_id){
-            $query->where([
-                ['_workpoint', $workpoint_id],
-                ['min', '>', 0],
-                ['max', '>', 0],
-            ]);
-        }])->whereHas('stocks', function($query) use($workpoint_id, $workpoint_to, $_categories){
-            $query->where([
-                ['_workpoint', $workpoint_id],
-                ['min', '>', 0],
-                ['max', '>', 0]
-            ])->orWhere([
-                ['_workpoint', $workpoint_to],
-                ['stock', '>=', 0]
-            ]);
-        }, '>', 1)->where('_status', '=', 1)->havingRaw('section = ?', [$_categories[0]]);
 
-        if(count($_categories)>1){
-            $products = $products->orHavingRaw('section = ?', [$_categories[1]]);
-        }
-        if(count($_categories)>2){
-            $products = $products->orHavingRaw('section = ?', [$_categories[2]]);
-        }
-        if(count($_categories)>3){
-            $products = $products->orHavingRaw('section = ?', [$_categories[3]]);
-        }
-        $products = $products->get();
+        $pquery = '
+                SELECT
+                    P.id AS id,
+                    P.code AS code,
+                    P._unit AS unitsupply,
+                    P.pieces AS ipack,
+                    P.cost AS cost,
+                    (SELECT stock FROM product_stock WHERE _workpoint=:wf0 AND _product=P.id AND _status!=4 AND min>0 AND max>0) AS stock,
+                    (SELECT min FROM product_stock WHERE _workpoint=:wf1 AND _product=P.id) AS min,
+                    (SELECT max FROM product_stock WHERE _workpoint=:wf2 AND _product=P.id) AS max,
+                    SUM(IF(PS._workpoint=1, PS.stock ,0)) AS CEDIS,
+                    SUM(IF(PS._workpoint=2, PS.stock ,0)) AS PANTACO
+                FROM products P
+                    INNER JOIN product_categories PC ON PC.id = P._category
+                    INNER JOIN product_stock PS ON PS._product = P.id
+                WHERE GETSECTION(PC.id) in ('.$cats.') AND P._status!=4 AND (IF(PS._workpoint=:wt0, PS._status, 0))=1 AND (IF(PS._workpoint=:wt1, PS.stock, 0))>=0 AND ((SELECT stock FROM product_stock WHERE _workpoint=:wf3 AND _product=P.id AND _status!=4 AND min>0 AND max>0)) IS NOT NULL
+                GROUP BY P.code
+        ';
 
-        /**OBTENEMOS STOCKS */
-        $toSupply = [];
-        foreach($products as $key => $product){ // Se genera el formato para insertar el los productos al pedido
-            $stock = $product->stocks[0]->pivot->gen;
-            $min = $product->stocks[0]->pivot->min;
-            $max = $product->stocks[0]->pivot->max;
+        $binds = [
+            "wf0"=>$workpoint_id,
+            "wf1"=>$workpoint_id,
+            "wf2"=>$workpoint_id,
+            "wt0"=>$workpoint_to,
+            "wt1"=>$workpoint_to,
+            "wf3"=>$workpoint_id,
+        ];
 
-            $required = ($max>$stock) ? ($max-$stock) : 0;
+        $rows = DB::select($pquery,$binds);
+        $tosupply = [];
 
-            if($required > 0){
-                /*
-                    REGLAS DEL NEGOCIO
-                    Para los acticulos que son solicitados por CAJA se debe solicitar al menos 1 caja completa
-                    Para los articulos que son solicitados por PIEZA se debe solicitar al menos 6 unidades
-                    Si no se cumple la condición para pedir el minimo no se agregara el producto al pedido a pesar de que lo necesite la sucursal
-                    ---- SUGERENCIAS ----
-                    Los articulos que salen por piezas deberan tener un rango entre el minimo y maximo de al menos 6 unidades
-                    Los articulos que salen por caja deberan tener un rango entre el minimo y maximo de media caja, y el minimo no deberia ser de menos de media caja
-                */
-                if(($product->_unit == 1 && $required>6) || $product->_unit!=1){
-                    if($product->_unit == 3){
-                        $pieces = $product->pieces == 0 ? 1 : $product->pieces;
-                        $boxes = floor($required/$pieces);
-                        if($boxes >= 1){
-                            $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $boxes,  "_supply_by" => 3 , 'comments' => '', "stock" => 0];
-                        }
-                    }else{
-                        $toSupply[$product->id] = ['units' => $required, "cost" => $product->cost, 'amount' => $required,  "_supply_by" => 1 , 'comments' => '', "stock" => 0];
+        foreach ($rows as $product) {
+            $stock = $product->stock;
+            $min = $product->min;
+            $max = $product->max;
+
+            $required = ($stock<=$min) ? ($max-$stock) : 0;
+
+            if($required){
+                if( $product->unitsupply==3 ){
+                    $ipack = $product->ipack == 0 ? 1 : $product->ipack;
+                    $boxes = floor($required/$ipack);
+
+                    if($boxes>=1){
+                        $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
                     }
+                }else if( $product->unitsupply==1 && $required>6 ){
+                    $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0];
                 }
             }
         }
-        return ["products" => $toSupply];
+
+        return ["products" => $tosupply];
     }
 
     public function getPedidoFromStore($folio, $to){ // Función para exportar los productos que un pedido de preventa
@@ -802,44 +800,19 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1:
-                return ["Navidad","Juguete"];
-                break;
-            case 4:
-                return ["Navidad"];
-                break;
-            case 5:
-                return ["Navidad"];
-                break;
-            case 7:
-                return ["Navidad"];
-                break;
-            case 13:
-                return ["Navidad"];
-                break;
-            case 9:
-                return ["Navidad"];
-                break;
-            case 6:
-                return ["Calculadora", "Electronico", "Hogar"];
-            case 10:
-                return ["Navidad"];
-                break;
-            case 12:
-                return ["Calculadora","Electronico","Hogar"];
-                break;
-            case 11:
-                return ["Juguete"];
-                break;
-            case 8:
-                return ["Calculadora", "Juguete", "Papeleria"];
-                break;
-            case 3:
-                return ["Navidad", "Paraguas", "Juguete"];
-                break;
-            case 19:
-		return ["Navidad"];
-		break;
+            case 1: return '"Navidad", "Juguete"'; break;
+            case 3: return '"Navidad"'; break;
+            case 4: return '"Navidad"'; break;
+            case 5: return '"Navidad"'; break;
+            case 7: return '"Navidad"'; break;
+            case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
+            case 9: return '"Navidad"'; break;
+            case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 11: return '"Navidad"'; break;
+            case 10: return '"Navidad"'; break;
+            case 12: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 13: return '"Navidad"'; break;
+            case 19: return '"Navidad"'; break;
         }
     }
 
@@ -865,10 +838,7 @@ class RequisitionController extends Controller{
         try{
             $requisition = Requisition::find($request->_requisition);
             if(/* $requisition->_status == 5 */ 1 == 1){
-                $product = $requisition
-                    ->products()
-                    ->where('id', $request->_product)
-                    ->first();
+                $product = $requisition->products()->where('id', $request->_product)->first();
                 if($product){
                     $amount = isset($request->amount) ? $request->amount : 1; /* CANTIDAD EN UNIDAD */
                     $_supply_by = isset($request->_supply_by) ? $request->_supply_by : 1; /* UNIDAD DE MEDIDA */
@@ -885,26 +855,25 @@ class RequisitionController extends Controller{
                     ]);
 
                     $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                    ->with(['units', 'stocks' => function($query){
-                        $query->where('_workpoint', $this->account->_workpoint);
-                    }, 'prices' => function($query){
-                        $query->where('_type', 7);
-                    }])->where("id", $request->_product)->first();
+                        ->with(['units', 'stocks' => function($query){
+                            $query->where('_workpoint', $this->account->_workpoint);
+                        }, 'prices' => function($query){
+                            $query->where('_type', 7);
+                        }])->where("id", $request->_product)->first();
 
-                    return response()->json([
-                        "success" => true,
-                        "server_status" => 200,
-                        "msg" => "ok",
-                        "data" => new ProductResource($productUpdated)
-                    ]);
+                        return response()->json([
+                            "success" => true,
+                            "server_status" => 200,
+                            "msg" => "ok",
+                            "data" => new ProductResource($productUpdated)
+                        ]);
                 }else{
                     $product = Product::
-                    with(['stocks' => function($query) use($requisition){
-                        $query->where('_workpoint', $requisition->_workpoint_from)->distinct();
-                    }, 'prices' => function($query){
-                        $query->where('_type', 7);
-                    }])
-                    ->find($request->_product);
+                        with(['stocks' => function($query) use($requisition){
+                            $query->where('_workpoint', $requisition->_workpoint_from)->distinct();
+                        }, 'prices' => function($query){
+                            $query->where('_type', 7);
+                        }])->find($request->_product);
                     if($product){
                         $pieces = isset($request->pieces) ? $request->pieces : $product->pieces;
                         $cost = count($product->prices)> 0 ? $product->prices[0]->pivot->price : 0;
@@ -929,18 +898,18 @@ class RequisitionController extends Controller{
                         ]);
 
                         $productUpdated = $requisition->products()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS category')
-                        ->with(['units', 'stocks' => function($query){
-                            $query->where('_workpoint', $this->account->_workpoint);
-                        }, 'prices' => function($query){
-                            $query->where('_type', 7);
-                        }])->where("id", $request->_product)->first();
+                            ->with(['units', 'stocks' => function($query){
+                                $query->where('_workpoint', $this->account->_workpoint);
+                            }, 'prices' => function($query){
+                                $query->where('_type', 7);
+                            }])->where("id", $request->_product)->first();
 
-                        return response()->json([
-                            "success" => true,
-                            "server_status" => 200,
-                            "msg" => "ok",
-                            "data" => new ProductResource($productUpdated)
-                        ]);
+                            return response()->json([
+                                "success" => true,
+                                "server_status" => 200,
+                                "msg" => "ok",
+                                "data" => new ProductResource($productUpdated)
+                            ]);
                     }else{
                         return response()->json(["msg" => "El producto no se encuentra", "server_status" => 404, "success" => false]);
                     }

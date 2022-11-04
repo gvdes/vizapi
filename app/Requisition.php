@@ -1,13 +1,13 @@
-<?php 
+<?php
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Requisition extends Model{
-    
+
     protected $table = 'requisition';
     protected $fillable = ['name', 'num_ticket', 'num_ticket_store', 'notes', '_created_by', '_workpoint_from', '_workpoint_to', '_type', '_status', 'printed', 'time_life'];
-    
+
     /*****************
      * Relationships *
      *****************/
@@ -21,7 +21,7 @@ class Requisition extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'product_required', '_requisition', '_product')
-                    ->withPivot('amount', '_supply_by', 'units', 'cost', 'total', 'comments', 'stock', 'toDelivered', 'toReceived');
+                    ->withPivot('amount', '_supply_by', 'units', 'cost', 'total', 'comments', 'stock', 'toDelivered', 'toReceived', 'ipack', 'checkout');
     }
 
     public function to(){

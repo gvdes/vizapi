@@ -5,6 +5,7 @@ use Mike42\Escpos\Printer;
 use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
 use App\Requisition;
 use App\Order;
+use Carbon\Carbon;
 
 class MiniPrinterController extends Controller{
     /**
@@ -30,12 +31,71 @@ class MiniPrinterController extends Controller{
         }
     }
 
+    public function printKey($folio, $store, $key){
+        try {
+            $url = "http://192.168.12.183:2200/#/checkin/$folio?key=$key";
+
+            $printer = $this->printer;
+
+            $printer->setEmphasis(true);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+
+            $printer->qrCode($url, Printer::QR_ECLEVEL_L, 10, Printer::QR_MODEL_2);
+            $printer->text("\n$folio - $store\n");
+
+            $printer->feed(3);
+            $printer->cut();
+            $printer->close();
+
+            return 200;
+        } catch (\Error $e) { $printer->close(); return 500; }
+    }
+
+    public function notifyNewOrder(Requisition $requisition){
+        try {
+            $finished_at = $requisition->log->filter(function($log){ return $log->pivot->_status = 1; })[0];
+
+            // $txt = json_decode($finished_at);
+            $now = Carbon::now()->format("h:i a, Y/m/d");
+            $printer = $this->printer;
+            if(!$printer){ return false; }
+            $printer->selectPrintMode(Printer::MODE_FONT_B);
+            // $printer->setEmphasis(true);
+            // $printer->text(" ".substr("0000".$requisition->id,-5,5)." \n");
+            $printer->setTextSize(2,2);
+            $printer->setReverseColors(true);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text(" *** Nuevo Pedido *** \n\n\n");
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->setReverseColors(false);
+            // $printer->setEmphasis(false);
+
+            $printer->text(" Folio:     ".$requisition->id."\n");
+            $printer->text(" Sucursal:  ".$requisition->from->alias."\n\n");
+
+            $printer->setTextSize(2,1);
+            $printer->text(" ".$requisition->created_by->names."\n");
+            $printer->text(" ".$finished_at->pivot->created_at."\n");
+
+            $printer->setTextSize(1,1);
+            $printer->selectPrintMode(Printer::MODE_FONT_A);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("\n\nGRUPO VIZCARRA\n");
+            $printer->selectPrintMode(Printer::MODE_FONT_B);
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("Impresion: ".$now."\n");
+            $printer->feed(3);
+            $printer->cut();
+            $printer->close();
+            return true;
+
+        } catch (\Exception $e) { $printer->close(); return false; }
+    }
+
     public function requisitionReceipt($requisition){
         try{
             $printer = $this->printer;
-            if(!$printer){
-                return false;
-            }
+
             $summary = $requisition->products->reduce(function($summary, $product){
                 if(intval($product->pivot->stock)>0){
                     $summary['models'] = $summary['models'] + 1;
@@ -166,9 +226,8 @@ class MiniPrinterController extends Controller{
 
     public function requisitionTicket(Requisition $requisition){
         $printer = $this->printer;
-        if(!$printer){
-            return false;
-        }
+        if(!$printer){ return false; }
+
         $summary = $requisition->products->reduce(function($summary, $product){
             if($product->pivot->stock>0){
                 $summary['models'] = $summary['models'] + 1;
@@ -482,7 +541,7 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(2,1);
             $printer->text("Gracias $order->name ($order->num_ticket)");
             $printer->setTextSize(1,1);
-            $printer->text(" ██████\n"); 
+            $printer->text(" ██████\n");
             $printer->setTextSize(2,1);
             $printer->setEmphasis(true);
             $printer->setUnderline(true);
@@ -801,7 +860,7 @@ class MiniPrinterController extends Controller{
         if(!$printer){
             return false;
         }
-        
+
         $summary = $requisition->products->reduce(function($summary, $product){
             if($product->pivot->toDelivered && $product->pivot->toDelivered > 0){
                 $summary['models'] = $summary['models'] + 1;
@@ -855,7 +914,7 @@ class MiniPrinterController extends Controller{
         if(!$printer){
             return false;
         }
-        
+
         $summary = $requisition->products->reduce(function($summary, $product){
             if($product->pivot->toDelivered && $product->pivot->toDelivered > 0){
                 $summary['models'] = $summary['models'] + 1;
@@ -924,7 +983,7 @@ class MiniPrinterController extends Controller{
         }
 
         if($order->_order){
-            
+
             $printer->text("ANEXO ");
             $printer->setReverseColors(true);
             $printer->setTextSize(2,2);
@@ -932,7 +991,7 @@ class MiniPrinterController extends Controller{
             $printer->setEmphasis(false);
             $printer->setReverseColors(false);
         }
-        
+
 	$printer->setTextSize(1,2);
 	$printer->text("Pedido para: \n");
 	$printer->setTextSize(2,2);
