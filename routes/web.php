@@ -247,5 +247,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->post('/setreceived', 'LRestockController@setreceived');
                 $router->post('/checkin', 'LRestockController@checkin');
                 $router->post('/checkininit', 'LRestockController@checkininit');
+                $router->get('/report/{rep}', 'LRestockController@report');
+                $router->post('/massaction', 'LRestockController@massaction');
             });
         });

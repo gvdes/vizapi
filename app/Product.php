@@ -1,14 +1,14 @@
-<?php 
+<?php
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model{
-    
+
     protected $table = 'products';
     protected $fillable = ['code', 'name', 'description', 'stock', '_category', '_status', '_unit', '_provider', 'pieces', 'dimensions', 'weight', 'cost', 'large', 'label'];
     /* public $timestamps = false; */
-    
+
     /*****************
      * Relationships *
      *****************/
@@ -102,10 +102,9 @@ class Product extends Model{
     /**
      * MUTATORS
      */
-
     public function getDimensionsAttribute($value){
         $values = is_null($value) ? $value : json_decode($value);
-        $values->length =  is_null($values) ? floatval(0) : floatval($values->length);
+        $values->length = is_null($values) ? floatval(0) : floatval($values->length);
         $values->height = is_null($values) ? floatval(0) : floatval($values->height);
         $values->width = is_null($values) ? floatval(0) : floatval($values->width);
         return $values;

@@ -568,9 +568,9 @@ class RequisitionController extends Controller{
         $requisition = Requisition::with(["to", "from", "created_by"])->find($request->id);
         $server_status = 200;
         if($requisition){
-            $_status = isset($request->_status) ? $request->_status : $requisition->_status+1;
-            $_printer = isset($request->_printer) ? $request->_printer : null;
-            $_actors = isset($request->_actors) ? $request->_actors : [];
+            $_status = isset($request->_status) ? $request->_status:$requisition->_status+1;
+            $_printer = isset($request->_printer) ? $request->_printer:null;
+            $_actors = isset($request->_actors) ? $request->_actors:[];
 
             $process = Process::all()->toArray();
 
@@ -696,23 +696,30 @@ class RequisitionController extends Controller{
         // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
 
         $pquery = '
-                SELECT
-                    P.id AS id,
-                    P.code AS code,
-                    P._unit AS unitsupply,
-                    P.pieces AS ipack,
-                    P.cost AS cost,
-                    (SELECT stock FROM product_stock WHERE _workpoint=:wf0 AND _product=P.id AND _status!=4 AND min>0 AND max>0) AS stock,
-                    (SELECT min FROM product_stock WHERE _workpoint=:wf1 AND _product=P.id) AS min,
-                    (SELECT max FROM product_stock WHERE _workpoint=:wf2 AND _product=P.id) AS max,
-                    SUM(IF(PS._workpoint=1, PS.stock ,0)) AS CEDIS,
-                    SUM(IF(PS._workpoint=2, PS.stock ,0)) AS PANTACO
-                FROM products P
-                    INNER JOIN product_categories PC ON PC.id = P._category
-                    INNER JOIN product_stock PS ON PS._product = P.id
-                WHERE GETSECTION(PC.id) in ('.$cats.') AND P._status!=4 AND (IF(PS._workpoint=:wt0, PS._status, 0))=1 AND (IF(PS._workpoint=:wt1, PS.stock, 0))>=0 AND ((SELECT stock FROM product_stock WHERE _workpoint=:wf3 AND _product=P.id AND _status!=4 AND min>0 AND max>0)) IS NOT NULL
-                GROUP BY P.code
-        ';
+            SELECT
+                P.id AS id,
+                P.code AS code,
+                P._unit AS unitsupply,
+                P.pieces AS ipack,
+                P.cost AS cost,
+                    (SELECT stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) AS stock,
+                    (SELECT  min FROM product_stock WHERE _workpoint = 8 AND _product = P.id) AS min,
+                    (SELECT max FROM product_stock WHERE _workpoint = 8 AND _product = P.id) AS max,
+                    SUM(IF(PS._workpoint = 1, PS.stock, 0)) AS CEDIS,
+                    (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO
+                FROM
+                    products P
+                        INNER JOIN
+                    product_categories PC ON PC.id = P._category
+                        INNER JOIN
+                    product_stock PS ON PS._product = P.id
+                WHERE
+                    GETSECTION(PC.id) in ('.$cats.')
+                        AND P._status != 4
+                        AND (IF(PS._workpoint = 1, PS._status, 0)) = 1
+                        AND ((SELECT stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0)) IS NOT NULL
+                        AND (IF((SELECT  stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) <= (SELECT  min FROM product_stock WHERE  _workpoint = 8 AND _product = P.id), (SELECT  max FROM product_stock WHERE _workpoint = 8 AND _product = P.id) - (SELECT  stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0), 0)) > 0
+                GROUP BY P.code';
 
         $binds = [
             "wf0"=>$workpoint_id,
@@ -808,7 +815,7 @@ class RequisitionController extends Controller{
             case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
             case 9: return '"Navidad"'; break;
             case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 11: return '"Navidad"'; break;
+            case 11: return '"Juguete"'; break;
             case 10: return '"Navidad"'; break;
             case 12: return '"Calculadora", "Electronico", "Hogar"'; break;
             case 13: return '"Navidad"'; break;

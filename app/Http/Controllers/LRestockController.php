@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Requisition;
+use App\WorkPoint;
+use App\Product;
 use Carbon\CarbonImmutable;
 
 class LRestockController extends Controller{
@@ -17,17 +19,41 @@ class LRestockController extends Controller{
 
             $from = $now->startOf($view)->format("Y-m-d H:i");
             $to = $now->endOf("day")->format("Y-m-d H:i");
+            $resume = [];
 
             $orders = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                 ->withCount(["products"])
                 ->whereBetween("created_at",[$from,$to])
                 ->get();
 
+            $pdss = DB::select(
+                    "SELECT
+                        COUNT(PS._product) as total
+                    FROM product_stock PS
+                    WHERE
+                        PS._status=1 AND
+                        PS._workpoint=1 AND
+                        PS.stock=0 AND
+                        (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
+
+            $pndcs = Product::whereHas("stocks", function($qb){
+                    $qb->whereBetween("_workpoint",[1,2])
+                        ->whereNotIn("_status",[1,4])
+                        ->where("stock",">",0);
+                    })->count();
+
+            $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
+            $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
+
+            $printers = WorkPoint::with("printers")->whereIn("id",[1,2])->get();
+
             return response()->json([
                 "view"=>$view,
                 "orders"=>$orders,
                 "from"=>$from,
                 "to"=>$to,
+                "resume"=>$resume,
+                "printers"=>$printers
             ]);
         } catch (\Error $e) { return response()->json($e,500); }
     }
@@ -337,5 +363,74 @@ class LRestockController extends Controller{
                 }else{ return response("El status actual del pedido ($cstate), no permite iniciar el conteo",400); }
             }else{ return response("Sin coincidencias para el folio o llave invalida!",404); }
         } catch (\Error $e) { return response()->json($e,500); }
+    }
+
+    public function report(Request $request){
+        $rep = $request->route("rep");
+
+        switch ($rep) {
+            case'pdss':$rows=DB::select(
+                    "SELECT
+                        P.id AS ID,
+                        P.code AS CODIGO,
+                        P.description AS DESCRIPCION,
+                        GETSECTION(PC.id) AS SECCION,
+                        GETFAMILY(PC.id) AS FAMILIA,
+                        GETCATEGORY(PC.id) AS CATEGORIA,
+                        S.name AS ESTADO
+                    FROM products P
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                        INNER JOIN product_status S ON S.id = PS._status
+                        INNER JOIN product_categories PC ON PC.id = P._category
+                    WHERE PS._status = 1 AND PS._workpoint = 1 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint = 2 and _product = P.id) = 0  AND (SELECT sum(stock) FROM product_stock WHERE _workpoint = 1 and _product = P.id) = 0;");
+                    $name = "Productos disponibles sin stock";
+                    $key = "pdss";
+                break;
+
+            case'pndcs':$rows=DB::select(
+                    "SELECT
+                        P.id AS ID,
+                        P.code AS CODIGO,
+                        P.description AS DESCRIPCION,
+                        GETSECTION(PC.id) AS SECCION,
+                        GETFAMILY(PC.id) AS FAMILIA,
+                        GETCATEGORY(PC.id) AS CATEGORIA,
+                        S.name AS ESTADO,
+                        PS.stock AS CEDIS,
+                        (SELECT sum(stock) FROM product_stock WHERE _workpoint = 2 and _product = P.id) as PANTACO
+                    FROM products P
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                        INNER JOIN product_status S ON S.id = PS._status
+                        INNER JOIN product_categories PC ON PC.id = P._category
+                    WHERE PS._workpoint = 1 AND PS._status NOT IN (1,4) AND PS.stock > 0;");
+                    $name = "Productos no disponibles con stock";
+                    $key = "pndcs";
+                break;
+
+            default: break;
+        }
+
+        return response([ "rows"=>$rows, "name"=>$name, "key"=>$key ]);
+    }
+
+    public function massaction(Request $request){
+        $action = $request->action;
+
+        switch ($action) {
+            case 'pndcs':
+                $query = 'UPDATE product_stock PS SET PS._status=1 WHERE  PS._workpoint IN (1,2) AND PS._status NOT IN (1,4) AND PS.stock>0;';
+                break;
+
+            case 'pdss':
+                $query = 'UPDATE product_stock CED
+                            INNER JOIN product_stock PAN ON CED._product = PAN._product
+                            SET CED._status=3
+                            WHERE CED._status=1 AND CED._workpoint=1 AND CED.stock=0 AND PAN.stock=0 AND PAN._workpoint=2;';
+                break;
+        }
+
+        $q = DB::update($query);
+
+        return response()->json([ "msg"=>"Making $action", "query"=>$query, "exec"=>$q ]);
     }
 }
