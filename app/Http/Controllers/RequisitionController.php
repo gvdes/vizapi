@@ -233,6 +233,27 @@ class RequisitionController extends Controller{
         return response()->json(["added" => $added, "notFound" => $notFound]);
     }
 
+    public function sendWhatsapp($tel, $msg){
+        $curl = curl_init();//inicia el curl para el envio de el mensaje via whats app
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => "https://api.ultramsg.com/instance9800/messages/chat",
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_SSL_VERIFYHOST => 0,
+          CURLOPT_SSL_VERIFYPEER => 0,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => "token=6r5vqntlz18k61iu&to=+52$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
+          CURLOPT_HTTPHEADER => array("content-type: application/x-www-form-urlencoded"),));
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        return $response;
+        curl_close($curl);
+    }
+
     public function removeProduct(Request $request){
         try{
             $requisition = Requisition::find($request->_requisition);
@@ -247,10 +268,16 @@ class RequisitionController extends Controller{
         }
     }
 
-    public function log($case, Requisition $requisition, $_printer = null, $actors = []){
+    public function log($case, Requisition $requisition, $_printer=null, $actors=[]){
         $account = Account::with('user')->find($this->account->id);
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
+
+        $requisition->load(["from","to"]);
+        $requisition->fresh();
+
+        $telAdminFrom = $requisition->from["tel_admin"];
+        $telAdminTo = $requisition->from["tel_admin"];
 
         if($case != 1){
             $logs = $requisition->log->toArray();
@@ -268,16 +295,20 @@ class RequisitionController extends Controller{
             break;
 
             case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
+
                 $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);// se inserta el log dos al pedido con su responsable
                 $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
                 $requisition->save(); // se guardan los cambios
                 $requisition->fresh(['log']); // se refresca el log del pedido
 
-                // buscamos la miniprinter del tipo dos de la sucursal que solicito el pedido
+                // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
                 $port = $requisition->_workpoint_to==2 ? 4065:9100;
                 $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 $miniprinter = new MiniPrinterController($printer->ip, $port);
-                $msg = $miniprinter->requisitionReceipt($requisition) ? "" : "No se pudo imprimir el comprobante"; //Se ejecuta la impresión
+                $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
+                // $whats1 = $this->sendWhatsapp($telAdminFrom, "CEDIS ha recibido tu pedido - FOLIO: #$requisition->id 🤟🏽");
+                // $whats2 = $this->sendWhatsapp($telAdminFrom, "Nuevo pedido de ".$requisition->from['name'].": #$requisition->id, esta listo para iniciar surtido!!");
+
                 // traemos el cuerpo del pedido con las ubicaciones del workpoint destino
                 $_workpoint_to = $requisition->_workpoint_to;
                 $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
@@ -288,18 +319,17 @@ class RequisitionController extends Controller{
                     }]);
                 }]);
 
-                // imprimimos en el workpoint destino (a donde se solicita la mercancia con sus ubicaciones y stocks)
-                $printer = $_printer ? \App\Printer::find($_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $requisition->_workpoint_to);
-                $miniprinter = new MiniPrinterController($printer->ip, $port);
+                // definir IMPRESION AUTOMATICA DEL PEDIDO
+                $stores_p2 = [8,11,19];
+                $ipprinter = in_array($requisition->_workpoint_from, $stores_p2) ? env("PRINTER_P2") : env("PRINTER_P3");
 
-                if($miniprinter->notifyNewOrder($requisition)){
+                $miniprinter = new MiniPrinterController($ipprinter, $port);
+                $printed_provider = $miniprinter->requisitionTicket($requisition);
 
+                if($printed_provider){
+                    $requisition->printed = ($requisition->printed+1);
+                    $requisition->save();
                 }
-
-                // if($miniprinter->requisitionTicket($requisition)){
-                //     $requisition->printed = ($requisition->printed+1);
-                //     $requisition->save();
-                // }
             break;
 
             case 3: // SURTIENDO
@@ -576,7 +606,6 @@ class RequisitionController extends Controller{
 
             if(in_array($_status, array_column($process, "id"))){
                 $result = $this->log($_status, $requisition, $_printer, $_actors);
-
                 $msg = $result["success"] ? "" : "No se pudo cambiar el status";
                 $server_status = $result ["success"] ? 200 : 500;
             }else{

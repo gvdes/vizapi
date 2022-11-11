@@ -103,34 +103,32 @@ class MiniPrinterController extends Controller{
             $summary = $requisition->products->reduce(function($summary, $product){
                 if(intval($product->pivot->stock)>0){
                     $summary['models'] = $summary['models'] + 1;
-                    $summary['acticles'] = $summary['acticles'] + $product->pivot->units;
-                }else{
-                    $summary['soldOut'] = $summary['soldOut'] + 1;
-                }
+                    $summary['articles'] = $summary['articles'] + $product->pivot->units;
+                }else{ $summary['soldOut'] = $summary['soldOut']+1; }
                 return $summary;
-            }, ["models" => 0, "articles" => 0, "soldOut" => 0]);
-            $finished_at = $requisition->log->filter(function($log){
-                return $log->pivot->_status = 1;
-            });
+            }, [ "models"=>0, "articles"=>0, "soldOut"=>0 ]);
+
+            $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=1);
             $finished_at = $finished_at[sizeof($finished_at) - 1];
+
             $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->setTextSize(1,2);
+            $printer->setTextSize(2,2);
             $printer->setEmphasis(true);
             $printer->setReverseColors(true);
             $printer->text(" ".substr("0000".$requisition->id,-5,5)." \n");
             $printer->setReverseColors(false);
             $printer->setEmphasis(false);
-            $printer->setTextSize(1,2);
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text(" Solicitud de mercancia a ".$requisition->to->alias." #".$requisition->id."\n");
+            $printer->setTextSize(1,1);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("\n".$requisition->to->alias." ha recibido tu pedido!!\n");
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
             $printer->setTextSize(1,1);
-            $printer->text("--------------------------------------------\n");
-            $printer->setTextSize(1,2);
-            $printer->text(" Generado por ".$requisition->created_by->names." ".$requisition->surname_pat."\n");
-            $printer->text(" A las ".$finished_at->pivot->created_at." Hrs \n");
+            $printer->text("------------------------------------------------\n");
             $printer->setTextSize(1,1);
-            $printer->text("--------------------------------------------\n");
+            $printer->text(" AGENTE:     ".$requisition->created_by->names." ".$requisition->surname_pat."\n");
+            $printer->text(" FECHA/HORA: ".$finished_at->pivot->created_at." Hrs \n");
+            $printer->setTextSize(1,1);
+            $printer->text("------------------------------------------------\n");
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setTextSize(1,1);
             $printer->text("Modelos: ");
@@ -140,13 +138,14 @@ class MiniPrinterController extends Controller{
             $printer->text(" Piezas: ");
             $printer->setTextSize(2,1);
             $printer->text($summary['articles']."\n");
+
             if($summary['soldOut']>0){
                 $printer->setTextSize(1,1);
                 $printer->text("Modelos agotados: ");
                 $printer->setTextSize(2,1);
                 $printer->text($summary['soldOut']."\n");
-                $printer->setTextSize(1,1);
             }
+            $printer->setTextSize(1,1);
             $printer->text("--------------------------------------------\n");
             $printer->setBarcodeHeight($this->barcode_height);
             $printer->setBarcodeWidth($this->barcode_width);
@@ -246,33 +245,53 @@ class MiniPrinterController extends Controller{
                 $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + $product->pivot->units;
             }
             return $summary;
-        }, ["models" => 0, "articles" => 0, "volumen" => 0, "sinVolumen" => 0, "modelsSouldOut" => 0, "articlesSouldOut" => 0]);
-        $finished_at = $requisition->log->filter(function($log){
-            return $log->pivot->_status = 1;
-        });
+        }, ["models"=>0, "articles"=>0, "volumen"=>0, "sinVolumen"=>0, "modelsSouldOut"=>0, "articlesSouldOut"=>0]);
+
+        $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=1);
         $finished_at = $finished_at[sizeof($finished_at) - 1];
+
         $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setReverseColors(true);
+        $printer->setEmphasis(true);
+
         if($requisition->printed>0){
+            $printer->setTextSize(1,1);
+            $printer->text(" *** REIMPRESION *** \n");
+        }else{
+            $printer->setTextSize(2,2);
+            $printer->text(" *** Nuevo Pedido *** \n");
+        }
+
+        $printer->setReverseColors(false);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->setEmphasis(false);
+        $printer->setTextSize(1,1);
+        $printer->text("------------------------------------------------\n");
+        $printer->setTextSize(2,2);
+        $printer->setReverseColors(true);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text(" ".$requisition->from->alias." - ".$requisition->id." \n");
+        $printer->setReverseColors(false);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->setTextSize(1,1);
+        $printer->text("\n AGENTE:    ".$requisition->created_by->names."\n");
+        $printer->text(" SOLICITUD: ".$finished_at->pivot->created_at."\n");
+
+        if($requisition->notes){
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->selectPrintMode(Printer::MODE_FONT_B);
             $printer->setTextSize(2,1);
             $printer->setReverseColors(true);
-            $printer->text("REIMPRESION \n");
+            $printer->text("\n ¡¡ NOTAS !! \n");
             $printer->setReverseColors(false);
+            $printer->text(" $requisition->notes \n\n");
+            $printer->setTextSize(1,1);
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->selectPrintMode(Printer::MODE_FONT_A);
         }
-        $printer->setTextSize(2,2);
-        $printer->setEmphasis(true);
-        $printer->setReverseColors(true);
-        $printer->text("Pedido para ".$requisition->from->alias." #".$requisition->id." \n");
-        $printer->setReverseColors(false);
-        $printer->setEmphasis(false);
-        if($requisition->notes){
-            $printer->setTextSize(2,1);
-            $printer->text("$requisition->notes \n");
-        }
-        $printer->setTextSize(1,1);
-        $printer->text("----------------------------------------\n");
-        $printer->text("Generado: ".$finished_at->pivot->created_at." Hrs por: ".$requisition->created_by->names."\n");
+
+        $printer->text("------------------------------------------------\n\n");
         $printer->setTextSize(1,2);
-        $printer->text("----------------------------------------\n");
         $y = 1;
         $product = collect($requisition->products);
         $product2 = collect($requisition->products);

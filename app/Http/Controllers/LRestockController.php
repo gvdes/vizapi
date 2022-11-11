@@ -14,17 +14,24 @@ class LRestockController extends Controller{
     public function index(Request $request){
         try {
             $view = $request->query("v");
-
+            $dash = $request->query("d");
             $now = CarbonImmutable::now();
 
             $from = $now->startOf($view)->format("Y-m-d H:i");
             $to = $now->endOf("day")->format("Y-m-d H:i");
             $resume = [];
 
-            $orders = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
+            $query = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
                 ->withCount(["products"])
-                ->whereBetween("created_at",[$from,$to])
-                ->get();
+                ->whereBetween("created_at",[$from,$to]);
+
+            switch ($dash) {
+                case 'P3': case 'p3': $query->whereIn("_workpoint_from", [1,2,3,4,5,6,7,9,10,12,14,17]); break;
+                case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
+                default: break;
+            }
+
+            $orders = $query->get();
 
             $pdss = DB::select(
                     "SELECT
@@ -41,7 +48,6 @@ class LRestockController extends Controller{
                         ->whereNotIn("_status",[1,4])
                         ->where("stock",">",0);
                     })->count();
-
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
             $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
 
@@ -53,7 +59,8 @@ class LRestockController extends Controller{
                 "from"=>$from,
                 "to"=>$to,
                 "resume"=>$resume,
-                "printers"=>$printers
+                "printers"=>$printers,
+                "dash"=>$dash
             ]);
         } catch (\Error $e) { return response()->json($e,500); }
     }
@@ -450,6 +457,6 @@ class LRestockController extends Controller{
             $requisition->save();
         }
 
-        return response()->json("OK");
+        return response()->json($printed);
     }
 }
