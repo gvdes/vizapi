@@ -14,6 +14,8 @@ class MiniPrinterController extends Controller{
      * @return void
      */
 
+    public $ip = null;
+    public $port = null;
     public $printer = null;
     public $barcode_width = 2;
     public $barcode_height = 50;
@@ -26,6 +28,8 @@ class MiniPrinterController extends Controller{
             $connector = new NetworkPrintConnector($_ip, $_port, $time);
             // $connector = new NetworkPrintConnector($ip_printer, $port, $time);
             $this->printer = new Printer($connector);
+            $this->ip = $_ip;
+            $this->port = $_port;
         }catch(\Exception $e){
             return $e;
         }
@@ -718,23 +722,22 @@ class MiniPrinterController extends Controller{
 
     public function demo(){
         $printer = $this->printer;
-        if(!$printer){
-            return false;
-        }
+        if(!$printer){ return false; }
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setTextSize(1,1);
         $printer->text("--------------------------------------------\n");
         $printer->setTextSize(2,1);
-        $printer->text("--PRUEBA DE CONEXIÓN--");
+        $printer->text("--PRUEBA DE CONEXIÓN--\n");
         $printer->setTextSize(1,1);
         $printer->text("--------------------------------------------\n");
-        $printer->setTextSize(2,1);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text("IP: ".$this->ip."\n");
+        $printer->text("PORT: ".$this->port."\n");
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->feed(1);
         $printer->setBarcodeHeight($this->barcode_height);
         $printer->setBarcodeWidth($this->barcode_width);
         $printer->barcode("ID-15568");
         $printer->feed(1);
-        $printer->setTextSize(2,1);
         $printer->text("GRUPO VIZCARRA\n");
         $printer->cut();
         $printer->close();
@@ -992,11 +995,11 @@ class MiniPrinterController extends Controller{
             $printer->setReverseColors(false);
         }
 
-	$printer->setTextSize(1,2);
-	$printer->text("Pedido para: \n");
-	$printer->setTextSize(2,2);
-	$printer->text($order->name." \n");
-	// $printer->text("Pedido para:".$order->name." \n");
+        $printer->setTextSize(1,2);
+        $printer->text("Pedido para: \n");
+        $printer->setTextSize(2,2);
+        $printer->text($order->name." \n");
+        // $printer->text("Pedido para:".$order->name." \n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
         $printer->setTextSize(2,2);

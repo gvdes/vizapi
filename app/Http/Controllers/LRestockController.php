@@ -293,7 +293,9 @@ class LRestockController extends Controller{
     }
 
     public function printKey(Request $request){
-        $oid = $request->oid;
+        $ip = $request->ip;
+        $port = $request->port;
+        $oid = $request->order;
 
         $req = Requisition::with(["from"])->findOrFail($oid);
 
@@ -301,7 +303,7 @@ class LRestockController extends Controller{
         $id = $req->id;
         $store = $req->from["alias"];
 
-        $printer = new MiniPrinterController("192.168.12.232", 9100);
+        $printer = new MiniPrinterController($ip, $port);
         $printed = $printer->printKey($id, $store, $key);
 
         return response()->json($printed);
@@ -432,5 +434,22 @@ class LRestockController extends Controller{
         $q = DB::update($query);
 
         return response()->json([ "msg"=>"Making $action", "query"=>$query, "exec"=>$q ]);
+    }
+
+    public function printforsupply(Request $request){
+        $ip = $request->ip;
+        $port = $request->port;
+        $order = $request->order;
+        $requisition = Requisition::find($order);
+
+        $printer = new MiniPrinterController($ip, $port, 5);
+        $printed = $printer->requisitionTicket($requisition);
+
+        if($printed){
+            $requisition->printed = $requisition->printed +1;
+            $requisition->save();
+        }
+
+        return response()->json("OK");
     }
 }

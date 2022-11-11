@@ -238,10 +238,8 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'LRestockController@index');
                 $router->get('/crypt', 'LRestockController@crypt');
                 $router->get('/{oid}', 'LRestockController@order');
-                $router->get('/{oid}/locations', 'LRestockController@orderLocs');
                 $router->get('/{oid}/newinvoice', 'LRestockController@newinvoice');
                 $router->get('/{oid}/newentry', 'LRestockController@newentry');
-                $router->get('/{oid}/printkey', 'LRestockController@printkey');
                 $router->post('/changestate', 'LRestockController@changestate');
                 $router->post('/setdelivery', 'LRestockController@setdelivery');
                 $router->post('/setreceived', 'LRestockController@setreceived');
@@ -249,5 +247,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->post('/checkininit', 'LRestockController@checkininit');
                 $router->get('/report/{rep}', 'LRestockController@report');
                 $router->post('/massaction', 'LRestockController@massaction');
+                $router->post('/print/key', 'LRestockController@printkey');
+                $router->post('/print/forsupply', 'LRestockController@printforsupply');
             });
         });
