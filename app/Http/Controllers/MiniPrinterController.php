@@ -303,9 +303,7 @@ class MiniPrinterController extends Controller{
         })->groupBy(function($product){
             if(count($product->locations)>0){
                 return explode('-',$product->locations[0]->path)[0];
-            }else{
-                return '';
-            }
+            }else{ return ''; }
         })->sortKeys();
         $piso_num = 1;
         foreach($groupBy as $piso){

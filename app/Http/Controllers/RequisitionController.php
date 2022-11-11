@@ -273,11 +273,11 @@ class RequisitionController extends Controller{
         $responsable = $account->user->names.' '.$account->user->surname_pat;
         $previous = null;
 
-        $requisition->load(["from","to"]);
-        $requisition->fresh();
+        // $requisition->load(["from","to"]);
+        // $requisition->fresh();
 
-        $telAdminFrom = $requisition->from["tel_admin"];
-        $telAdminTo = $requisition->from["tel_admin"];
+        // $telAdminFrom = $requisition->from["tel_admin"];
+        // $telAdminTo = $requisition->from["tel_admin"];
 
         if($case != 1){
             $logs = $requisition->log->toArray();

@@ -449,6 +449,15 @@ class LRestockController extends Controller{
         $order = $request->order;
         $requisition = Requisition::find($order);
 
+        $_workpoint_to = $requisition->_workpoint_to;
+        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['locations' => function($query)  use ($_workpoint_to){
+                $query->whereHas('celler', function($query) use ($_workpoint_to){
+                    $query->where('_workpoint', $_workpoint_to);
+                });
+            }]);
+        }]);
+
         $printer = new MiniPrinterController($ip, $port, 5);
         $printed = $printer->requisitionTicket($requisition);
 
