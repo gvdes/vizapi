@@ -295,17 +295,13 @@ class RequisitionController extends Controller{
             break;
 
             case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
+                $port = $requisition->_workpoint_to==2 ? 4065:9100;
 
                 $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);// se inserta el log dos al pedido con su responsable
                 $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
                 $requisition->save(); // se guardan los cambios
                 $requisition->fresh(['log']); // se refresca el log del pedido
 
-                // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
-                $port = $requisition->_workpoint_to==2 ? 4065:9100;
-                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
-                $miniprinter = new MiniPrinterController($printer->ip, $port);
-                $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
                 // $whats1 = $this->sendWhatsapp($telAdminFrom, "CEDIS ha recibido tu pedido - FOLIO: #$requisition->id 🤟🏽");
                 // $whats2 = $this->sendWhatsapp($telAdminFrom, "Nuevo pedido de ".$requisition->from['name'].": #$requisition->id, esta listo para iniciar surtido!!");
 
@@ -330,6 +326,11 @@ class RequisitionController extends Controller{
                     $requisition->printed = ($requisition->printed+1);
                     $requisition->save();
                 }
+
+                // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
+                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                $miniprinter = new MiniPrinterController($printer->ip, $port);
+                $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
             break;
 
             case 3: // SURTIENDO
