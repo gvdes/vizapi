@@ -334,11 +334,7 @@ class RequisitionController extends Controller{
             break;
 
             case 3: // SURTIENDO
-                $requisition->log()->attach(3, [ 'details' => json_encode([
-                                    "responsable" => $responsable,
-                                    "actors" => $actors
-                                ])
-                            ]);
+                $requisition->log()->attach(3, [ 'details'=>json_encode([ "responsable"=>$responsable, "actors"=>$actors ]) ]);
 
                 $requisition->_status = 3;
                 $requisition->save();

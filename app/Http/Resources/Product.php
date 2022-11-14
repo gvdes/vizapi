@@ -98,6 +98,9 @@ class Product extends JsonResource{
                         "exh" => $stock->pivot->exh,
                         "des" => $stock->pivot->des,
                         "fdt" => $stock->pivot->fdt,
+                        "V23" => $stock->pivot->V23,
+                        "LRY" => $stock->pivot->LRY,
+                        "STC" => $stock->pivot->STC,
                         "min" => $stock->pivot->min,
                         "max" => $stock->pivot->max,
                         "status" => \App\ProductStatus::find($stock->pivot->_status)

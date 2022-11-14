@@ -263,7 +263,7 @@ class LocationController extends Controller{
         $workpoint = $this->account->_workpoint;
         if($workpoint){
             $cellers = \App\Celler::where('_workpoint', $workpoint)->get();
-            
+
             $res = $cellers->map(function($celler){
                 $celler->sections = \App\CellerSection::where([
                     ['_celler', '=',$celler->id],
@@ -360,7 +360,7 @@ class LocationController extends Controller{
         if($product && !is_null($request->_section)){ // Se valida si existe el producto
             return response()->json([
                 'success' => $product->locations()->toggle($request->_section) // Se pone o quita la ubicación
-            ]);            
+            ]);
         }
         return response()->json([
             'msg' => "Código no válido"
@@ -388,7 +388,7 @@ class LocationController extends Controller{
     }
 
     public function setMassiveMax(Request $request){ // Función para asignar un minimo y maximo de forma masiva mediante el código principal
-        /* 
+        /*
             Datos necesarios:
                 code -> Modelo del articulo
                 min -> cantidad minima que tendra que tener la sucursal para la operación
@@ -417,9 +417,9 @@ class LocationController extends Controller{
         $counterProducts = Product::where('_status', '!=', 4)->count();
         // Se obtiene la cantidad de articulos con stock en el inventario de la sucursal
         $withStock = Product::whereHas('stocks', function($query){
-            $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
-            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where('_status', '!=', 4)->count();
+                        $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
+                            ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
+                        })->where('_status', '!=', 4)->count();
         // Se obtiene la cantidad de articulos sin stock en el inventario de la sucursal
         $withoutStock = Product::whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -998,7 +998,7 @@ class LocationController extends Controller{
                 "Máximo" => $producto->stocks[0]->pivot->max
             ];
         })->toArray();
-        
+
         return $res;
     }
 
@@ -1028,7 +1028,7 @@ class LocationController extends Controller{
                 "Diferencia" => $producto->stocks[0]->pivot->max - $producto->stocks[0]->pivot->min
             ];
         })->toArray();
-        
+
         return $res;
     }
 
