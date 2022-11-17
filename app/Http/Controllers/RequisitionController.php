@@ -32,6 +32,7 @@ class RequisitionController extends Controller{
                 $_workpoint_to = $request->_workpoint_to;
                 switch ($request->_type){
                     case 2:
+                        // return response()->json();
                         $data = $this->getToSupplyFromStore($this->account->_workpoint, $_workpoint_to);
                     break;
                     case 3:
@@ -88,7 +89,7 @@ class RequisitionController extends Controller{
                 "order" => new RequisitionResource($requisition)
             ]);
         }catch(\Exception $e){
-            return response()->json(["message" => "No se ha podido crear el pedido"]);
+            return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
         }
     }
 
@@ -721,17 +722,19 @@ class RequisitionController extends Controller{
         $cats = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
         // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
 
-        $pquery = '
-            SELECT
+        $wkf = $workpoint_id;
+        $wkt = $workpoint_to;
+
+        $pquery = "SELECT
                 P.id AS id,
                 P.code AS code,
                 P._unit AS unitsupply,
                 P.pieces AS ipack,
                 P.cost AS cost,
-                    (SELECT stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) AS stock,
-                    (SELECT  min FROM product_stock WHERE _workpoint = 8 AND _product = P.id) AS min,
-                    (SELECT max FROM product_stock WHERE _workpoint = 8 AND _product = P.id) AS max,
-                    SUM(IF(PS._workpoint = 1, PS.stock, 0)) AS CEDIS,
+                    (SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) AS stock,
+                    (SELECT  min FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS min,
+                    (SELECT max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS max,
+                    SUM(IF(PS._workpoint=$wkf, PS.stock, 0)) AS CEDIS,
                     (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO
                 FROM
                     products P
@@ -740,23 +743,14 @@ class RequisitionController extends Controller{
                         INNER JOIN
                     product_stock PS ON PS._product = P.id
                 WHERE
-                    GETSECTION(PC.id) in ('.$cats.')
+                    GETSECTION(PC.id) in ($cats)
                         AND P._status != 4
                         AND (IF(PS._workpoint = 1, PS._status, 0)) = 1
-                        AND ((SELECT stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0)) IS NOT NULL
-                        AND (IF((SELECT  stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) <= (SELECT  min FROM product_stock WHERE  _workpoint = 8 AND _product = P.id), (SELECT  max FROM product_stock WHERE _workpoint = 8 AND _product = P.id) - (SELECT  stock FROM product_stock WHERE _workpoint = 8 AND _product = P.id AND _status != 4 AND min > 0 AND max > 0), 0)) > 0
-                GROUP BY P.code';
+                        AND ((SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0)) IS NOT NULL
+                        AND (IF((SELECT  stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) <= (SELECT  min FROM product_stock WHERE  _workpoint=$wkf AND _product = P.id), (SELECT  max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) - (SELECT  stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0), 0)) > 0
+                GROUP BY P.code";
 
-        $binds = [
-            "wf0"=>$workpoint_id,
-            "wf1"=>$workpoint_id,
-            "wf2"=>$workpoint_id,
-            "wt0"=>$workpoint_to,
-            "wt1"=>$workpoint_to,
-            "wf3"=>$workpoint_id,
-        ];
-
-        $rows = DB::select($pquery,$binds);
+        $rows = DB::select($pquery);
         $tosupply = [];
 
         foreach ($rows as $product) {
