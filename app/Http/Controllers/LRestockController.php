@@ -40,8 +40,7 @@ class LRestockController extends Controller{
                     WHERE
                         PS._status=1 AND
                         PS._workpoint=1 AND
-                        PS.stock=0 AND
-                        (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
+                        PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
             $pndcs = Product::whereHas("stocks", function($qb){
                     $qb->whereBetween("_workpoint",[1,2])

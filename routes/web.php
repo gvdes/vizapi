@@ -67,6 +67,10 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/saveHistoric', 'LocationController@saveStocks'); // Función para almacenar el cierre de stocks del día
     });
 
+    $router->group([ 'prefix'=>'C' ], function() use($router){
+        $router->get("salesstore", "LStoreController@index");
+    });
+
     $router->group(['prefix' => 'inventory'], function () use ($router){
         $router->get('/', 'CycleCountController@index'); // Función que nos retorna las conteos ciclicos que hemos realizado en cierto periodo de tiempo, ademas retorna los datos necesarios para seguir creando conteos
         $router->get('/{id}', 'CycleCountController@find'); // Función para agregar un conteo ciclico en especifico con sus repectivos datos para trabajar con el
