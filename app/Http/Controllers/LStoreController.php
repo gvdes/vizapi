@@ -35,10 +35,12 @@ class LStoreController extends Controller{
                             GETFAMILY(PC.id) AS FAMILIA,
                             GETCATEGORY(PC.id) AS CATEGORIA,
                             VENT.VENTA AS VEN,
-                            STO.STOCK AS STO
+                            STO.STOCK AS STO,
+                            STO.MIN as MIN,
+                            STO.MAX as MAX
                         FROM products P
                             INNER JOIN product_categories PC ON PC.id = P._category
-                            LEFT JOIN (SELECT _product AS CODIGO, SUM(stock) AS STOCK FROM product_stock WHERE _workpoint = $wkp GROUP BY _product) AS STO ON STO.CODIGO = P.id
+                            LEFT JOIN (SELECT _product AS CODIGO, min AS MIN, max as MAX, SUM(stock) AS STOCK FROM product_stock WHERE _workpoint = $wkp GROUP BY _product,min,max) AS STO ON STO.CODIGO = P.id
                             LEFT JOIN (SELECT PS._product AS CODIGO, SUM(PS.amount) AS VENTA FROM product_sold PS INNER JOIN sales S ON S.id = PS._sale INNER JOIN cash_registers CS ON CS.id = S._cash WHERE  _workpoint = $wkp AND S.created_at BETWEEN '$from' AND '$to' GROUP BY PS._product) AS VENT ON VENT.CODIGO = P.id
                         WHERE P._status!=4";
 
