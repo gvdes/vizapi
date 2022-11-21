@@ -165,7 +165,11 @@ class OrderController extends Controller{
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
                 /* $cash_ = $cash_[0]->pivot->responsable; */
-                $cellerPrinter->orderTicket2($order, $cash_);
+                $printed = $cellerPrinter->orderTicket2($order, $cash_);
+                if($printed){
+                    $order->printed = $order->printed +1;
+                    $order->save();
+                }
                 $user = User::find($this->account->_account);
                 // Order was passed next status by
                 $log = $this->createLog($order->id, 5, []);
