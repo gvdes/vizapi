@@ -296,7 +296,8 @@ class RequisitionController extends Controller{
             break;
 
             case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
-                $port = $requisition->_workpoint_to==2 ? 4065:9100;
+                // $port = $requisition->_workpoint_to==2 ? 4065:9100;
+                $port = 9100;
 
                 $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);// se inserta el log dos al pedido con su responsable
                 $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
@@ -657,11 +658,8 @@ class RequisitionController extends Controller{
             }]);
         }]);
         $printer = isset($request->_printer) ? \App\Printer::find($request->_printer) : $this->getPrinterDefault($requisition->_workpoint_from, $this->account->_workpoint);
-        if($this->account->_workpoint == 2){
-            $port = 4065;
-        }else{
-            $port = 9100;
-        }
+        $port = 9100;
+        // if($this->account->_workpoint == 2){ $port = 4065; }else{ $port = 9100; }
         $cellerPrinter = new MiniPrinterController($printer->ip, $port);
         $res = $cellerPrinter->requisitionTicket($requisition);
         if($requisition->_workpoint_to == $this->account->_workpoint){
