@@ -19,11 +19,12 @@ class LStoreController extends Controller{
         $this->account = Auth::payload()['workpoint'];
     }
 
-    public function index(){
+    public function index(Request $request){
         try {
+            $view = $request->view;
             $wkp = $this->account->_workpoint;
             $now = CarbonImmutable::now();
-            $from = $now->startOf("day")->format("Y-m-d H:i");
+            $from = $now->startOf($view)->format("Y-m-d H:i");
             $to = $now->endOf("day")->format("Y-m-d H:i");
 
             $query = "  SELECT
@@ -48,7 +49,8 @@ class LStoreController extends Controller{
 
             return response()->json([
                 "user"=>$this->account,
-                "rows"=>$rows
+                "rows"=>$rows,
+                "view"=>$view
             ]);
         } catch (\Throwable $th) { return response()->json($th,500); }
     }

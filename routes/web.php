@@ -68,7 +68,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
     });
 
     $router->group([ 'prefix'=>'C' ], function() use($router){
-        $router->get("salesstore", "LStoreController@index");
+        $router->post("salesstore", "LStoreController@index");
     });
 
     $router->group(['prefix' => 'inventory'], function () use ($router){
@@ -161,7 +161,6 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/edit', 'OrderController@editting');
         $router->post('/demo', 'OrderController@getNextStatus');
         $router->post('/excel', 'OrderController@excel');
-
     });
 
     $router->group(['prefix' => 'workpoints'], function () use ($router){
