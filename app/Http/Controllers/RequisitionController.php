@@ -318,10 +318,12 @@ class RequisitionController extends Controller{
                 }]);
 
                 // definir IMPRESION AUTOMATICA DEL PEDIDO
-                $stores_p2 = [8,11,19];
-                $ipprinter = in_array($requisition->_workpoint_from, $stores_p2) ? env("PRINTER_P2") : env("PRINTER_P3");
+                // $stores_p2 = [8,11,19];
+                // $ipprinter = in_array($requisition->_workpoint_from, $stores_p2) ? env("PRINTER_P2") : env("PRINTER_P3");
 
-                $miniprinter = new MiniPrinterController($ipprinter, $port);
+                $ipprinter = \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint_to]])->first();
+
+                $miniprinter = new MiniPrinterController($ipprinter->ip, $port);
                 $printed_provider = $miniprinter->requisitionTicket($requisition);
 
                 if($printed_provider){
