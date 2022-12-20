@@ -43,14 +43,14 @@ class LRestockController extends Controller{
                         PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
             $pndcs = Product::whereHas("stocks", function($qb){
-                    $qb->whereBetween("_workpoint",[1,2])
+                    $qb->whereIn("_workpoint",[1,2,13])
                         ->whereNotIn("_status",[1,4])
                         ->where("stock",">",0);
                     })->count();
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
             $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
 
-            $printers = WorkPoint::with("printers")->whereIn("id",[1,2])->get();
+            $printers = WorkPoint::with("printers")->whereIn("id",[1,2,13])->get();
 
             return response()->json([
                 "view"=>$view,
