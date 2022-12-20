@@ -258,4 +258,8 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'LFacsController@index');
                 $router->get('/ticket', 'LFacsController@ticket');
             });
+
+            $router->group(['prefix' => 'vfy'], function() use($router){
+                $router->get('/index', 'LVerificatorController@index');
+            });
         });

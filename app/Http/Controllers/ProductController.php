@@ -646,14 +646,19 @@ class ProductController extends Controller{
             //OBTENER FUNCIÓN DE CHECAR STOCKS
         }
 
-        $query = $query->with(['units', 'status']); // por default se obtienen las unidades y el status general
+        $query = $query->with(['units', 'status', 'variants']); // por default se obtienen las unidades y el status general
 
         if(isset($request->_workpoint_status) && $request->_workpoint_status){ // Se obtiene el stock de la tienda se se aplica el filtro
-            $workpoints = $request->_workpoint_status;
-            $workpoints[] = $this->account->_workpoint; // Siempre se agrega el status de la sucursal
-            $query = $query->with(['stocks' => function($query) use($workpoints){ //Se obtienen los stocks de todas las sucursales que se pasa el arreglo
-                $query->whereIn('_workpoint', $workpoints)->distinct();
-            }]);
+
+            if($request->_workpoint_status == "all"){
+                $query = $query->with(['stocks']);
+            }else{
+                $workpoints = $request->_workpoint_status;
+                $workpoints[] = $this->account->_workpoint; // Siempre se agrega el status de la sucursal
+                $query = $query->with(['stocks' => function($query) use($workpoints){ //Se obtienen los stocks de todas las sucursales que se pasa el arreglo
+                    $query->whereIn('_workpoint', $workpoints)->distinct();
+                }]);
+            }
         }else{
             $query = $query->with(['stocks' => function($query){ //Se obtiene el stock de la sucursal
                 $query->where('_workpoint', $this->account->_workpoint)->distinct();
@@ -691,7 +696,7 @@ class ProductController extends Controller{
             $query = $query->limit($request->limit);
         }
 
-        $query = $query->with('variants');
+        // $query = $query->with(['variants']);
 
         if(isset($request->paginate) && $request->paginate){
             $products = $query->orderBy('_status', 'asc')->paginate($request->paginate);
