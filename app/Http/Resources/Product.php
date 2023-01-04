@@ -93,6 +93,7 @@ class Product extends JsonResource{
                         "_workpoint" => $stock->id,
                         "alias" => $stock->alias,
                         "name" => $stock->name,
+                        "typewkp" => $stock->_type,
                         "stock" => $stock->pivot->stock,
                         "gen" => $stock->pivot->gen,
                         "exh" => $stock->pivot->exh,
