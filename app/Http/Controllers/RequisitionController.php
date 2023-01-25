@@ -827,19 +827,19 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Navidad", "Juguete"'; break;
-            case 3: return '"Navidad"'; break;
-            case 4: return '"Navidad"'; break;
-            case 5: return '"Navidad"'; break;
-            case 7: return '"Navidad"'; break;
-            case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
-            case 9: return '"Navidad"'; break;
+            case 1: return '"Mochila", "Juguete"'; break;
+            case 3: return '"Paraguas"'; break;
+            case 4: return '"Mochila"'; break;
+            case 5: return '"Mochila"'; break;
             case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 7: return '"Mochila"'; break;
+            case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
+            case 9: return '"Mochila"'; break;
+            case 10: return '"Calculadora", "Electronico", "Hogar"'; break;
             case 11: return '"Juguete"'; break;
-            case 10: return '"Navidad"'; break;
             case 12: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 13: return '"Navidad"'; break;
-            case 19: return '"Navidad"'; break;
+            case 13: return '"Mochila"'; break;
+            case 19: return '"Juguete"'; break;
         }
     }
 
