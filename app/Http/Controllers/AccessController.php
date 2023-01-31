@@ -13,8 +13,9 @@ class AccessController extends Controller{
 
     public function __construct($url){
         $this->url = $url;
+        // new branch
     }
-    
+
     public function getStocks($_workpoint){
         $client = curl_init();
         curl_setopt($client, CURLOPT_URL, $this->url.env('ACCESS_SERVER').'/warehouse/stocks');
@@ -28,7 +29,7 @@ class AccessController extends Controller{
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         return json_decode(curl_exec($client), true);
     }
-    /* 
+    /*
 
     public function todosLosProducts($cols){
         $client = curl_init();
@@ -180,14 +181,14 @@ class AccessController extends Controller{
         $data = json_encode(["last_data" => $last_data]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-        return json_decode(curl_exec($client), true);        
+        return json_decode(curl_exec($client), true);
     }
 
     /*************
      * PRODUCTOS *
      *************/
     public function getProducts(){
-        
+
     }
 
     public function getRawProducts($date, $prices, $products){
@@ -462,7 +463,7 @@ class AccessController extends Controller{
         $data = json_encode(["date" => $date]);
         curl_setopt($client, CURLOPT_POSTFIELDS, $data);
         curl_setopt($client, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-        return json_decode(curl_exec($client), true);        
+        return json_decode(curl_exec($client), true);
     }
 
     public function getConcepts(){
