@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use App\WorkPoint;
 use App\Product;
 use App\Celler;
+use App\Sales;
+use App\CashRegister;
 use App\CellerSection;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class LocationController extends Controller{
     /**
@@ -499,6 +502,15 @@ class LocationController extends Controller{
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         })->where('_status', '!=', 4)->count();
 
+        // reporte de ventas en negativo
+        $devoluciones = DB::table('sales as S')
+            ->join('cash_registers as CR','CR.id','=','S._cash')
+            ->join('workpoints as W','W.id','=','CR._workpoint')
+            ->where('W.id', $this->account->_workpoint)
+            ->where('S.total',"<",0)
+            ->whereDate("S.created_at", Carbon::now()->format('Y-m-d'))
+            ->count();
+
         return response()->json([
             ["alias" => "catalogo", "value" => $counterProducts, "description" => "Artículos en catalogo", "_excel" => 12],
             ["alias" => "stock", "value" => $withStock, "description" => "Con stock", "_excel" => 1],
@@ -512,6 +524,7 @@ class LocationController extends Controller{
             ["alias" => "withLocation", "value" => $withLocationWithoutStock, "description" => "Sin stock con ubicación", "_excel" => 5],
             ["alias" => "generalVsCedis", "value" => count($generalVsCedis), "description" => "Almacen general vs CEDIS", "_excel" => 8],
             ["alias" => "negativos", "value" => $negativos, "description" => "Productos en negativo", "_excel" => 10],
+            ["alias" => "devoluciones", "value" => $devoluciones, "description" => "Devoluciones", "_excel" => 13],
         ]);
     }
 
@@ -633,6 +646,10 @@ class LocationController extends Controller{
                 $res = $this->catologo();
                 $name = "catalogoCompleto";
                 break;
+            case 13:
+                $res = $this->devoluciones();
+                $name = "devoluciones";
+                break;
             default:
                 $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
                 $name = "noFound";
@@ -677,6 +694,24 @@ class LocationController extends Controller{
             ];
         })->toArray();
         return $res;
+    }
+
+    public function devoluciones(){
+       return DB::table('sales as S')
+            ->join('cash_registers as CR','CR.id','=','S._cash')
+            ->join('workpoints as W','W.id','=','CR._workpoint')
+            ->where('W.id', $this->account->_workpoint)
+            ->where('S.total',"<",0)
+            ->whereDate("S.created_at", Carbon::now()->format('Y-m-d'))
+            ->select('CR.num_cash as serie','S.num_ticket as ticket', 'S.name as cliente', 'S.total as total')
+            ->get()->map(function($row){
+            return [
+                "Caja"=>$row->serie,
+                "Ticket"=>$row->ticket,
+                "Cliente"=>$row->cliente,
+                "Total"=>$row->total,
+            ];
+        })->toArray();
     }
 
     public function negativos(){
@@ -724,6 +759,7 @@ class LocationController extends Controller{
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         })->where('_status', '!=', 4)->get();
+
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -740,6 +776,7 @@ class LocationController extends Controller{
                 "Ubicaciones" => $locations
             ];
         })->toArray();
+
         return $res;
     }
 
