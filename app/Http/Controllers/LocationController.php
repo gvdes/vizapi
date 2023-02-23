@@ -511,6 +511,17 @@ class LocationController extends Controller{
             ->whereDate("S.created_at", Carbon::now()->format('Y-m-d'))
             ->count();
 
+        $salesundercost = DB::table('sales AS S')
+            ->join('product_sold AS PS','PS._sale','S.id')
+            ->join('cash_registers AS CS','CS.id','S._cash')
+            ->join('products AS P','P.id','PS._product')
+            ->whereDate('S.created_at', Carbon::now()->format('Y-m-d'))
+            ->where('CS._workpoint', $this->account->_workpoint)
+            ->whereraw('(PS.price - P.cost) < 0')
+            ->select('P.code as codigo','P.description as descripcion','P.cost as costo','PS.price as venta')
+            ->selectraw('CONCAT(CS.num_cash,"-",S.num_ticket) as ticket, PS.price - P.cost as diferencia')
+            ->count();
+
         return response()->json([
             ["alias" => "catalogo", "value" => $counterProducts, "description" => "Artículos en catalogo", "_excel" => 12],
             ["alias" => "stock", "value" => $withStock, "description" => "Con stock", "_excel" => 1],
@@ -525,6 +536,7 @@ class LocationController extends Controller{
             ["alias" => "generalVsCedis", "value" => count($generalVsCedis), "description" => "Almacen general vs CEDIS", "_excel" => 8],
             ["alias" => "negativos", "value" => $negativos, "description" => "Productos en negativo", "_excel" => 10],
             ["alias" => "devoluciones", "value" => $devoluciones, "description" => "Devoluciones", "_excel" => 13],
+            ["alias" => "salesundercost", "value" => $salesundercost, "description" => "Productos bajo costo", "_excel" => 14],
         ]);
     }
 
@@ -705,13 +717,35 @@ class LocationController extends Controller{
             ->whereDate("S.created_at", Carbon::now()->format('Y-m-d'))
             ->select('CR.num_cash as serie','S.num_ticket as ticket', 'S.name as cliente', 'S.total as total')
             ->get()->map(function($row){
-            return [
-                "Caja"=>$row->serie,
-                "Ticket"=>$row->ticket,
-                "Cliente"=>$row->cliente,
-                "Total"=>$row->total,
-            ];
-        })->toArray();
+                return [
+                    "Caja"=>$row->serie,
+                    "Ticket"=>$row->ticket,
+                    "Cliente"=>$row->cliente,
+                    "Total"=>$row->total,
+                ];
+            })->toArray();
+    }
+
+    public function salesundercost(){
+        return DB::table('sales AS S')
+            ->join('product_sold AS PS','PS._sale','S.id')
+            ->join('cash_registers AS CS','CS.id','S._cash')
+            ->join('products AS P','P.id','PS._product')
+            ->whereDate('S.created_at', Carbon::now()->format('Y-m-d'))
+            ->where('CS._workpoint', $this->account->_workpoint)
+            ->whereraw('(PS.price - P.cost) < 0')
+            ->select('P.code as codigo','P.description as descripcion','P.cost as costo','PS.price as venta')
+            ->selectraw('CONCAT(CS.num_cash,"-",S.num_ticket) as ticket, PS.price - P.cost as diferencia')
+            ->get()->map(function($row){
+                return [
+                    "ticket"=>$row->ticket,
+                    "articulo"=>$row->codigo,
+                    "descripcion"=>$row->descripcion,
+                    "costo"=>$row->costo,
+                    "precio_venta"=>$row->venta,
+                    "diferencia"=>$row->diferencia
+                ];
+            })->toArray();
     }
 
     public function negativos(){
