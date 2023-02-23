@@ -662,6 +662,10 @@ class LocationController extends Controller{
                 $res = $this->devoluciones();
                 $name = "devoluciones";
                 break;
+            case 14:
+                $res = $this->salesundercost();
+                $name = "devoluciones";
+                break;
             default:
                 $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
                 $name = "noFound";
