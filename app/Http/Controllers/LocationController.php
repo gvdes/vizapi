@@ -522,6 +522,15 @@ class LocationController extends Controller{
             ->selectraw('CONCAT(CS.num_cash,"-",S.num_ticket) as ticket, PS.price - P.cost as diferencia')
             ->count();
 
+        $pricesupdates = DB::table('products AS P')
+            ->join('product_categories AS PC','PC.id','P._category')
+            ->join('prices_product AS PP','PP._product','P.id')
+            ->whereDate('P.updated_at',Carbon::now()->format('Y-m-d'))
+            ->selectRaw('IF(PP.CENTRO = PP.MENUDEO, "OFERTA", "LINEA") AS ESTADO,')
+            ->selectRaw('GETSECTION(PC.id) as seccion')
+            ->select('P.code','P.description','PP.CENTRO','PP.ESPECIAL','PP.CAJA','PP.DOCENA','PP.MAYOREO','PP.MENUDEO')
+            ->count();
+
         return response()->json([
             ["alias" => "catalogo", "value" => $counterProducts, "description" => "Artículos en catalogo", "_excel" => 12],
             ["alias" => "stock", "value" => $withStock, "description" => "Con stock", "_excel" => 1],
@@ -537,7 +546,10 @@ class LocationController extends Controller{
             ["alias" => "negativos", "value" => $negativos, "description" => "Productos en negativo", "_excel" => 10],
             ["alias" => "devoluciones", "value" => $devoluciones, "description" => "Devoluciones", "_excel" => 13],
             ["alias" => "salesundercost", "value" => $salesundercost, "description" => "Productos bajo costo", "_excel" => 14],
+            ["alias" => "pricesupdates", "value" => $pricesupdates, "description" => "Cambios de Precio", "_excel" => 15],
         ]);
+
+
     }
 
     public function getSectionsChildren($id){ // Función que nos retorna las secciones hija de una de nivel inferior
@@ -752,6 +764,29 @@ class LocationController extends Controller{
             })->toArray();
     }
 
+    public function updatedprices(){
+        return DB::table('products AS P')
+            ->join('product_categories AS PC','PC.id','P._category')
+            ->join('prices_product AS PP','PP._product','P.id')
+            ->whereDate('P.updated_at', Carbon::now()->format('Y-m-d'))
+            ->select('P.code AS codigo','P.description as descripcion','PP.CENTRO as centro','PP.ESPECIAL as especial','PP.CAJA as caja','PP.DOCENA as docena','PP.MAYOREO as mayoreo','PP.MENUDEO as menudeo')
+            ->selectRaw('IF(PP.CENTRO = PP.MENUDEO, "OFERTA", "LINEA") as estado, GETSECTION(PC.id) as seccion')
+            ->get()->map(function($row){
+                return  [
+                    "seccion"=>$row->seccion,
+                    "codigo"=>$row->codigo,
+                    "descripcion"=>$row->descripcion,
+                    "estado"=>$row->estado,
+                    "centro"=>$row->centro,
+                    "especial"=>$row->especial,
+                    "caja"=>$row->caja,
+                    "docena"=>$row->docena,
+                    "mayoreo"=>$row->mayoreo,
+                    "menudeo"=>$row->menudeo,
+                ];
+            })->toArray();
+    }
+
     public function negativos(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
         with(['stocks' => function($query){
@@ -955,15 +990,15 @@ class LocationController extends Controller{
 
     public function generalVsCedis(){
         if($this->account->_workpoint == 1){
-            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['category', 'stocks' => function($query){
-                $query->where("_workpoint", 2);
-            }, 'locations' => function($query){
-                $query->whereHas('celler', function($query){
-                    $query->where('_workpoint', 2);
-                });
-            }])->whereHas('stocks', function($query){
-                $query->where([["stock", ">", 0], ["_workpoint", 2]]);
-            })->where('_status', '!=', 4)->get();
+            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+                        ->with([
+                            'category',
+                            'stocks' => fn($q) => $q->where("_workpoint", 2),
+                            'locations' => fn($q) => $q->whereHas('celler', fn($q) => $q->where('_workpoint', 2))
+                        ])
+                        ->whereHas('stocks', fn($q) => $q->where([["stock", ">", 0], ["_workpoint", 2]]))
+                        ->where('_status', '!=', 4)
+                        ->get();
         }else{
             $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['category', 'stocks' => function($query){
                 $query->where("_workpoint", 1);
