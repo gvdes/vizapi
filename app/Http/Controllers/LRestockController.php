@@ -77,18 +77,18 @@ class LRestockController extends Controller{
                         'log',
                         'from',
                         'products' => function($query){
-                            $query->selectRaw('
-                                        products.*,
-                                        getSection(products._category) AS section,
-                                        getFamily(products._category) AS family,
-                                        getCategory(products._category) AS category
-                                    ')->with([
-                                        'units',
-                                        'variants',
-                                        'stocks' => function($q){ return $q->whereIn('_workpoint', [1,2]); },
-                                        'locations' => fn($qq) => $qq->whereHas('celler', function($qqq){ $qqq->where('_workpoint', 1); }),
-                                    ]);
-                            }
+                                            $query->selectRaw('
+                                                        products.*,
+                                                        getSection(products._category) AS section,
+                                                        getFamily(products._category) AS family,
+                                                        getCategory(products._category) AS category
+                                                    ')->with([
+                                                        'units',
+                                                        'variants',
+                                                        'stocks' => function($q){ return $q->whereIn('_workpoint', [1,2]); },
+                                                        'locations' => fn($qq) => $qq->whereHas('celler', function($qqq){ $qqq->where('_workpoint', 1); }),
+                                                    ]);
+                                        }
                     ])->findOrFail($id);
 
             return response()->json($order);
@@ -208,23 +208,25 @@ class LRestockController extends Controller{
             if($resp["error"]){
                 return response()->json($resp["error"],500);
             }else{
-                $requisition = Requisition::with(["to", "from", "log", "status", "created_by"])->find($oid);
-                $now = CarbonImmutable::now();
-                $prevstate = null;
+                if($resp["httpcode"]==201){
+                    $requisition = Requisition::with(["to", "from", "log", "status", "created_by"])->find($oid);
+                    $now = CarbonImmutable::now();
+                    $prevstate = null;
 
-                $logs = $requisition->log->toArray();
-                $end = end($logs);
-                $prevstate = $end['pivot']['_status'];
-                $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
-                $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                $requisition->_status=7; // se actualiza el status del pedido
-                $requisition->entry_key = md5($requisition->id);
-                $requisition->save(); // se guardan los cambios
-                $requisition->fresh(['log']); // se refresca el log del pedido
+                    $logs = $requisition->log->toArray();
+                    $end = end($logs);
+                    $prevstate = $end['pivot']['_status'];
+                    $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                    $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                    $requisition->_status=7; // se actualiza el status del pedido
+                    $requisition->entry_key = md5($requisition->id);
+                    $requisition->save(); // se guardan los cambios
+                    $requisition->fresh(['log']); // se refresca el log del pedido
 
-                return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
+                    return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
+                }else{ return response()->json($resp["done"],$resp["httpcode"]); }
             }
-        } catch (\Error $e) { return response()->json($e, 500); }
+        } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
     }
 
     public function newentry(Request $request){
@@ -240,23 +242,25 @@ class LRestockController extends Controller{
                 if($resp["error"]){
                     return response()->json($resp["error"],500);
                 }else{
-                    $now = CarbonImmutable::now();
-                    $prevstate = null;
+                    if($resp["httpcode"]==201){
 
-                    $logs = $requisition->log->toArray();
-                    $end = end($logs);
-                    $prevstate = $end['pivot']['_status'];
-                    $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
-                    $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                    $requisition->_status=10; // se actualiza el status del pedido
-                    $requisition->save(); // se guardan los cambios
-                    $requisition->fresh(['log']); // se refresca el log del pedido
+                        $now = CarbonImmutable::now();
+                        $prevstate = null;
 
-                    return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
+                        $logs = $requisition->log->toArray();
+                        $end = end($logs);
+                        $prevstate = $end['pivot']['_status'];
+                        $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                        $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                        $requisition->_status=10; // se actualiza el status del pedido
+                        $requisition->save(); //  guardan los cambios
+                        $requisition->fresh(['log']); // se refresca el log del pedido
+
+                        return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
+                    }else{ return response()->json($resp["done"],$resp["httpcode"]); }
                 }
-                return response()->json([ "order" => $resp ]);
             }else{ return response("El status actual de esta orden no permite generar entrada (orderState: $cstate)",400); }
-        } catch (\Error $e) { return response()->json($e, 500); }
+        } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
     }
 
     private function accessGenInvoice($oid){
@@ -275,7 +279,7 @@ class LRestockController extends Controller{
         $exec = json_decode(curl_exec($curl));
         $info = curl_getinfo($curl);
 
-        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "info"=>$info ];
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
 
         curl_close($curl);
     }
@@ -296,7 +300,7 @@ class LRestockController extends Controller{
         $exec = json_decode(curl_exec($curl));
         $info = curl_getinfo($curl);
 
-        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "info"=>$info ];
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
 
         curl_close($curl);
     }
@@ -337,7 +341,7 @@ class LRestockController extends Controller{
                                     ')->with([
                                         'units',
                                         'variants',
-                                        // 'stocks' => function($q){ return $q->whereIn('_workpoint', [1,2]); },
+                                        'stocks' => function($q){ return $q->whereIn('_workpoint', [1,2]); },
                                         // 'locations' => fn($qq) => $qq->whereHas('celler', function($qqq){ $qqq->where('_workpoint', 1); }),
                                     ]);
                             }
@@ -371,7 +375,7 @@ class LRestockController extends Controller{
                     $req->fresh(['log']); // se refresca el log del pedido
 
                     return response()->json([ "req"=>$req ]);
-                }else{ return response("El status actual del pedido ($cstate), no permite iniciar el conteo",400); }
+                }else{ return response("El status ($cstate) actual del pedido, no permite iniciar el conteo",400); }
             }else{ return response("Sin coincidencias para el folio o llave invalida!",404); }
         } catch (\Error $e) { return response()->json($e,500); }
     }

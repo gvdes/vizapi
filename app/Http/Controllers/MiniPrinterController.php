@@ -37,7 +37,8 @@ class MiniPrinterController extends Controller{
 
     public function printKey($folio, $store, $key){
         try {
-            $url = "http://192.168.10.15:2200/#/checkin/$folio?key=$key";
+            $url = "http://192.168.10.189:2200/#/checkin/$folio?key=$key";
+            // $url = "http://192.168.12.183:4550/#/checkin/$folio?key=$key";
 
             $printer = $this->printer;
 
