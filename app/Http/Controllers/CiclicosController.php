@@ -52,13 +52,15 @@ class CiclicosController extends Controller{
                                                 });
                                             }]);
                                         }
-                    ])->find($folio);
+                    ])
+                    ->where([ ["id","=",$folio], ["_workpoint","=",$wkp] ])
+                    ->first();
 
         if($inventory){
             return response()->json([
                 "inventory" => new InventoryResource($inventory),
                 "params" => [$folio, $wkp]
             ]);
-        }else{ return response(404); }
+        }else{ return response("Not Found",404); }
     }
 }
