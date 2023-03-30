@@ -278,3 +278,10 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/index', 'LVerificatorController@index');
             });
         });
+
+        $router->group(['prefix' => 'LVH'], function() use($router){
+            $router->group(['prefix' => 'ciclicos'], function() use($router){
+                $router->get('/', 'CiclicosController@index');
+                $router->get('/{folio}', 'CiclicosController@find');
+            });
+        });
