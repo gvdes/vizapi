@@ -37,7 +37,7 @@ class Kernel extends ConsoleKernel
         *    VENTAS    *
         ****************/
         /* Actualización cada 5 minutos */
-        $schedule->call('App\Http\Controllers\VentasController@getLastVentas')->everyFiveMinutes()->between('9:00', '23:00');
+        $schedule->call('App\Http\Controllers\VentasController@getLastVentas')->everyFiveMinutes();
         /* Depuración de ventas diarias */
         $schedule->call('App\Http\Controllers\VentasController@restoreSales')->dailyAt('23:10');
         /* Se solicita la actualización de las ventas despues de ser eliminadas */
