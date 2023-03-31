@@ -757,20 +757,25 @@ class RequisitionController extends Controller{
             $min = $product->min;
             $max = $product->max;
 
-            $required = ($stock<=$min) ? ($max-$stock) : 0;
+            // $required = ($stock<=$min) ? ($max-$stock) : 0;
 
-            if($required){
+            // if($required){
                 if( $product->unitsupply==3 ){
+                    $required = ($stock<=$min) ? ($max-$stock) : 0;
                     $ipack = $product->ipack == 0 ? 1 : $product->ipack;
                     $boxes = floor($required/$ipack);
 
                     if($boxes>=1){
                         $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
                     }
-                }else if( $product->unitsupply==1 && $required<=$min ){
-                    $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0];
+                }else if( $product->unitsupply==1){
+                    $required = ($max-$stock);
+                    if($required<=$min){
+                        $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0];
+                    }
+
                 }
-            }
+            // }
         }
 
         return ["products" => $tosupply];
