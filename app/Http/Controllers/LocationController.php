@@ -780,14 +780,14 @@ class LocationController extends Controller{
             return [
                 "seccion"=>$row->seccion,
                 "codigo"=>$row->code,
-                "descripcion"=>$row->descripcion,
-                "estado"=>$row->estado,
-                "centro"=>$row->centro,
-                "especial"=>$row->especial,
-                "caja"=>$row->caja,
-                "docena"=>$row->docena,
-                "mayoreo"=>$row->mayoreo,
-                "menudeo"=>$row->menudeo,
+                "descripcion"=>$row->description,
+                "estado"=>$row->ESTADO,
+                "centro"=>$row->CENTRO,
+                "especial"=>$row->ESPECIAL,
+                "caja"=>$row->CAJA,
+                "docena"=>$row->DOCENA,
+                "mayoreo"=>$row->MAYOREO,
+                "menudeo"=>$row->MENUDEO,
             ];
         })->toArray();
     }
