@@ -676,7 +676,11 @@ class LocationController extends Controller{
                 break;
             case 14:
                 $res = $this->salesundercost();
-                $name = "devoluciones";
+                $name = "salesundercost";
+                break; 
+           case 15:
+                $res = $this->pricesupdates();
+                $name = "pricesupdates";
                 break;
             default:
                 $res = ["NOT"=>"4", "_" => "0", "FOUND" =>"4"];
@@ -762,6 +766,30 @@ class LocationController extends Controller{
                     "diferencia"=>$row->diferencia
                 ];
             })->toArray();
+    }
+
+    public function pricesupdates(){
+        return DB::table('products AS P')
+        ->join('product_categories AS PC','PC.id','P._category')
+        ->join('prices_product AS PP','PP._product','P.id')
+        ->whereDate('P.updated_at',Carbon::now()->format('Y-m-d'))
+        ->selectRaw('IF(PP.CENTRO = PP.MENUDEO, "OFERTA", "LINEA") AS ESTADO,')
+        ->selectRaw('GETSECTION(PC.id) as seccion')
+        ->select('P.code','P.description','PP.CENTRO','PP.ESPECIAL','PP.CAJA','PP.DOCENA','PP.MAYOREO','PP.MENUDEO')
+        ->get()->map(function($row){
+            return [
+                "seccion"=>$row->seccion,
+                "codigo"=>$row->code,
+                "descripcion"=>$row->descripcion,
+                "estado"=>$row->estado,
+                "centro"=>$row->centro,
+                "especial"=>$row->especial,
+                "caja"=>$row->caja,
+                "docena"=>$row->docena,
+                "mayoreo"=>$row->mayoreo,
+                "menudeo"=>$row->menudeo,
+            ];
+        })->toArray();
     }
 
     public function updatedprices(){
