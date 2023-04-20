@@ -773,7 +773,7 @@ class LocationController extends Controller{
         ->join('product_categories AS PC','PC.id','P._category')
         ->join('prices_product AS PP','PP._product','P.id')
         ->whereDate('P.updated_at',Carbon::now()->format('Y-m-d'))
-        ->selectRaw('IF(PP.CENTRO = PP.MENUDEO, "OFERTA", "LINEA") AS ESTADO,')
+        // ->selectRaw('IF(PP.CENTRO = PP.MENUDEO, "OFERTA", "LINEA") AS ESTADO,')
         // ->selectRaw('GETSECTION(PC.id) as seccion')
         ->select('P.code','P.description','PP.CENTRO','PP.ESPECIAL','PP.CAJA','PP.DOCENA','PP.MAYOREO','PP.MENUDEO')
         ->get()->map(function($row){
@@ -781,7 +781,7 @@ class LocationController extends Controller{
                 // "seccion"=>$row->seccion,
                 "codigo"=>$row->code,
                 "descripcion"=>$row->description,
-                "estado"=>$row->ESTADO,
+                // "estado"=>$row->ESTADO,
                 "centro"=>$row->CENTRO,
                 "especial"=>$row->ESPECIAL,
                 "caja"=>$row->CAJA,
