@@ -480,8 +480,7 @@ class RequisitionController extends Controller{
                 "active" => $event->active,
                 "allow" => $event->allow,
                 "details" => json_decode($event->pivot->details),
-                // "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
-                "created_at" => \Carbon\Carbon::parse($event->pivot->created_at)->subHour()->format('Y-m-d H:i'),
+                "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
                 "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
             ];
         });
