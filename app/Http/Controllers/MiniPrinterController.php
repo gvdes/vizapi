@@ -109,7 +109,7 @@ class MiniPrinterController extends Controller{
                 return $summary;
             }, [ "models"=>0, "articles"=>0, "soldOut"=>0 ]);
 
-            $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=1);
+            $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=2);//se cambio el statys de 1 a 2
             $finished_at = $finished_at[sizeof($finished_at) - 1];
 
             $printer->setJustification(Printer::JUSTIFY_CENTER);
