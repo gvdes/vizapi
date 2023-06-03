@@ -334,6 +334,8 @@ class RequisitionController extends Controller{
                 }
 
                 // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
+                //SE BLOQUEARON ESTAS PARTES YA QUE NO ENVIABA EL PAPELITO EN SAN PABLO 2 Y SE QUEDABA ATORADO EL PEDIDO Y SE TENIA QUE REACARGAR
+
                 // $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 // $miniprinter = new MiniPrinterController($printer->ip, $port);
                 // $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
