@@ -334,9 +334,9 @@ class RequisitionController extends Controller{
                 }
 
                 // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
-                $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
-                $miniprinter = new MiniPrinterController($printer->ip, $port);
-                $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
+                // $printer = $_printer ? \App\Printer::find($_printer) : \App\Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
+                // $miniprinter = new MiniPrinterController($printer->ip, $port);
+                // $printed_store = $miniprinter->requisitionReceipt($requisition); //Se ejecuta la impresión
             break;
 
             case 3: // SURTIENDO
