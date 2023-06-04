@@ -293,14 +293,14 @@ class RequisitionController extends Controller{
 
         switch($case){
             case 1: // LEVANTAR PEDIDO
-                $requisition->log()->attach(1, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i'), 'updated_at' => carbon::now()->subHour()->format('Y-m-d H:i') ]);
+                $requisition->log()->attach(1, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);
             break;
 
             case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
                 // $port = $requisition->_workpoint_to==2 ? 4065:9100;
                 $port = 9100;
 
-                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i'), 'updated_at' => carbon::now()->subHour()->format('Y-m-d H:i') ]);// se inserta el log dos al pedido con su responsable
+                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i') ]);// se inserta el log dos al pedido con su responsable
                 $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
                 // $requisition->created_at = carbon::now()->subHour()->format('Y-m-d H:i');
                 $requisition->save(); // se guardan los cambios
@@ -343,7 +343,7 @@ class RequisitionController extends Controller{
             break;
 
             case 3: // SURTIENDO
-                $requisition->log()->attach(3, [ 'details'=>json_encode([ "responsable"=>$responsable, "actors"=>$actors 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i'), 'updated_at' => carbon::now()->subHour()->format('Y-m-d H:i') ]) ]);
+                $requisition->log()->attach(3, [ 'details'=>json_encode([ "responsable"=>$responsable, "actors"=>$actors ]) ]);
 
                 $requisition->_status = 3;
                 $requisition->save();
@@ -422,7 +422,7 @@ class RequisitionController extends Controller{
                 $requisition->log()->attach(7, [ 'details' => json_encode([
                     "responsable" => $responsable,
                     "actors" => $actors
-                ]), 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i'), 'updated_at' => carbon::now()->subHour()->format('Y-m-d H:i')]);
+                ])]);
                 $requisition->_status = 7;
                 $requisition->save();
             break;
