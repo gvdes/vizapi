@@ -300,9 +300,9 @@ class RequisitionController extends Controller{
                 // $port = $requisition->_workpoint_to==2 ? 4065:9100;
                 $port = 9100;
 
-                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]) ]);// se inserta el log dos al pedido con su responsable
+                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->subHour()->format('Y-m-d H:i') ]);// se inserta el log dos al pedido con su responsable
                 $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
-                $requisition->created_at = carbon::now()->subHour()->format('Y-m-d H:i');
+                // $requisition->created_at = carbon::now()->subHour()->format('Y-m-d H:i');
                 $requisition->save(); // se guardan los cambios
                 $requisition->fresh(['log']); // se refresca el log del pedido
 
