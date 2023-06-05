@@ -247,7 +247,7 @@ class RequisitionController extends Controller{
           CURLOPT_SSL_VERIFYPEER => 0,
           CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
           CURLOPT_CUSTOMREQUEST => "POST",
-          CURLOPT_POSTFIELDS => "token=6r5vqntlz18k61iu&to=+52$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
+          CURLOPT_POSTFIELDS => "token=7lxqd2rwots9u4lv&to=$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
           CURLOPT_HTTPHEADER => array("content-type: application/x-www-form-urlencoded"),));
         $response = curl_exec($curl);
         $err = curl_error($curl);
@@ -331,6 +331,10 @@ class RequisitionController extends Controller{
                 if($printed_provider){
                     $requisition->printed = ($requisition->printed+1);
                     $requisition->save();
+                }else {
+                    $groupvi = "120363157493041484@g.us";
+                    $mess = "El pedido ".$requisition->id." no se logro imprimir, favor de revisarlo";
+                    $this->sendWhatsapp($groupvi, $mess);
                 }
 
                 // NOTIFICAR VIA IMPRESION / WHATSAPP A LA TIENDA QUE SOLICITO EL PEDIDO
