@@ -7,6 +7,7 @@ use App\OrderSupply;
 use App\OrderSupplied;
 use App\Product;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class SalidasController extends Controller{
     /**
