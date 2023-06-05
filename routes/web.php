@@ -232,7 +232,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->group(['prefix' => 'salidas'], function () use ($router){
             $router->get('/', 'SalidasController@seederSalidas');
             $router->get('/new', 'SalidasController@LastSalidas');
-            $router->get('/missingprinter', 'RequisitionController@missingPrint');//revisa que todos los pedidos hayan sido impresos
+            $router->get('/missingprinter', 'SalidasController@missingPrint');//revisa que todos los pedidos hayan sido impresos
         });
 
         $router->group(['prefix' => 'entradas'], function () use ($router){
