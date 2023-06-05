@@ -272,7 +272,7 @@ class SalidasController extends Controller{
 
         $pedidos = DB::table('requisition')->whereDate('created_at',$date)->where('printed',0)->where('_status',2)->get();
 
-        if($pedidos === []){
+        if(count($pedidos) == 0){
             return response()->json("no hay brou");
         }else {
         foreach($pedidos as $pedido){
