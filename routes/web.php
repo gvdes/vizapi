@@ -154,6 +154,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/next', 'RequisitionController@nextStep');
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
         $router->post('/toDelivered', 'RequisitionController@setDeliveryValue');
+        $router->get('/missingprinter', 'RequisitionController@missingPrint');//revisa que todos los pedidos hayan sido impresos
     });
 
     $router->group(['prefix' => 'order'], function () use ($router){
