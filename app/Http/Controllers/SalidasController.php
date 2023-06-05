@@ -282,7 +282,6 @@ class SalidasController extends Controller{
             foreach($pedidos as $pedido){
                 $ped[] = $pedido->id;
                 }
-                return $ped;
             $req = implode(", ",$ped);
             $msg = "No se han impreso los pedidos ".$req;
             $nme = "120363157493041484@g.us";
