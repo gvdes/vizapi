@@ -273,7 +273,7 @@ class SalidasController extends Controller{
         $pedidos = DB::table('requisition')
         ->whereDate('created_at',$date)
         ->where('printed',0)
-        // ->where('_status',2)
+        ->where('_status',2)
         ->get();
 
         if(count($pedidos) == 0){
