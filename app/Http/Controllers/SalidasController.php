@@ -271,17 +271,20 @@ class SalidasController extends Controller{
         $date = Carbon::now()->format('Y-m-d');
 
         $pedidos = DB::table('requisition')->whereDate('created_at',$date)->where('printed',0)->where('_status',2)->get();
-        return $pedidos;
-        // if($pedidos){
-        //     foreach($pedidos as $pedido){
-        //         $ped[] = $pedido;
-        //     }
-        //     $req = implode(", ",$ped);
-        //     if($ped){
-        //         $msg = "No se han impreso los pedidos ".$req;
-        //         $nme = "120363157493041484@g.us";
-        //         $this->sendWhatsapp($nme,$msg);
-        //     }
-        // }else {return response()->json("no hay brou");}
+
+        if(is_null($pedidos)){
+            return response()->json("no hay brou");
+        }else {
+        foreach($pedidos as $pedido){
+                    $ped[] = $pedido;
+                }
+                $req = implode(", ",$ped);
+                if($ped){
+                    $msg = "No se han impreso los pedidos ".$req;
+                    $nme = "120363157493041484@g.us";
+                    $this->sendWhatsapp($nme,$msg);
+                }
+        }
+
     }
 }
