@@ -280,7 +280,7 @@ class SalidasController extends Controller{
             return response()->json("no hay brou");
         }else {
             foreach($pedidos as $pedido){
-                $ped[] = $pedido;
+                $ped[] = $pedido->id;
                 }
                 return $ped;
             $req = implode(", ",$ped);
