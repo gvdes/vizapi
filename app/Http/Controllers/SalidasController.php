@@ -279,15 +279,14 @@ class SalidasController extends Controller{
         if(count($pedidos) == 0){
             return response()->json("no hay brou");
         }else {
-        foreach($pedidos as $pedido){
-                    $ped[] = $pedido;
+            foreach($pedidos as $pedido){
+                $ped[] = $pedido;
                 }
-                $req = implode(", ",$ped);
-                if($ped){
-                    $msg = "No se han impreso los pedidos ".$req;
-                    $nme = "120363157493041484@g.us";
-                    $this->sendWhatsapp($nme,$msg);
-                }
+                return $ped;
+            $req = implode(", ",$ped);
+            $msg = "No se han impreso los pedidos ".$req;
+            $nme = "120363157493041484@g.us";
+            $this->sendWhatsapp($nme,$msg);
         }
 
     }
