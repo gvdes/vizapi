@@ -81,7 +81,7 @@ class Kernel extends ConsoleKernel
         *    requisitions    *
         ****************/
         //reporte que todos los pedidos han sido impresos
-        // $schedule->call('App\Http\Controllers\RequisitionController@missingPrint')->everyFiveMinutes();
+        $schedule->call('App\Http\Controllers\RequisitionController@missingPrint')->everyFiveMinutes();
 
         /* Actualización de retiradas de las sucursales al termino del día */
        // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas

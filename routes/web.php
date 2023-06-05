@@ -145,6 +145,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
     $router->group(['prefix' => 'requisition'], function () use ($router){
         $router->get('/', 'RequisitionController@index'); // Función para traer todos los pedidos que ha levantado la sucursal
         $router->get('/dashboard', 'RequisitionController@dashboard'); // Función para trer todos los pedidos que le han solicitado a la sucursal
+        $router->get('/missingprinter', 'RequisitionController@missingPrint');//revisa que todos los pedidos hayan sido impresos
         $router->get('/{id}', 'RequisitionController@find'); // Función para buscar un pedido en especifico
         $router->post('/updateStocks', 'RequisitionController@updateStocks'); // Función para actualizar los stocks de un pedido de resurtido
         $router->post('/', 'RequisitionController@create'); // Función para trer todos los pedidos que le han solicitado a la sucursal
@@ -154,7 +155,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/next', 'RequisitionController@nextStep');
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
         $router->post('/toDelivered', 'RequisitionController@setDeliveryValue');
-        // $router->get('/missingprinter', 'RequisitionController@missingPrint');//revisa que todos los pedidos hayan sido impresos
+
     });
 
     $router->group(['prefix' => 'order'], function () use ($router){
