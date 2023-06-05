@@ -275,7 +275,6 @@ class SalidasController extends Controller{
             foreach($pedidos as $pedido){
                 $ped[] = $pedido->id;
             }
-
             $req = implode(", ",$ped);
             if($ped){
                 $msg = "No se han impreso los pedidos ".$req;
