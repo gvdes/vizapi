@@ -984,22 +984,4 @@ class RequisitionController extends Controller{
         // con esta función solo saldran las impresiones en la parte de arriba
         return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
     }
-
-    public function missingPrint(){
-        $date = Carbon::now()->format('Y-m-d');
-
-        $pedidos = DB::table('requisition')->whereDate('created_at',$date)->where('printed',0)->get();
-
-        foreach($pedidos as $pedido){
-            $ped[] = $pedido->id;
-        }
-
-        $req = implode(" , ",$ped);
-        if($ped){
-            $msg = "No se han impreso los pedidos ".$req;
-            $nme = "120363157493041484@g.us";
-            $this->sendWhatsapp($nme,$msg);
-        }
-
-    }
 }

@@ -56,6 +56,7 @@ class Kernel extends ConsoleKernel
         *****************/
         /* Actualización de salidas cada hora */
         $schedule->call('App\Http\Controllers\SalidasController@LastSalidas')->hourly()->between('9:00', '22:00');
+        $schedule->call('App\Http\Controllers\SalidasController@missingPrint')->everyFiveMinutes();
 
         /**************
         *   COMPRAS   *
@@ -77,11 +78,7 @@ class Kernel extends ConsoleKernel
         /* Se solicita la actualización de los gastos despues de ser eliminados */
         $schedule->call('App\Http\Controllers\AccountingController@getNew')->weeklyOn(7,'8:05');
 
-        /***************
-        *    requisitions    *
-        ****************/
-        //reporte que todos los pedidos han sido impresos
-        $schedule->call('App\Http\Controllers\RequisitionController@missingPrint')->everyFiveMinutes();
+
 
         /* Actualización de retiradas de las sucursales al termino del día */
        // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
