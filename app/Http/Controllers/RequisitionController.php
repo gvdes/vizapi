@@ -845,6 +845,7 @@ class RequisitionController extends Controller{
             case 11: return '"Juguete"'; break;
             case 12: return '"Calculadora", "Electronico", "Hogar"'; break;
             case 13: return '"Mochila"'; break;
+            case 18: return '"Mochila", "Electronico", "Hogar"'; break;
             case 19: return '"Juguete"'; break;
         }
     }
