@@ -1075,7 +1075,7 @@ class OrderController extends Controller{
     public function getStatusByRol(){
         switch($this->account->_rol){
             case 1: case 2: case 3: case 8: return range(1,100);
-            case 4: return range(1,100); //vendedor
+            case 4: case 10: return range(1,100); //vendedor
             case 5: return range(6,9); //Cajero
             case 6: case 7: return range(3,5); //Bodeguero Administrador de almacenes
             case 9: return [5,6,7];//Validador
