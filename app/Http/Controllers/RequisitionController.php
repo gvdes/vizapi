@@ -322,7 +322,7 @@ class RequisitionController extends Controller{
                 // $ipprinter = \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint_to]])->first();
                 // $miniprinter = new MiniPrinterController($ipprinter->ip, $port);
 
-                if($requisition->_workpoint_from == 2){
+                if($requisition->_workpoint_from == 1){
                     $ipprinter = env("PRINTERTEX");
                 }else{
                     $stores_p3 = [ 4, 5, 7, 9, 13, 18 , 22 ];
