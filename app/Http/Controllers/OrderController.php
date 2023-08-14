@@ -164,8 +164,15 @@ class OrderController extends Controller{
                     $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 }
                 $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
-                /* $cash_ = $cash_[0]->pivot->responsable; */
-                $printed = $cellerPrinter->orderTicket2($order, $cash_);
+                if($cellerPrinter){//si sale mal quitalo apagalo otto jajaja
+                    $printed = $cellerPrinter->orderTicket2($order, $cash_);
+                }else{//este tambien w y descomentas el printed que esta abajo  va tkm hugo de el futuro <3
+                    $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint], ['name', 'LIKE', '%'."REIMP".'%']])->first();
+                    $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
+                    $printed = $cellerPrinter->orderTicket2($order, $cash_);
+                }
+                /* $cash_ = $cash_[0]->pivot->responsable; */ //este estaba asi
+                // $printed = $cellerPrinter->orderTicket2($order, $cash_); si sale mal descomenta esto y quitar el iff
                 if($printed){
                     $order->printed = $order->printed +1;
                     $order->save();
