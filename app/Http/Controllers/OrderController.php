@@ -172,7 +172,7 @@ class OrderController extends Controller{
                 //     $printed = $cellerPrinter->orderTicket2($order, $cash_);
                 // }
                 /* $cash_ = $cash_[0]->pivot->responsable; */ //este estaba asi
-                $printed = $cellerPrinter->orderTicket2($order, $cash_); si sale mal descomenta esto y quitar el iff
+                $printed = $cellerPrinter->orderTicket2($order, $cash_);
                 if($printed){
                     $order->printed = $order->printed +1;
                     $order->save();
