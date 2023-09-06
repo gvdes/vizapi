@@ -266,7 +266,7 @@ class LRestockController extends Controller{
     private function accessGenInvoice($oid){
         $data = json_encode([ "id"=>$oid ]);
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/access/public/Received/Received");
+        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Received/Received");
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_HEADER, 0);
@@ -287,7 +287,7 @@ class LRestockController extends Controller{
     private function accessGenEntry($oid,$ip){
         $data = json_encode([ "id"=>$oid ]);
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, "http://$ip/access/public/Required/Required");
+        curl_setopt($curl, CURLOPT_URL, "http://$ip/storetools/public/api/Required/Required");
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_HEADER, 0);
