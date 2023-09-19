@@ -326,7 +326,7 @@ class RequisitionController extends Controller{
                     $par = $requisition->_workpoint_to;
                     $ipprinter = $par == 2 ? env("PRINTERTEX") :  env("PRINTER_P3");
                 }else{
-                    $stores_p3 = [ 4, 5, 7, 9, 13, 18 , 22 ];
+                    $stores_p3 = [ 3, 4, 5, 7, 9, 13, 18 , 22 ];
                     $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
                 }
 
@@ -838,21 +838,21 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Mochila", "Juguete"'; break;
-            case 3: return '"Paraguas"'; break;
-            case 4: return '"Mochila"'; break;
-            case 5: return '"Mochila"'; break;
+            case 1: return '"Navidad", "Juguete"'; break;
+            case 3: return '"Navidad"'; break;
+            case 4: return '"Navidad"'; break;
+            case 5: return '"Navidad"'; break;
             case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 7: return '"Mochila"'; break;
+            case 7: return '"Navidad"'; break;
             case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
-            case 9: return '"Mochila"'; break;
+            case 9: return '"Navidad"'; break;
             case 10: return '"Calculadora", "Electronico", "Hogar"'; break;
             case 11: return '"Juguete"'; break;
             case 12: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 13: return '"Mochila"'; break;
-            case 18: return '"Mochila", "Electronico", "Hogar"'; break;
+            case 13: return '"Navidad"'; break;
+            case 18: return '"Navidad", "Electronico", "Hogar"'; break;
             case 19: return '"Juguete"'; break;
-            case 22: return '"Mochila"'; break;
+            case 22: return '"Navidad"'; break;
         }
     }
 
