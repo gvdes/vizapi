@@ -334,8 +334,10 @@ class RequisitionController extends Controller{
                 if($par = $requisition->_workpoint_to == 2){
                     $ipprinter = env("PRINTERTEX");
                 }else{
-                    $stores_p3 = [ 1, 3, 4, 5, 7, 9, 13, 18 , 22 ];
-                    $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
+                    // $stores_p3 = [ 1, 3, 4, 5, 7, 9, 13, 18 , 22 ];
+                    // $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
+                    $ipprinter = env("PRINTER_P3") ;
+
                 }
 
                 $miniprinter = new MiniPrinterController($ipprinter, $port);
