@@ -100,7 +100,7 @@ class OrderController extends Controller{
                 }else{
                     $printer = Printer::find($_printer);
                 }
-                $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
+                $cellerPrinter = new MiniPrinterController($printer->ip, $printer->_port, 5);//cambia el printerport por 9100
                 $_workpoint_to = $order->_workpoint_from;
                 $order->refresh(['created_by', 'products' => function($query) use ($_workpoint_to){
                     $query->with(['locations' => function($query)  use ($_workpoint_to){
@@ -163,7 +163,7 @@ class OrderController extends Controller{
                 if(!$printer){
                     $printer = Printer::where([['_type', 2], ['_workpoint', $this->account->_workpoint]])->first();
                 }
-                $cellerPrinter = new MiniPrinterController($printer->ip, 9100, 5);
+                $cellerPrinter = new MiniPrinterController($printer->ip, $printer->_port, 5);//cambia el printerport por 9100
                 // if($cellerPrinter){//si sale mal quitalo apagalo otto jajaja
                 //     $printed = $cellerPrinter->orderTicket2($order, $cash_);
                 // }else{//este tambien w y descomentas el printed que esta abajo  va tkm hugo de el futuro <3
