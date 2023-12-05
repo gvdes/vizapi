@@ -19,7 +19,7 @@ class PrinterController extends Controller{
 
     public function create(Request $request){ // Función para crear una nueva miniprinter (Impresora)
         /** VALIDACIONES */
-        /* 
+        /*
             Datos necesarios:
                 ip -> dirección local
                 name -> nombre de la impresora
@@ -60,7 +60,7 @@ class PrinterController extends Controller{
     }
 
     public function update(Request $request){ // Función para actualizar los datos de una miniprinter (Impresora)
-        /* 
+        /*
             Datos necesarios:
                 ip -> dirección local
                 name -> nombre de la impresora
@@ -125,7 +125,7 @@ class PrinterController extends Controller{
 
     public function test(Request $request){ // Función para realizar una prueba de impresión
         $printer = \App\Printer::find($request->_printer); // Se busca la impresora a la cual se quiere hacer la prueba
-        $cellerPrinter = new MiniPrinterController($printer->ip, 9100); // Se hace la conexión con la impresora
+        $cellerPrinter = new MiniPrinterController($printer->ip, $printer->_port); // Se hace la conexión con la impresora
         $res = $cellerPrinter->demo(); // Se ejecuta la prueba de impresión
         return response()->json(["success" => $res]);
     }
