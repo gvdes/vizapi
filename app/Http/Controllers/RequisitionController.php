@@ -852,7 +852,7 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Detalles", "Peluche"'; break;
+            case 1: return '"Detalles", "Peluche", "Hogar"'; break;
             case 3: return '"Navidad"'; break;
             case 4: return '"Navidad"'; break;
             case 5: return '"Navidad"'; break;
