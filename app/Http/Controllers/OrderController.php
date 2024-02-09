@@ -33,6 +33,7 @@ class OrderController extends Controller{
     }
 
     public function create(Request $request){
+        return $request->all();
         try{
             $order = DB::transaction( function () use ($request){
                 $now = new \DateTime();
