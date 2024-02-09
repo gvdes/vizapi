@@ -50,7 +50,7 @@ class OrderController extends Controller{
                 $order = Order::create([
                     'num_ticket' => $num_ticket,
                     'name' => isset($request->_client) ? $client->name : $request->name,
-                    '_client' => 0,
+                    '_client' => $client->id,
                     '_price_list' => $client->_price_list,
                     '_created_by' => $this->account->_account,
                     '_workpoint_from' => $this->account->_workpoint,
