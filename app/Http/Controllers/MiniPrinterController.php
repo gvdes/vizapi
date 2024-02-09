@@ -756,10 +756,10 @@ class MiniPrinterController extends Controller{
         $printer->setBarcodeWidth($this->barcode_width);
         $printer->barcode("ID-15568");
         $printer->feed(1);
-        $printer->text("GRUPO VIZCARRA\n");
+        $printer->text("Vizuru\n");
         $printer->cut();
         $printer->close();
-        return true;
+        return "true".$this->ip.":".$this->port;
     }
 
     public function validationTicket($series, $order){

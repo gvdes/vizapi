@@ -33,43 +33,44 @@ class OrderController extends Controller{
     }
 
     public function create(Request $request){
-        try{
-            $order = DB::transaction( function () use ($request){
-                $now = new \DateTime();
-                $_parent = null;
-                if(isset($request->_order) && $request->_order){
-                    $parent = Order::find($request->_order);
-                    if(!$parent){
-                        return response()->json(["success" => false, "server_status" => 404, "msg" => "No se encontro el pedido"]);
-                    }else{
-                        $_parent = $parent->_order ? $parent->_order : $parent->id;
-                    }
-                }
-                $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
-                $client = isset($request->_client) ? \App\Client::find($request->_client) : \App\Client::find(0);
-                $order = Order::create([
-                    'num_ticket' => $num_ticket,
-                    'name' => isset($request->_client) ? $client->name : $request->name,
-                    '_client' => $client->id,
-                    '_price_list' => $client->_price_list,
-                    '_created_by' => $this->account->_account,
-                    '_workpoint_from' => $this->account->_workpoint,
-                    'time_life' => '00:30:00',
-                    '_status' => 1,
-                    '_order' => $_parent ? $_parent : null
-                ]);
-                $this->log(1, $order);
-                return $order->fresh(['products' => function($query){
-                    $query->with(['prices' => function($query){
-                        $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-                    },'variants']);
-                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
-            });
+        return $request->all();
+        // try{
+        //     $order = DB::transaction( function () use ($request){
+        //         $now = new \DateTime();
+        //         $_parent = null;
+        //         if(isset($request->_order) && $request->_order){
+        //             $parent = Order::find($request->_order);
+        //             if(!$parent){
+        //                 return response()->json(["success" => false, "server_status" => 404, "msg" => "No se encontro el pedido"]);
+        //             }else{
+        //                 $_parent = $parent->_order ? $parent->_order : $parent->id;
+        //             }
+        //         }
+        //         $num_ticket = Order::where('_workpoint_from', $this->account->_workpoint)->whereDate('created_at', $now)->count()+1;
+        //         $client = isset($request->_client) ? \App\Client::find($request->_client) : \App\Client::find(0);
+        //         $order = Order::create([
+        //             'num_ticket' => $num_ticket,
+        //             'name' => isset($request->_client) ? $client->name : $request->name,
+        //             '_client' => $client->id,
+        //             '_price_list' => $client->_price_list,
+        //             '_created_by' => $this->account->_account,
+        //             '_workpoint_from' => $this->account->_workpoint,
+        //             'time_life' => '00:30:00',
+        //             '_status' => 1,
+        //             '_order' => $_parent ? $_parent : null
+        //         ]);
+        //         $this->log(1, $order);
+        //         return $order->fresh(['products' => function($query){
+        //             $query->with(['prices' => function($query){
+        //                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
+        //             },'variants']);
+        //         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+        //     });
 
-            $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
-            $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
-            return response()->json(new OrderResource($order));
-        }catch(\Exception $e){ return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500, "error"=>$e]); }
+        //     $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
+        //     $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
+        //     return response()->json(new OrderResource($order));
+        // }catch(\Exception $e){ return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500, "error"=>$e]); }
     }
 
     public function log($case, Order $order, $_printer = null){
