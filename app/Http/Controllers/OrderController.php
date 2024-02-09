@@ -33,7 +33,7 @@ class OrderController extends Controller{
     }
 
     public function create(Request $request){
-        // try{
+        try{
             $order = DB::transaction( function () use ($request){
                 $now = new \DateTime();
                 $_parent = null;
@@ -69,7 +69,7 @@ class OrderController extends Controller{
             $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
             $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
             return response()->json(new OrderResource($order));
-        // }catch(\Exception $e){ return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500, "error"=>$e]); }
+        }catch(\Exception $e){ return response()->json(["msg" => "No se ha podido crear el pedido", "server_status" => 500, "error"=>$e]); }
     }
 
     public function log($case, Order $order, $_printer = null){
