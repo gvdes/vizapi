@@ -85,7 +85,7 @@ class MiniPrinterController extends Controller{
             $printer->setTextSize(1,1);
             $printer->selectPrintMode(Printer::MODE_FONT_A);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->text("\n\nGRUPO VIZCARRA\n");
+            $printer->text("\n\nVizuru\n");
             $printer->selectPrintMode(Printer::MODE_FONT_B);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->text("Impresion: ".$now."\n");
@@ -152,7 +152,7 @@ class MiniPrinterController extends Controller{
             $printer->setBarcodeWidth($this->barcode_width);
             $printer->barcode($requisition->id);
             $printer->feed(1);
-            $printer->text("GRUPO VIZCARRA\n");
+            $printer->text("Vizuru\n");
             $printer->feed(1);
             $printer->cut();
             $printer->close();
@@ -217,7 +217,7 @@ class MiniPrinterController extends Controller{
         $printer->barcode($order->id);
         $printer->feed(1);
         $printer->text($order->id."\n");
-        $printer->text($order->workpoint->name.", GRUPO VIZCARRA");
+        $printer->text($order->workpoint->name.", Vizuru");
         $printer->feed(1);
         $printer->cut();
         $printer->close();
@@ -531,7 +531,7 @@ class MiniPrinterController extends Controller{
         $printer->setBarcodeWidth($this->barcode_width);
         $printer->barcode($requisition->id);
         $printer->feed(1);
-        $printer->text("GRUPO VIZCARRA\n");
+        $printer->text("Vizuru\n");
         $printer->feed(1);
         $printer->cut();
         $printer->close();
@@ -597,7 +597,7 @@ class MiniPrinterController extends Controller{
             $printer->barcode($order->id);
             $printer->feed(1);
             $printer->setTextSize(2,1);
-            $printer->text("GRUPO VIZCARRA\n");
+            $printer->text("Vizuru\n");
             $printer->setTextSize(1,1);
             $printer->feed(1);
             $printer->cut();
@@ -731,7 +731,7 @@ class MiniPrinterController extends Controller{
         $printer->feed(1);
         $printer->setTextSize(1,1);
         $printer->text($order->id."\n");
-        $printer->text("GRUPO VIZCARRA\n");
+        $printer->text("Vizuru\n");
         $printer->feed(1);
         $printer->cut();
         $printer->close();
@@ -867,7 +867,7 @@ class MiniPrinterController extends Controller{
             $printer->feed(1);
             $printer->setTextSize(2,1);
             $printer->setFont(Printer::FONT_B);
-            $printer->text("GRUPO VIZCARRA - ".$order->id."\n");
+            $printer->text("Vizuru - ".$order->id."\n");
             $printer->cut();
             $printer->close();
             return true;
@@ -920,7 +920,7 @@ class MiniPrinterController extends Controller{
         $printer->feed(1);
         $printer->setTextSize(2,1);
         $printer->setFont(Printer::FONT_B);
-        $printer->text("GRUPO VIZCARRA - ".$requisition->id."\n");
+        $printer->text("Vizuru - ".$requisition->id."\n");
         $printer->cut();
         $printer->close();
         return true;
@@ -975,7 +975,7 @@ class MiniPrinterController extends Controller{
         $printer->feed(1);
         $printer->setTextSize(2,1);
         $printer->setFont(Printer::FONT_B);
-        $printer->text("GRUPO VIZCARRA - ".$requisition->id."\n");
+        $printer->text("Vizuru - ".$requisition->id."\n");
         $printer->cut();
         $printer->close();
         return true;
@@ -1097,7 +1097,7 @@ class MiniPrinterController extends Controller{
         $printer->feed(1);
         $printer->setTextSize(1,1);
         $printer->text($order->id."\n");
-        $printer->text("GRUPO VIZCARRA\n");
+        $printer->text("Vizuru\n");
         $printer->feed(1);
         $printer->cut();
         $printer->close();
@@ -1221,7 +1221,7 @@ class MiniPrinterController extends Controller{
         $printer->feed(1);
         $printer->setTextSize(1,1);
         $printer->text($order->id."\n");
-        $printer->text("GRUPO VIZCARRA\n");
+        $printer->text("Vizuru\n");
         $printer->feed(1);
         $printer->cut();
         $printer->close();
