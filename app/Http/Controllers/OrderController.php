@@ -65,7 +65,7 @@ class OrderController extends Controller{
                     },'variants']);
                 }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
             });
-
+            return $order;
             $order->parent = $order->_order ? Order::with(['status', 'created_by'])->find($order->_order) : [];
             $order->children = Order::with(['status', 'created_by'])->where('_order', $order->id)->get();
             return response()->json(new OrderResource($order));
