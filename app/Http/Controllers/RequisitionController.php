@@ -770,7 +770,7 @@ class RequisitionController extends Controller{
                 WHERE
                     GETSECTION(PC.id) in ($cats)
                         AND P._status != 4
-                        AND (IF(PS._workpoint = 1, PS._status, 0)) = 1
+                        AND (IF(PS._workpoint = $wkt, PS._status, 0)) = 1
                         AND ((SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product=P.id AND _status!=4 AND min>0 AND max>0)) IS NOT NULL
                         AND (IF((SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product=P.id AND _status!=4 AND min>0 AND max>0) <= (SELECT min FROM product_stock WHERE _workpoint=$wkf AND _product=P.id), (SELECT  max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) - (SELECT  stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0), 0)) > 0
                 GROUP BY P.code";
