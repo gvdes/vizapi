@@ -132,7 +132,7 @@ class LRestockController extends Controller{
              * mover de "SURTIENDO (3)" a "Por Enviar (6)"
              *
             */
-            if(($cstate==2&&$moveTo==3) || ($cstate==3&&$moveTo==6)){
+            if(($cstate==2&&$moveTo==3) || ($cstate==3&&$moveTo==4) || ($cstate==4&&$moveTo==5) || ($cstate==5&&$moveTo==6) || ($cstate==7&&$moveTo==8)){
 
                 $logs = $requisition->log->toArray();
                 $end = end($logs);
@@ -162,7 +162,7 @@ class LRestockController extends Controller{
 
         $updateCols = $checkout ? [ "toDelivered"=>$delivery, "ipack"=>$ipack, "checkout"=>1 ] : [ "toDelivered"=>$delivery, "ipack"=>$ipack ];
 
-        if($cstate==3){
+        if($cstate==5 || $cstate==3){
             $setted = DB::table('product_required')
                     ->where([ ["_requisition",$oid],["_product",$product] ])
                     ->update($updateCols);
@@ -362,7 +362,7 @@ class LRestockController extends Controller{
             if($req){
                 $cstate = $req->_status;
 
-                if($cstate==7){
+                if($cstate==8){
                     $now = CarbonImmutable::now();
                     $prevstate = null;
                     $logs = $req->log->toArray();
