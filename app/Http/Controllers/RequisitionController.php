@@ -334,7 +334,7 @@ class RequisitionController extends Controller{
 
                 if($requisition->_workpoint_to == 2){
                     $ipprinter = env("PRINTERTEX");
-                    $groupvi = "7445056373";
+                    $groupvi = "120363185463796253@g.us";
                     $mess = "Has recibido el pedido ".$requisition->id;
                     $this->sendWhatsapp($groupvi, $mess);
                 }else if($requisition->_workpoint_to == 24){
@@ -352,7 +352,7 @@ class RequisitionController extends Controller{
                     $requisition->printed = ($requisition->printed+1);
                     $requisition->save();
                 }else {
-                    $groupvi = "120363157493041484@g.us";
+                    $groupvi = "120363185463796253@g.us";
                     $mess = "El pedido ".$requisition->id." no se logro imprimir, favor de revisarlo";
                     $this->sendWhatsapp($groupvi, $mess);
                 }

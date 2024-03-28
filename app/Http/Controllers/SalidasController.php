@@ -284,7 +284,7 @@ class SalidasController extends Controller{
                 }
             $req = implode(", ",$ped);
             $msg = "No se han impreso los pedidos ".$req;
-            $nme = "120363157493041484@g.us";
+            $nme = "120363185463796253@g.us";
             $this->sendWhatsapp($nme,$msg);
         }
 
