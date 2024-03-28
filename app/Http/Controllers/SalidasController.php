@@ -291,6 +291,7 @@ class SalidasController extends Controller{
     }
 
     public function sendWhatsapp($tel, $msg){
+        $token = env('WATO');
         $curl = curl_init();//inicia el curl para el envio de el mensaje via whats app
         curl_setopt_array($curl, array(
           CURLOPT_URL => "https://api.ultramsg.com/instance9800/messages/chat",
@@ -302,7 +303,7 @@ class SalidasController extends Controller{
           CURLOPT_SSL_VERIFYPEER => 0,
           CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
           CURLOPT_CUSTOMREQUEST => "POST",
-          CURLOPT_POSTFIELDS => "token=7lxqd2rwots9u4lv&to=$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
+          CURLOPT_POSTFIELDS => "token=$token&to=$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
           CURLOPT_HTTPHEADER => array("content-type: application/x-www-form-urlencoded"),));
         $response = curl_exec($curl);
         $err = curl_error($curl);
