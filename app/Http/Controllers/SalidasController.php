@@ -284,14 +284,13 @@ class SalidasController extends Controller{
                 }
             $req = implode(", ",$ped);
             $msg = "No se han impreso los pedidos ".$req;
-            $nme = "120363185463796253@g.us@g.us";
+            $nme = "120363157493041484@g.us";
             $this->sendWhatsapp($nme,$msg);
         }
 
     }
 
     public function sendWhatsapp($tel, $msg){
-        $token= env('WATO');
         $curl = curl_init();//inicia el curl para el envio de el mensaje via whats app
         curl_setopt_array($curl, array(
           CURLOPT_URL => "https://api.ultramsg.com/instance9800/messages/chat",

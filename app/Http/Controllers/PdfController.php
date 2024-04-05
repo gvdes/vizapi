@@ -205,7 +205,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -288,7 +288,7 @@ class PdfController extends Controller{
         $this->setImageBackground(realpath(dirname(__FILE__).'/../../..').'/files/resources/img/STAR12.png', $content, 200, 125, 1, 2, 5, 0, $key+$counter);
       }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -319,7 +319,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -403,11 +403,11 @@ class PdfController extends Controller{
             $this->setImageBackground(realpath(dirname(__FILE__).'/../../..').'/files/resources/img/STAR12.png', $content, 100, 62.5, 2, 4, 5, 0, $key+$counter);
         }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     //return response(PDF::Output($nameFile, 'D'));
-    
+
     $std = collect($std);
     $off = collect($off);
     $totalOff = $off->reduce( function($total, $product){
@@ -436,7 +436,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -514,7 +514,7 @@ class PdfController extends Controller{
         $this->setImageBackground(realpath(dirname(__FILE__).'/../../..').'/files/resources/img/STAR12.png', $content, 66.6, 41.6, 3, 6, 5, 0, $key+$counter);
       }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -620,7 +620,7 @@ class PdfController extends Controller{
         $this->setImageBackground(realpath(dirname(__FILE__).'/../../..').'/files/resources/img/STAR12.png', $content, 50, 41.6, 4, 6, 5, 0, $key+$counter);
       }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -682,7 +682,7 @@ class PdfController extends Controller{
         $this->setImageBackground_bordered(null, $content, 103, 30, 2, 9, 1, -4, $key+$counter);
       }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $products = collect($products);
@@ -707,7 +707,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
         for($i=0; $i<$product['copies']; $i++){
             if($i>0){
-                $counter +=1; 
+                $counter +=1;
             }
             if(($key+$counter)%$pzHoja==0){
                 PDF::AddPage('L');
@@ -762,7 +762,7 @@ class PdfController extends Controller{
     foreach($off as $key => $product){
         for($i=0; $i<$product['copies']; $i++){
             if($i>0){
-                $counter +=1; 
+                $counter +=1;
             }
             if(($key+$counter)%$pzHoja==0){
                 PDF::AddPage('L');
@@ -797,10 +797,10 @@ class PdfController extends Controller{
             $this->setImageBackground_area(__DIR__.'./resources/img/STAR12.png', $content, $width=47, $height=53, $cols=3, $rows=2, $top_space=-4, $sides_space= 29, $key+$counter, $top_margin=31.5, $sides_margin=40);
         }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
-    
+
     $std = collect($std);
     $off = collect($off);
     $totalOff = $off->reduce( function($total, $product){
@@ -827,7 +827,7 @@ class PdfController extends Controller{
       foreach($products as $key => $product){
           for($i=0; $i<$product['copies']; $i++){
               if($i>0){
-                  $counter +=1; 
+                  $counter +=1;
               }
               if(($key+$counter)%$pzHoja==0){
                   PDF::AddPage();
@@ -886,11 +886,11 @@ class PdfController extends Controller{
                               <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
                           </div>';
               }
-              
+
               $this->setImageBackground_area_2(null, $content, $width=52, $height=58, $cols=3, $rows=3, $top_space=-43, $sides_space=14.7, $position=$key+$counter, $top_margin=30, $sides_margin=14);
           }
       }
-      
+
       $nameFile = time().'.pdf';
       PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
       //return response(PDF::Output($nameFile, 'D'));
@@ -914,7 +914,7 @@ class PdfController extends Controller{
     foreach($products as $key => $product){
         for($i=0; $i<$product['copies']; $i++){
             if($i>0){
-                $counter +=1; 
+                $counter +=1;
             }
             if(($key+$counter)%$pzHoja==0){
                 PDF::AddPage();
@@ -973,11 +973,11 @@ class PdfController extends Controller{
                             <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                         </div>';
             }
-            
+
             $this->setImageBackground_area_2(null, $content, $width=40, $height=48, $cols=4, $rows=3, $top_space=-62, $sides_space=15, $position=$key+$counter, $top_margin=42, $sides_margin=7.5);
         }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     //return response(PDF::Output($nameFile, 'D'));
@@ -988,7 +988,7 @@ class PdfController extends Controller{
     return response()->json([
         'total' => ceil($totalProducts/$pzHoja),
         'file' => $nameFile,
-    ]);    
+    ]);
   }
 
   public function pdf_mochila_16($products, $isInnerPack){
@@ -1003,7 +1003,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1052,7 +1052,7 @@ class PdfController extends Controller{
                     <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
                     <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
                 </div>';
-        
+
         $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-19.8, $sides_space=6.5, $position=$key+$counter, $top_margin=16, $sides_margin=7.5);
       }
     }
@@ -1061,7 +1061,7 @@ class PdfController extends Controller{
     foreach($off as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1110,10 +1110,10 @@ class PdfController extends Controller{
                         <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
                         <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
                     </div>';
-        
+
         $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-19.8, $sides_space=6.5, $position=$key+$counter, $top_margin=16, $sides_margin=7.5);
     }}
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -1145,7 +1145,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
         for($i=0; $i<$product['copies']; $i++){
             if($i>0){
-                $counter +=1; 
+                $counter +=1;
             }
             if(($key+$counter)%$pzHoja==0){
                 PDF::AddPage();
@@ -1194,17 +1194,17 @@ class PdfController extends Controller{
                         <span style="font-size:'.$font_size_prices.'em; font-weight: bold;">'.$this->customPrices($product['prices'], $br).'</span><span style="font-size:.1em"><br/></span>
                         <span style="font-size:1.2em; font-weight: bold;">'.$pz.'</span>
                     </div>';
-            
+
             $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-24, $sides_space=7.5, $position=$key+$counter, $top_margin=14.6, $sides_margin=7.5);
         }
     }
-    
+
     $counter = 0;
 
     foreach($off as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
           if($i>0){
-              $counter +=1; 
+              $counter +=1;
           }
           if(($key+$counter)%$pzHoja==0){
               PDF::AddPage();
@@ -1256,7 +1256,7 @@ class PdfController extends Controller{
           $this->setImageBackground_area_2(null, $content, $width=44, $height=49, $cols=4, $rows=4, $top_space=-24, $sides_space=7.5, $position=$key+$counter, $top_margin=14.6, $sides_margin=7.5);
       }
     }
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -1288,11 +1288,11 @@ class PdfController extends Controller{
     $pzHoja = 20;
     $off = $this->getOffProducts($products);
     $std = $this->getStdProducts($products);
-    
+
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1347,16 +1347,16 @@ class PdfController extends Controller{
                       <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                   </div>';
         }
-        
+
         $this->setImageBackground_area_2(null, $content, $width=37, $height=40, $cols=4, $rows=5, $top_space=-18.5, $sides_space=11.8, $position=$key+$counter, $top_margin=12.7, $sides_margin=11.6);
       }
     }
-    
+
     $counter = 0;
     foreach($off as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1411,7 +1411,7 @@ class PdfController extends Controller{
                       <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                   </div>';
         }
-        
+
         $this->setImageBackground_area_2(null, $content, $width=37, $height=40, $cols=4, $rows=5, $top_space=-21, $sides_space=11.8, $position=$key+$counter, $top_margin=12.7, $sides_margin=11.6);
       }
     }
@@ -1446,7 +1446,7 @@ class PdfController extends Controller{
     foreach($std as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1494,7 +1494,7 @@ class PdfController extends Controller{
                     <span style="font-size:1em; font-weight: bold;  text-align: right;">'.$product['code'].$tool.'</span><span style="font-size:.1em"><br/></span>
                     <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                 </div>';
-        
+
                 $this->setImageBackground_area_2(null, $content, $width=68, $height=33.8, $cols=3, $rows=6, $top_space=-20.4, $sides_space=0, $position=$key+$counter, $top_margin=10, $sides_margin=5);
       }
     }
@@ -1503,7 +1503,7 @@ class PdfController extends Controller{
     foreach($off as $key => $product){
       for($i=0; $i<$product['copies']; $i++){
         if($i>0){
-          $counter +=1; 
+          $counter +=1;
         }
         if(($key+$counter)%$pzHoja==0){
           PDF::AddPage();
@@ -1551,10 +1551,10 @@ class PdfController extends Controller{
                         <div style="font-size:1em; font-weight: bold; text-align: right;">'.$product['code'].$tool.'</div>
                         <span style="font-size:1em; font-weight: bold;">'.$pz.'</span>
                         </div>';
-        
+
                         $this->setImageBackground_area_2(null, $content, $width=65, $height=33.8, $cols=3, $rows=6, $top_space=-20.4, $sides_space=0, $position=$key+$counter, $top_margin=10, $sides_margin=5);
     }}
-    
+
     $nameFile = time().'.pdf';
     PDF::Output(realpath(dirname(__FILE__).'/../../..').'/files/'.$nameFile, 'F');
     $std = collect($std);
@@ -1675,7 +1675,7 @@ class PdfController extends Controller{
       'stretchtext' => 4
     );
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1731,7 +1731,7 @@ class PdfController extends Controller{
       'stretchtext' => 4
     );
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1831,7 +1831,7 @@ class PdfController extends Controller{
     );
     //Especificar area de la etiqueta
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
@@ -1965,7 +1965,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2035,7 +2035,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2146,7 +2146,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
@@ -2246,7 +2246,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 20);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Grupo Vizcarra</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+$line-2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($margin_x+$x_relative*$width)+4, $y=($margin/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
     if($type=='std'){
