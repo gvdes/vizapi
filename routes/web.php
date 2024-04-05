@@ -15,21 +15,21 @@ use Illuminate\Support\Facades\DB;
 */
 
 $router->get('/', function () use ($router) {
-    // return $router->app->version();
+    return $router->app->version();
 
-    DB::enableQueryLog();
+    // DB::enableQueryLog();
 
-    $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
-                        ->with([
-                            'category',
-                            'stocks' => fn($q) => $q->where("_workpoint", 2),
-                            'locations' => fn($q) => $q->whereHas('celler', fn($q) => $q->where('_workpoint', 2))
-                        ])
-                        ->whereHas('stocks', fn($q) => $q->where([["stock", ">", 0], ["_workpoint", 2]]))
-                        ->where('_status', '!=', 4)
-                        ->get();
+    // $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+    //                     ->with([
+    //                         'category',
+    //                         'stocks' => fn($q) => $q->where("_workpoint", 2),
+    //                         'locations' => fn($q) => $q->whereHas('celler', fn($q) => $q->where('_workpoint', 2))
+    //                     ])
+    //                     ->whereHas('stocks', fn($q) => $q->where([["stock", ">", 0], ["_workpoint", 2]]))
+    //                     ->where('_status', '!=', 4)
+    //                     ->get();
 
-    dd(DB::getQueryLog());
+    // dd(DB::getQueryLog());
 });
 
 $router->group(['prefix' => 'account'], function () use ($router){ // Modulo de cuentas de usuario
