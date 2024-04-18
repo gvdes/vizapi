@@ -21,7 +21,7 @@ class Requisition extends Model{
 
     public function products(){
         return $this->belongsToMany('App\Product', 'product_required', '_requisition', '_product')
-                    ->withPivot('amount', '_supply_by', 'units', 'cost', 'total', 'comments', 'stock', 'toDelivered', 'toReceived', 'ipack', 'checkout');
+                    ->withPivot('amount', '_supply_by', 'units', 'cost', 'total', 'comments', 'stock', 'toDelivered', 'toReceived', 'ipack', 'checkout','_suplier_id');
     }
 
     public function to(){
@@ -41,4 +41,6 @@ class Requisition extends Model{
                     ->withPivot('id', 'details')
                     ->withTimestamps();
     }
+
+    public function partition(){ return $this->hasMany('App\RequisitionPartition','_requisition');}
 }

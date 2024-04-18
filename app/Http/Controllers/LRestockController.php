@@ -76,6 +76,7 @@ class LRestockController extends Controller{
                         'status',
                         'log',
                         'from',
+                        'partition',
                         'products' => function($query){
                                             $query->selectRaw('
                                                         products.*,
