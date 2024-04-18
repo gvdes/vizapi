@@ -1675,7 +1675,7 @@ class PdfController extends Controller{
       'stretchtext' => 4
     );
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1731,7 +1731,7 @@ class PdfController extends Controller{
       'stretchtext' => 4
     );
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -1831,7 +1831,7 @@ class PdfController extends Controller{
     );
     //Especificar area de la etiqueta
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$product['description'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
@@ -1965,7 +1965,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2035,7 +2035,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=100, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=100, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $left_margin+$x_relative*$width, $top_margin+$y_relative+5, $width, 13, 0.4, $style, 'N');
     PDF::MultiCell($w=100, $h=$line, '<p style="text-align:left; font-size: 34px; font-weight: bold;">       '.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width, $y=$top_margin+$y_relative+6, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=90, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$left_margin+$x_relative*$width+4, $y=$top_margin+$y_relative+19, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
@@ -2146,7 +2146,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 28);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::write1DBarcode($product['name'], 'C128', $paddig_left+$x_relative*$width, $paddig_top+$y_relative+5, $width-($paddig_left/2), 13, 0.4, $style, 'N');
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 24px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=$paddig_top+$y_relative+$line, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$paddig_left+$x_relative*$width, $y=($paddig_top/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
@@ -2246,7 +2246,7 @@ class PdfController extends Controller{
     $description = trim($description);
     $description = substr($description, 0, 20);
     PDF::MultiCell($w=$width, $h=$height, '', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$height);
-    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Vizuru</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
+    PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 14px; font-weight: bold;">Novedades Dio</p>', $border=1, $align='center', $fill=0, $ln=0, $x=$margin_x+($x_relative*$width), $y=$margin+$y_relative, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width, $h=$line, '<p style="text-align:center; font-size: 28px; font-weight: bold;">'.$product['name'].'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=$margin_x+$x_relative*$width, $y=$margin+$y_relative+$line-2, $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line);
     PDF::MultiCell($w=$width-$paddig_left, $h=$line, '<p style="text-align:left; font-size: 10px;">'.$description.'</p>', $border=0, $align='center', $fill=0, $ln=0, $x=($margin_x+$x_relative*$width)+4, $y=($margin/2)+$y_relative+($line*3), $reseth=true, $stretch=0, $ishtml=true, $autopadding=false, $maxh=$line*2);
     if($type=='std'){
