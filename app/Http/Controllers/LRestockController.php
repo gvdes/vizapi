@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Requisition;
+use App\RequisitionPartition;
 use App\WorkPoint;
 use App\Product;
 use Carbon\CarbonImmutable;
@@ -21,7 +22,7 @@ class LRestockController extends Controller{
             $to = $now->endOf("day")->format("Y-m-d H:i");
             $resume = [];
 
-            $query = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
+            $query = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log', 'partition.status', 'partition.log'])
                 ->withCount(["products"])
                 ->whereBetween("created_at",[$from,$to]);
 
@@ -77,7 +78,8 @@ class LRestockController extends Controller{
                         'log',
                         'from',
                         'partition.status',
-
+                        'partition.log',
+                        'partition.products',
                         'products' => function($query){
                                             $query->selectRaw('
                                                         products.*,
@@ -184,14 +186,14 @@ class LRestockController extends Controller{
         $ipack = $request->ipack;
         $checkout = $request->checkout;
 
-        $requisition = Requisition::findOrFail($oid);
+        $requisition = RequisitionPartition::findOrFail($oid);
         $cstate = $requisition->_status;
 
         $updateCols = [ "toReceived"=>$received ];
 
         if($cstate==9){
             $setted = DB::table('product_required')
-                    ->where([ ["_requisition",$oid],["_product",$product] ])
+                    ->where([ ["_partition",$oid],["_product",$product] ])
                     ->update($updateCols);
 
             return response()->json([
@@ -205,26 +207,25 @@ class LRestockController extends Controller{
     public function newinvoice(Request $request){
         try {
             $oid = $request->route("oid");
-            $resp = $this->accessGenInvoice($oid);
-
+            $supply = $request->route("supply");
+            $resp = $this->accessGenInvoice($oid,$supply);
             if($resp["error"]){
                 return response()->json($resp["error"],500);
             }else{
                 if($resp["httpcode"]==201){
-                    $requisition = Requisition::with(["to", "from", "log", "status", "created_by"])->find($oid);
-                    $now = CarbonImmutable::now();
-                    $prevstate = null;
+                    $requisition = RequisitionPartition::where([['_requisition',$oid],['_suplier_id',$supply]])->first();
+                    // $now = CarbonImmutable::now();
+                    // $prevstate = null;
 
-                    $logs = $requisition->log->toArray();
-                    $end = end($logs);
-                    $prevstate = $end['pivot']['_status'];
-                    $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
-                    $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                    // $logs = $requisition->log->toArray();
+                    // $end = end($logs);
+                    // $prevstate = $end['pivot']['_status'];
+                    // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                    // $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
                     $requisition->_status=7; // se actualiza el status del pedido
                     $requisition->entry_key = md5($requisition->id);
                     $requisition->save(); // se guardan los cambios
-                    $requisition->fresh(['log']); // se refresca el log del pedido
-
+                    $requisition->fresh(); // se refresca el log del pedido
                     return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
                 }else{ return response()->json($resp["done"],$resp["httpcode"]); }
             }
@@ -234,29 +235,33 @@ class LRestockController extends Controller{
     public function newentry(Request $request){
         try {
             $oid = $request->route("oid");
-            $requisition = Requisition::with(["from"])->find($oid);
+            $requisition = RequisitionPartition::with(["requisition.from"])->find($oid);
+            $requi = $requisition->requisition['id'];
+            $suply = $requisition->_suplier_id;
             $cstate = $requisition->_status;
 
-            if($cstate==9){
-                $ip = $requisition->from["dominio"];
-                $resp = $this->accessGenEntry($oid, $ip);
+            if($cstate==8){
+                $ip = $requisition->requisition['from']["dominio"];
+
+                $resp = $this->accessGenEntry($requi, $ip, $suply);
+                // $resp = $this->accessGenEntry($requi, '192.168.10.112:1619', $suply);
 
                 if($resp["error"]){
                     return response()->json($resp["error"],500);
                 }else{
                     if($resp["httpcode"]==201){
 
-                        $now = CarbonImmutable::now();
-                        $prevstate = null;
+                        // $now = CarbonImmutable::now();
+                        // $prevstate = null;
 
-                        $logs = $requisition->log->toArray();
-                        $end = end($logs);
-                        $prevstate = $end['pivot']['_status'];
-                        $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
-                        $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                        $requisition->_status=10; // se actualiza el status del pedido
+                        // $logs = $requisition->log->toArray();
+                        // $end = end($logs);
+                        // $prevstate = $end['pivot']['_status'];
+                        // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                        // $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                        $requisition->_status=8; // se actualiza el status del pedido
                         $requisition->save(); //  guardan los cambios
-                        $requisition->fresh(['log']); // se refresca el log del pedido
+                        // $requisition->fresh(['log']); // se refresca el log del pedido
 
                         return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
                     }else{ return response()->json($resp["done"],$resp["httpcode"]); }
@@ -265,8 +270,8 @@ class LRestockController extends Controller{
         } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
     }
 
-    private function accessGenInvoice($oid){
-        $data = json_encode([ "id"=>$oid ]);
+    private function accessGenInvoice($oid,$supply){
+        $data = json_encode([ "id"=>$oid, "supply"=>$supply ]);
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Received/Received");
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -286,8 +291,8 @@ class LRestockController extends Controller{
         curl_close($curl);
     }
 
-    private function accessGenEntry($oid,$ip){
-        $data = json_encode([ "id"=>$oid ]);
+    private function accessGenEntry($oid,$ip, $suply){
+        $data = json_encode([ "id"=>$oid, "suply"=>$suply ]);
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, "http://$ip/storetools/public/api/Required/Required");
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -329,11 +334,11 @@ class LRestockController extends Controller{
             $oid = $request->oid;
             $key = $request->key;
 
-            $order = Requisition::with([
-                        'type',
+            $order = RequisitionPartition::with([
+                        // 'type',
                         'status',
-                        'log',
-                        'from',
+                        // 'log',
+                        'requisition.from',
                         'products' => function($query){
                             $query->selectRaw('
                                         products.*,
@@ -347,7 +352,7 @@ class LRestockController extends Controller{
                                         // 'locations' => fn($qq) => $qq->whereHas('celler', function($qqq){ $qqq->where('_workpoint', 1); }),
                                     ]);
                             }
-                    ])->where([ ["id",$oid],["entry_key", $key] ])->first();
+                    ])->where([ ["_requisition",$oid],["entry_key", $key]])->first();
 
             if($order){
                 return response()->json([ "order"=>$order ]);
@@ -359,25 +364,25 @@ class LRestockController extends Controller{
         try {
             $oid = $request->oid;
             $key = $request->key;
-            $req = Requisition::with(["log"])->where([ ["id",$oid],["entry_key", $key] ])->first();
+            $req = RequisitionPartition::where([ ["_requisition",$oid],["entry_key", $key] ])->first();
 
             if($req){
                 $cstate = $req->_status;
 
-                if($cstate==8){
-                    $now = CarbonImmutable::now();
-                    $prevstate = null;
-                    $logs = $req->log->toArray();
-                    $end = end($logs);
-                    $prevstate = $end['pivot']['_status'];
-                    $prevstate ? $req->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
-                    $req->log()->attach(9, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                    $req->_status=9; // se actualiza el status del pedido
-                    $req->save(); // se guardan los cambios
-                    $req->fresh(['log']); // se refresca el log del pedido
+                // if($cstate==8){
+                //     $now = CarbonImmutable::now();
+                //     $prevstate = null;
+                //     $logs = $req->log->toArray();
+                //     $end = end($logs);
+                //     $prevstate = $end['pivot']['_status'];
+                //     $prevstate ? $req->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                //     $req->log()->attach(9, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                //     $req->_status=9; // se actualiza el status del pedido
+                //     $req->save(); // se guardan los cambios
+                //     $req->fresh(['log']); // se refresca el log del pedido
 
                     return response()->json([ "req"=>$req ]);
-                }else{ return response("El status ($cstate) actual del pedido, no permite iniciar el conteo",400); }
+                // }else{ return response("El status ($cstate) actual del pedido, no permite iniciar el conteo",400); }
             }else{ return response("Sin coincidencias para el folio o llave invalida!",404); }
         } catch (\Error $e) { return response()->json($e,500); }
     }
