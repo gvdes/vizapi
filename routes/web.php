@@ -259,6 +259,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/crypt', 'LRestockController@crypt');
                 $router->get('/{oid}', 'LRestockController@order');
                 $router->get('/{oid}/{supply}/newinvoice', 'LRestockController@newinvoice');
+                $router->get('/{oid}/fresh', 'LRestockController@orderFresh');
                 $router->get('/{oid}/newentry', 'LRestockController@newentry');
                 $router->post('/changestate', 'LRestockController@changestate');
                 $router->post('/setdelivery', 'LRestockController@setdelivery');

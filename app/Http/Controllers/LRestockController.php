@@ -68,6 +68,15 @@ class LRestockController extends Controller{
         } catch (\Error $e) { return response()->json($e,500); }
     }
 
+    public function orderFresh(Request $request){
+        $id = $request->route("oid");
+        $order = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
+            ->withCount(["products"])
+            ->find($id);
+
+        return response()->json(["oid"=>$id,"order"=>$order]);
+    }
+
     public function order(Request $request){
         $id = $request->route("oid");
 
