@@ -231,7 +231,7 @@ class LRestockController extends Controller{
                     // $prevstate = $end['pivot']['_status'];
                     // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
                     // $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                    $requisition->_status=7; // se actualiza el status del pedido
+                    $requisition->_status=6; // se actualiza el status del pedido
                     $requisition->entry_key = md5($requisition->id);
                     $requisition->save(); // se guardan los cambios
                     $requisition->fresh(); // se refresca el log del pedido
@@ -249,7 +249,7 @@ class LRestockController extends Controller{
             $suply = $requisition->_suplier_id;
             $cstate = $requisition->_status;
 
-            if($cstate==8){
+            if($cstate==6){
                 $ip = $requisition->requisition['from']["dominio"];
 
                 $resp = $this->accessGenEntry($requi, $ip, $suply);
@@ -268,7 +268,7 @@ class LRestockController extends Controller{
                         // $prevstate = $end['pivot']['_status'];
                         // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
                         // $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                        $requisition->_status=8; // se actualiza el status del pedido
+                        $requisition->_status=6; // se actualiza el status del pedido
                         $requisition->save(); //  guardan los cambios
                         // $requisition->fresh(['log']); // se refresca el log del pedido
 
