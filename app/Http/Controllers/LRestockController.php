@@ -145,7 +145,7 @@ class LRestockController extends Controller{
              * mover de "SURTIENDO (3)" a "Por Enviar (6)"
              *
             */
-            if(($cstate==2&&$moveTo==3) || ($cstate==3&&$moveTo==4) || ($cstate==4&&$moveTo==5) || ($cstate==5&&$moveTo==6) || ($cstate==7&&$moveTo==8)){
+            if(($cstate==2&&$moveTo==3) || ($cstate==3&&$moveTo==4) || ($cstate==4&&$moveTo==5) || ($cstate==5&&$moveTo==6) || ($cstate==6&&$moveTo==7) || ($cstate==7&&$moveTo==8) || ($cstate==8&&$moveTo==9) || ($cstate==9&&$moveTo==10)){
 
                 $logs = $requisition->log->toArray();
                 $end = end($logs);
@@ -175,7 +175,7 @@ class LRestockController extends Controller{
 
         $updateCols = $checkout ? [ "toDelivered"=>$delivery, "ipack"=>$ipack, "checkout"=>1 ] : [ "toDelivered"=>$delivery, "ipack"=>$ipack ];
 
-        if($cstate==5 || $cstate==3){
+        if($cstate>3 ){
             $setted = DB::table('product_required')
                     ->where([ ["_requisition",$oid],["_product",$product] ])
                     ->update($updateCols);
