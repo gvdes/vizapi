@@ -175,7 +175,7 @@ class LRestockController extends Controller{
 
         $updateCols = $checkout ? [ "toDelivered"=>$delivery, "ipack"=>$ipack, "checkout"=>1 ] : [ "toDelivered"=>$delivery, "ipack"=>$ipack ];
 
-        if($cstate>3 ){
+        if($cstate ==3 || $cstate ==4 ){
             $setted = DB::table('product_required')
                     ->where([ ["_requisition",$oid],["_product",$product] ])
                     ->update($updateCols);
