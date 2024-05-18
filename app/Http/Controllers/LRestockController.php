@@ -135,7 +135,7 @@ class LRestockController extends Controller{
         try {
             $oid = $request->id;
             $moveTo = $request->state;
-            $requisition = Requisition::with(["to", "from", "log", "status", "created_by"])->find($oid);
+            $requisition = Requisition::with(["to", "from", "log", "status", "created_by","partition.status","partition.log","type"])->find($oid);
             $cstate = $requisition->_status;
             $now = CarbonImmutable::now();
             $prevstate = null;
@@ -156,7 +156,7 @@ class LRestockController extends Controller{
                 $requisition->log()->attach($moveTo, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
                 $requisition->_status=$moveTo; // se actualiza el status del pedido
                 $requisition->save(); // se guardan los cambios
-                $requisition->fresh(['log']); // se refresca el log del pedido
+                $requisition->load(['log','status']); // se refresca el log del pedido
 
                 return response()->json($requisition);
             }else{ return response()->json("El status $cstate no puede cambiar a $moveTo",400); }
