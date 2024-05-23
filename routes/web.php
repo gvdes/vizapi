@@ -256,12 +256,15 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->group(['prefix' => 'L'], function() use($router){
             $router->group(['prefix' => 'restock'], function() use($router){
                 $router->get('/', 'LRestockController@index');
+                $router->get('/suc', 'LRestockController@suc');
                 $router->get('/crypt', 'LRestockController@crypt');
                 $router->get('/{oid}', 'LRestockController@order');
                 $router->get('/{oid}/{supply}/newinvoice', 'LRestockController@newinvoice');
                 $router->get('/{oid}/fresh', 'LRestockController@orderFresh');
                 $router->get('/{oid}/newentry', 'LRestockController@newentry');
                 $router->post('/changestate', 'LRestockController@changestate');
+                $router->post('/create', 'LRestockController@create');
+                $router->post('/next', 'LRestockController@nextStep');
                 $router->post('/setdelivery', 'LRestockController@setdelivery');
                 $router->post('/setreceived', 'LRestockController@setreceived');
                 $router->post('/checkin', 'LRestockController@checkin');
@@ -276,6 +279,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'LFacsController@index');
                 $router->get('/ticket', 'LFacsController@ticket');
             });
+
 
             $router->group(['prefix' => 'vfy'], function() use($router){
                 $router->get('/index', 'LVerificatorController@index');

@@ -9,6 +9,12 @@ use App\RequisitionPartition;
 use App\WorkPoint;
 use App\Product;
 use Carbon\CarbonImmutable;
+use App\Http\Resources\Requisition as RequisitionResource;
+use App\RequisitionProcess as Process;
+use App\Http\Resources\ProductRequired as ProductResource;
+use App\Account;
+use Carbon\Carbon;
+
 
 class LRestockController extends Controller{
 
@@ -70,7 +76,8 @@ class LRestockController extends Controller{
 
     public function orderFresh(Request $request){
         $id = $request->route("oid");
-        $order = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log'])
+        $order = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log','partition.status','partition.log',
+        'partition.products'])
             ->withCount(["products"])
             ->find($id);
 
@@ -490,4 +497,390 @@ class LRestockController extends Controller{
 
         return response()->json($printed);
     }
+
+    // public function create(Request $request){
+    //     // try{
+    //         // return $request;
+    //         $requisition = DB::transaction(function() use ($request){
+    //             $_workpoint_from = $request->_workpoint_from;
+
+    //             $_workpoint_to = $request->_workpoint_to;
+    //            $request->_type;
+
+    //                     $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+
+    //             if(isset($data['msg'])){
+    //                 return response()->json([
+    //                     "success" => false,
+    //                     "msg" => $data['msg']
+    //                 ]);
+    //             }
+
+    //             $now = new \DateTime();
+    //             $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
+    //                                         ->whereDate('created_at', $now)
+    //                                         ->count()+1;
+    //             $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
+    //                                             ->whereDate('created_at', $now)
+    //                                             ->count()+1;
+    //             $requisition =  Requisition::create([
+    //                 "notes" => $request->notes,
+    //                 "num_ticket" => $num_ticket,
+    //                 "num_ticket_store" => $num_ticket_store,
+    //                 "_created_by" => 1,
+    //                 "_workpoint_from" => $_workpoint_from,
+    //                 "_workpoint_to" => $_workpoint_to,
+    //                 "_type" => $request->_type,
+    //                 "printed" => 0,
+    //                 "time_life" => "00:15:00",
+    //                 "_status" => 1
+    //             ]);
+
+    //             $this->log(1, $requisition);
+
+    //             if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+
+    //             if($request->_type != 1){ $this->refreshStocks($requisition); }
+
+    //             return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
+    //         });
+    //         $this->nextStep($requisition->id);
+    //         return response()->json([
+    //             "success" => true,
+    //             "order" => new RequisitionResource($requisition)
+    //         ]);
+    //     // }catch(\Exception $e){
+    //     //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
+    //     // }
+    // }
+
+    public function getToSupplyFromStore($workpoint_id, $workpoint_to){ // Función para hacer el pedido de minimos y máximos de la sucursal
+
+        // $workpoint = WorkPoint::find($workpoint_id); // Obtenemos la sucursal a la que se le realizara el pedido
+        $cats = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
+        // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
+
+        $wkf = $workpoint_id;
+        $wkt = $workpoint_to;
+
+        $pquery = "SELECT
+                P.id AS id,
+                P.code AS code,
+                P._unit AS unitsupply,
+                P.pieces AS ipack,
+                P.cost AS cost,
+                    (SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) AS stock,
+                    (SELECT min FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS min,
+                    (SELECT max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS max,
+                    SUM(IF(PS._workpoint=$wkf, PS.stock, 0)) AS CEDIS,
+                    (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO
+                FROM
+                    products P
+                        INNER JOIN product_categories PC ON PC.id = P._category
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                WHERE
+                    GETSECTION(PC.id) in ($cats)
+                        AND P._status != 4
+                        AND (IF(PS._workpoint = $wkt, PS._status, 0)) = 1
+                        AND ((SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product=P.id AND _status!=4 AND min>0 AND max>0)) IS NOT NULL
+                        AND (IF((SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product=P.id AND _status!=4 AND min>0 AND max>0) <= (SELECT min FROM product_stock WHERE _workpoint=$wkf AND _product=P.id), (SELECT  max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) - (SELECT  stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0), 0)) > 0
+                GROUP BY P.code";
+
+        $rows = DB::select($pquery);
+        $tosupply = [];
+
+        foreach ($rows as $product) {
+            $stock = $product->stock;
+            $min = $product->min;
+            $max = $product->max;
+
+            // $required = ($stock<=$min) ? ($max-$stock) : 0;
+
+            // if($required){
+                if( $product->unitsupply==3 ){
+                    $required = ($stock<=$min) ? ($max-$stock) : 0;
+                    $ipack = $product->ipack == 0 ? 1 : $product->ipack;
+                    $boxes = floor($required/$ipack);
+
+                    ($boxes>=1) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ] : null;
+                }else if( $product->unitsupply==1){
+                    $required = ($max-$stock);
+                    ($stock<=$min) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0] : null ;
+                }
+            // }
+        }
+
+        return ["products" => $tosupply];
+    }
+
+    public function categoriesByStore($_workpoint){
+
+        /* IMPORTANTE */
+        /* En este lugar se establecen las secciones que puede solicitar una sucursal */
+        switch($_workpoint){
+            case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Mochila","Papeleria","Juguete"'; break;
+            case 3: return '"Paraguas"'; break;
+            case 4: return '"Mochila"'; break;
+            case 5: return '"Mochila"'; break;
+            case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 7: return '"Mochila"'; break;
+            case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
+            case 9: return '"Mochila"'; break;
+            case 10: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 11: return '"Juguete"'; break;
+            case 12: return '"Mochila"'; break;
+            case 13: return '"Mochila"'; break;
+            case 18: return '"Mochila", "Electronico", "Hogar"'; break;
+            case 19: return '"Juguete"'; break;
+            case 22: return '"Mochila"'; break;
+            case 23: return '"Mochila"'; break;
+            case 24: return '"Juguete"'; break;
+        }
+    }
+
+
+    public function log($case, Requisition $requisition, $_printer=null, $actors=[]){
+        $account = Account::with('user')->find(1);
+        $responsable = $account->user->names.' '.$account->user->surname_pat;
+        $previous = null;
+
+        // $requisition->load(["from","to"]);
+        // $requisition->fresh();
+
+        // $telAdminFrom = $requisition->from["tel_admin"];
+        // $telAdminTo = $requisition->from["tel_admin"];
+
+        if($case != 1){
+            $logs = $requisition->log->toArray();
+            $end = end($logs);
+            $previous = $end['pivot']['_status'];
+        }
+
+        if($previous){
+            $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
+        }
+
+        switch($case){
+            case 1: // LEVANTAR PEDIDO
+                $requisition->log()->attach(1, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->format('Y-m-d H:i:s'), 'updated_at' => carbon::now()->format('Y-m-d H:i:s') ]);
+            break;
+
+            case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
+                // $port = $requisition->_workpoint_to==2 ? 4065:9100;
+                $port = 9100;
+
+                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->format('Y-m-d H:i:s'), 'updated_at' => carbon::now()->format('Y-m-d H:i:s') ]);// se inserta el log dos al pedido con su responsable
+                $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
+                $requisition->save(); // se guardan los cambios
+                $requisition->fresh(['log']); // se refresca el log del pedido
+
+                // $whats1 = $this->sendWhatsapp($telAdminFrom, "CEDIS ha recibido tu pedido - FOLIO: #$requisition->id 🤟🏽");
+                // $whats2 = $this->sendWhatsapp($telAdminFrom, "Nuevo pedido de ".$requisition->from['name'].": #$requisition->id, esta listo para iniciar surtido!!");
+
+                // traemos el cuerpo del pedido con las ubicaciones del workpoint destino
+                $_workpoint_to = $requisition->_workpoint_to;
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where('_workpoint', $_workpoint_to);
+                        });
+                    }]);
+                }]);
+
+                // definir IMPRESION AUTOMATICA DEL PEDIDO
+                // $ipprinter = \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint_to]])->first();
+                // $miniprinter = new MiniPrinterController($ipprinter->ip, $port);
+
+                // if($requisition->_workpoint_from == 1){
+                //     $par = $requisition->_workpoint_to;
+                //     $ipprinter = $par == 2 ? env("PRINTERTEX") :  env("PRINTER_P3");
+                // }else{
+                //     $stores_p3 = [ 3, 4, 5, 7, 9, 13, 18 , 22 ];
+                //     $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
+                // }
+
+
+                if($requisition->_workpoint_to == 2){
+                    // $ipprinter = env("PRINTERTEX");
+                    // $groupvi = "120363185463796253@g.us";
+                    // $mess = "Has recibido el pedido ".$requisition->id;
+                    // $this->sendWhatsapp($groupvi, $mess);
+                }else if($requisition->_workpoint_to == 24){
+                    $ipprinter = env("PRINTERBOL");
+                }else{
+                    // $stores_p3 = [ 1, 3, 4, 5, 7, 9, 13, 18 , 22 ];
+                    // $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
+                    $ipprinter = env("PRINTER_P3") ;
+                }
+
+                $miniprinter = new MiniPrinterController($ipprinter, $port);
+                $printed_provider = $miniprinter->requisitionTicket($requisition);
+
+                if($printed_provider){
+                    $requisition->printed = ($requisition->printed+1);
+                    $requisition->save();
+                }else {
+                    $groupvi = "120363185463796253@g.us";
+                    $mess = "El pedido ".$requisition->id." no se logro imprimir, favor de revisarlo";
+                    $this->sendWhatsapp($groupvi, $mess);
+                }
+
+            $requisition->refresh('log');
+
+            $log = $requisition->log->filter(function($event) use($case){
+                return $event->id >= $case;
+            })->values()->map(function($event){
+                return [
+                    "id" => $event->id,
+                    "name" => $event->name,
+                    "active" => $event->active,
+                    "allow" => $event->allow,
+                    "details" => json_decode($event->pivot->details),
+                    "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
+                    "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
+                ];
+            });
+
+            return [
+                "success" => (count($log)>0),
+                "printed" => $requisition->printed,
+                "status" => $requisition->status,
+                "log" => $log
+            ];
+        }
+    }
+    public function refreshStocks(Requisition $requisition){ // Función para actualizar los stocks de un pedido de resurtido
+        $_workpoint_to = $requisition->_workpoint_to;
+        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['stocks' => function($query) use($_workpoint_to){
+                $query->where('_workpoint', $_workpoint_to);
+            }]);
+        }]);
+        foreach($requisition->products as $product){
+            $requisition->products()->syncWithoutDetaching([
+                $product->id => [
+                    'units' => $product->pivot->units,
+                    'comments' => $product->pivot->comments,
+                    'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0
+                ]
+            ]);
+        }
+        return true;
+    }
+
+    public function nextStep($id){
+        $requisition = Requisition::with(["to", "from", "created_by"])->find($id);
+        $server_status = 200;
+        if($requisition){
+            $_status = $requisition->_status+1;
+
+            $process = Process::all()->toArray();
+
+            if(in_array($_status, array_column($process, "id"))){
+                $result = $this->log($_status, $requisition);
+                $msg = $result["success"] ? "" : "No se pudo cambiar el status";
+                $server_status = $result ["success"] ? 200 : 500;
+            }else{
+                $msg = "Status no válido";
+                $server_status = 400;
+            }
+        }else{
+            $msg = "Pedido no encontrado";
+            $server_status = 404;
+        }
+
+        return response()->json([
+            "success" => isset($result) ? $result["success"] : false,
+            "serve_status" => $server_status,
+            "msg" => $msg,
+            "updates" =>[
+                "status" => isset($result) ? $result["status"] : null,
+                "log" => isset($result) ? $result["log"] : null,
+                "printed" =>  isset($result) ? $result["printed"] : null
+            ]
+        ]);
+    }
+    public function sendWhatsapp($tel, $msg){
+        $token = env('WATO');
+        $curl = curl_init();//inicia el curl para el envio de el mensaje via whats app
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => "https://api.ultramsg.com/instance9800/messages/chat",
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_SSL_VERIFYHOST => 0,
+          CURLOPT_SSL_VERIFYPEER => 0,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => "token=$token&to=$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
+          CURLOPT_HTTPHEADER => array("content-type: application/x-www-form-urlencoded"),));
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        return $response;
+        curl_close($curl);
+    }
+
+    public function suc(){
+        $sucursales = Workpoint::where([['_type',2],['active',1]])->get();
+        return response()->json($sucursales,200);
+    }
+
+    public function create($store){
+        // try{
+            // return $request;
+            $requisition = DB::transaction(function() use ($store){
+                $_workpoint_from = $store;
+
+                $_workpoint_to = 1;
+
+
+                 $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+
+                if(isset($data['msg'])){
+                    return response()->json([
+                        "success" => false,
+                        "msg" => $data['msg']
+                    ]);
+                }
+
+                $now = new \DateTime();
+                $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
+                                            ->whereDate('created_at', $now)
+                                            ->count()+1;
+                $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
+                                                ->whereDate('created_at', $now)
+                                                ->count()+1;
+                $requisition =  Requisition::create([
+                    "notes" => 'Pedido '.$num_ticket,
+                    "num_ticket" => $num_ticket,
+                    "num_ticket_store" => $num_ticket_store,
+                    "_created_by" => 1,
+                    "_workpoint_from" => $_workpoint_from,
+                    "_workpoint_to" => $_workpoint_to,
+                    "_type" => 2,
+                    "printed" => 0,
+                    "time_life" => "00:15:00",
+                    "_status" => 1
+                ]);
+
+                $this->log(1, $requisition);
+
+                if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+
+                if(2 != 1){ $this->refreshStocks($requisition); }
+
+                return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
+            });
+            $this->nextStep($requisition->id);
+            return response()->json([
+                "success" => true,
+                "order" => new RequisitionResource($requisition)
+            ]);
+        // }catch(\Exception $e){
+        //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
+        // }
+    }
+
 }

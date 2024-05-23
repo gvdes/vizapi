@@ -14,6 +14,7 @@ use App\Client;
 use App\OrderSupply;
 use App\Http\Controllers\FactusolController;
 use App\Http\Controllers\AccessController;
+use App\Http\Controllers\LRestockController;
 
 class Kernel extends ConsoleKernel
 {
@@ -77,8 +78,16 @@ class Kernel extends ConsoleKernel
         $schedule->call('App\Http\Controllers\AccountingController@restore')->weeklyOn(7, '8:00');
         /* Se solicita la actualización de los gastos despues de ser eliminados */
         $schedule->call('App\Http\Controllers\AccountingController@getNew')->weeklyOn(7,'8:05');
-
-
+        /***************
+        *    PEDIDOS AUTOMATICOS    *
+        ****************/
+        $stores = Workpoint::where([['_type',2],['active',1]])->whereIn('id',[1])->get();
+        foreach($stores as $store){
+            $controller = new LRestockController;
+            $schedule->call(function() use ($controller, $store){
+                $controller->create($store);
+            })->everyTwoMinutes();
+        }
 
         /* Actualización de retiradas de las sucursales al termino del día */
        // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
