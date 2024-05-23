@@ -81,13 +81,8 @@ class Kernel extends ConsoleKernel
         /***************
         *    PEDIDOS AUTOMATICOS    *
         ****************/
-        // $stores = Workpoint::where([['_type',2],['active',1]])->whereIn('id',[1])->get();
-        // foreach($stores as $store){
-        //     $controller = new LRestockController;
-        //     $schedule->call(function() use ($controller, $store){
-        //         $controller->create($store);
-        //     })->everyTwoMinutes();
-        // }
+
+            $schedule->call('App\Http\Controllers\LRestockController@automate')->everyTwoMinutes();
 
         /* Actualización de retiradas de las sucursales al termino del día */
        // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
