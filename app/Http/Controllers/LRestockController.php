@@ -498,61 +498,61 @@ class LRestockController extends Controller{
         return response()->json($printed);
     }
 
-    // public function create(Request $request){
-    //     // try{
-    //         // return $request;
-    //         $requisition = DB::transaction(function() use ($request){
-    //             $_workpoint_from = $request->_workpoint_from;
+    public function create(Request $request){
+        // try{
+            // return $request;
+            $requisition = DB::transaction(function() use ($request){
+                $_workpoint_from = $request->_workpoint_from;
 
-    //             $_workpoint_to = $request->_workpoint_to;
-    //            $request->_type;
+                $_workpoint_to = $request->_workpoint_to;
+               $request->_type;
 
-    //                     $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+                        $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
 
-    //             if(isset($data['msg'])){
-    //                 return response()->json([
-    //                     "success" => false,
-    //                     "msg" => $data['msg']
-    //                 ]);
-    //             }
+                if(isset($data['msg'])){
+                    return response()->json([
+                        "success" => false,
+                        "msg" => $data['msg']
+                    ]);
+                }
 
-    //             $now = new \DateTime();
-    //             $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
-    //                                         ->whereDate('created_at', $now)
-    //                                         ->count()+1;
-    //             $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
-    //                                             ->whereDate('created_at', $now)
-    //                                             ->count()+1;
-    //             $requisition =  Requisition::create([
-    //                 "notes" => $request->notes,
-    //                 "num_ticket" => $num_ticket,
-    //                 "num_ticket_store" => $num_ticket_store,
-    //                 "_created_by" => 1,
-    //                 "_workpoint_from" => $_workpoint_from,
-    //                 "_workpoint_to" => $_workpoint_to,
-    //                 "_type" => $request->_type,
-    //                 "printed" => 0,
-    //                 "time_life" => "00:15:00",
-    //                 "_status" => 1
-    //             ]);
+                $now = new \DateTime();
+                $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
+                                            ->whereDate('created_at', $now)
+                                            ->count()+1;
+                $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
+                                                ->whereDate('created_at', $now)
+                                                ->count()+1;
+                $requisition =  Requisition::create([
+                    "notes" => $request->notes,
+                    "num_ticket" => $num_ticket,
+                    "num_ticket_store" => $num_ticket_store,
+                    "_created_by" => 1,
+                    "_workpoint_from" => $_workpoint_from,
+                    "_workpoint_to" => $_workpoint_to,
+                    "_type" => $request->_type,
+                    "printed" => 0,
+                    "time_life" => "00:15:00",
+                    "_status" => 1
+                ]);
 
-    //             $this->log(1, $requisition);
+                $this->log(1, $requisition);
 
-    //             if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+                if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
 
-    //             if($request->_type != 1){ $this->refreshStocks($requisition); }
+                if($request->_type != 1){ $this->refreshStocks($requisition); }
 
-    //             return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
-    //         });
-    //         $this->nextStep($requisition->id);
-    //         return response()->json([
-    //             "success" => true,
-    //             "order" => new RequisitionResource($requisition)
-    //         ]);
-    //     // }catch(\Exception $e){
-    //     //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
-    //     // }
-    // }
+                return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
+            });
+            $this->nextStep($requisition->id);
+            return response()->json([
+                "success" => true,
+                "order" => new RequisitionResource($requisition)
+            ]);
+        // }catch(\Exception $e){
+        //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
+        // }
+    }
 
     public function getToSupplyFromStore($workpoint_id, $workpoint_to){ // Función para hacer el pedido de minimos y máximos de la sucursal
 
@@ -827,67 +827,67 @@ class LRestockController extends Controller{
         return response()->json($sucursales,200);
     }
 
-    public function create($store){
-        // try{
-            // return $request;
-            $requisition = DB::transaction(function() use ($store){
-                $_workpoint_from = $store;
+    // public function create($store){
+    //     // try{
+    //         // return $request;
+    //         $requisition = DB::transaction(function() use ($store){
+    //             $_workpoint_from = $store;
 
-                $_workpoint_to = 1;
+    //             $_workpoint_to = 1;
 
 
-                 $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+    //              $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
 
-                if(isset($data['msg'])){
-                    return response()->json([
-                        "success" => false,
-                        "msg" => $data['msg']
-                    ]);
-                }
+    //             if(isset($data['msg'])){
+    //                 return response()->json([
+    //                     "success" => false,
+    //                     "msg" => $data['msg']
+    //                 ]);
+    //             }
 
-                $now = new \DateTime();
-                $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
-                                            ->whereDate('created_at', $now)
-                                            ->count()+1;
-                $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
-                                                ->whereDate('created_at', $now)
-                                                ->count()+1;
-                $requisition =  Requisition::create([
-                    "notes" => 'Pedido '.$num_ticket,
-                    "num_ticket" => $num_ticket,
-                    "num_ticket_store" => $num_ticket_store,
-                    "_created_by" => 1,
-                    "_workpoint_from" => $_workpoint_from,
-                    "_workpoint_to" => $_workpoint_to,
-                    "_type" => 2,
-                    "printed" => 0,
-                    "time_life" => "00:15:00",
-                    "_status" => 1
-                ]);
+    //             $now = new \DateTime();
+    //             $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
+    //                                         ->whereDate('created_at', $now)
+    //                                         ->count()+1;
+    //             $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
+    //                                             ->whereDate('created_at', $now)
+    //                                             ->count()+1;
+    //             $requisition =  Requisition::create([
+    //                 "notes" => 'Pedido '.$num_ticket,
+    //                 "num_ticket" => $num_ticket,
+    //                 "num_ticket_store" => $num_ticket_store,
+    //                 "_created_by" => 1,
+    //                 "_workpoint_from" => $_workpoint_from,
+    //                 "_workpoint_to" => $_workpoint_to,
+    //                 "_type" => 2,
+    //                 "printed" => 0,
+    //                 "time_life" => "00:15:00",
+    //                 "_status" => 1
+    //             ]);
 
-                $this->log(1, $requisition);
+    //             $this->log(1, $requisition);
 
-                if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+    //             if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
 
-                if(2 != 1){ $this->refreshStocks($requisition); }
+    //             if(2 != 1){ $this->refreshStocks($requisition); }
 
-                return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
-            });
-            $this->nextStep($requisition->id);
-            return response()->json([
-                "success" => true,
-                "order" => new RequisitionResource($requisition)
-            ]);
-        // }catch(\Exception $e){
-        //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
-        // }
-    }
+    //             return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
+    //         });
+    //         $this->nextStep($requisition->id);
+    //         return response()->json([
+    //             "success" => true,
+    //             "order" => new RequisitionResource($requisition)
+    //         ]);
+    //     // }catch(\Exception $e){
+    //     //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
+    //     // }
+    // }
 
-    public function automate(){
-        $stores = Workpoint::where([['_type',2],['active',1]])->whereIn('id',[1])->get();
-        foreach($stores as $store){
-            $this->create($store);
-        }
+    // public function automate(){
+    //     $stores = Workpoint::where([['_type',2],['active',1]])->whereIn('id',[1])->get();
+    //     foreach($stores as $store){
+    //         $this->create($store);
+    //     }
 
-    }
+    // }
 }
