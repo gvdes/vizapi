@@ -82,7 +82,7 @@ class Kernel extends ConsoleKernel
         *    PEDIDOS AUTOMATICOS    *
         ****************/
 
-            $schedule->call('App\Http\Controllers\LRestockController@automate')->everyTwoMinutes();
+            // $schedule->call('App\Http\Controllers\LRestockController@automate')->everyTwoMinutes();
 
         /* Actualización de retiradas de las sucursales al termino del día */
        // $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
