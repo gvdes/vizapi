@@ -108,7 +108,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/', 'ProductController@getProducts'); // Función autocomplete 2.0 la chida
         $router->get('/restore', 'ProductController@restoreProducts'); // Restablece el catalgo maestro de productos emparejando el catalogo en CEDIS SP (F_ART) con el de MySQL (products)
         $router->get('/previous', 'ProductController@addProductsLastYears'); // -- CASO ESPECIAL -- Esta función se hizo para poblar el catalogo maestro de productos con los creados desde 2016, para obtener el historico completo
-        $router->get('/updateTable', 'ProductController@updateTable'); // Se actualiza la BD de mysql y los ACCESS de todas las sucursales con base a una fecha de actualización
+        // $router->get('/updateTable', 'ProductController@updateTable'); // Se actualiza la BD de mysql y los ACCESS de todas las sucursales con base a una fecha de actualización
         $router->get('/restorePrices', 'ProductController@restorePrices'); // Empatar BD de mysql con ACCESS CEDISSP (Solo precios)
         $router->get('/autocomplete', 'ProductController@autocomplete'); // Autocomplete ANTIGUO que estaba en la sección de minimos y maximos
         $router->post('/getMassive', 'ProductController@getMassiveProducts'); // Función para obtener los productos y obtener la lista de los que se encontraron y no
@@ -286,4 +286,8 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'CiclicosController@index');
                 $router->get('/{folio}', 'CiclicosController@find');
             });
+        });
+
+        $router->group(['prefix' => 'product'], function () use ($router){ // Modulo de productos
+            $router->get('/updateTable', 'ProductController@updateTable'); // Se actualiza la BD de mysql y los ACCESS de todas las sucursales con base a una fecha de actualización
         });
