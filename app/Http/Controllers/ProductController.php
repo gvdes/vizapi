@@ -22,10 +22,10 @@ class ProductController extends Controller{
      * @return void
      */
 
-    // public $account = null;
-    // public function __construct(){
-    //     $this->account = Auth::payload()['workpoint'];
-    // }
+    public $account = null;
+    public function __construct(){
+        $this->account = Auth::payload()['workpoint'];
+    }
 
     public function restoreProducts(){
         // Restablece el catalgo maestro de productos emparejando el catalogo en CEDIS SP (F_ART) con el de MySQL (products)
