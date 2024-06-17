@@ -35,6 +35,9 @@ class Product extends Model{
     public function provider(){
         return $this->belongsTo('App\Provider', '_provider');
     }
+    public function maker(){
+        return $this->belongsTo('App\Maker', '_maker');
+    }
 
     public function units(){
         return $this->belongsTo('App\ProductUnit', '_unit');

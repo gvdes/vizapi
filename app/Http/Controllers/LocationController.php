@@ -677,7 +677,7 @@ class LocationController extends Controller{
             case 14:
                 $res = $this->salesundercost();
                 $name = "salesundercost";
-                break; 
+                break;
            case 15:
                 $res = $this->updatedprices();
                 $name = "pricesupdates";
@@ -694,17 +694,24 @@ class LocationController extends Controller{
 
     public function conStock(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-            with(['stocks' => function($query){
+            with([
+        'maker',
+        'provider',
+        'stocks' => function($query){
                 $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
                 ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        }, 'locations' => function($query){
+        },
+        'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        }, 'category'])->whereHas('stocks', function($query){
+        },
+        'category'])->whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where('_status', '!=', 4)->get();
+        })
+        ->where('_status', '!=', 4)->get();
+
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -713,6 +720,8 @@ class LocationController extends Controller{
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -793,7 +802,10 @@ class LocationController extends Controller{
 
     public function negativos(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'maker',
+        'provider',
+        'stocks' => function($query){
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -810,6 +822,8 @@ class LocationController extends Controller{
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -827,7 +841,10 @@ class LocationController extends Controller{
 
     public function sinStock(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
-        ->with(['stocks' => function($query){
+        ->with([
+            'provider',
+            'maker',
+            'stocks' => function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -845,6 +862,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripcion" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -858,7 +877,11 @@ class LocationController extends Controller{
     }
 
     public function conStockUbicados(){
-        $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['stocks' => function($query){
+        $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+        ->with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where([["gen", ">", "0"], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
@@ -881,6 +904,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -894,7 +919,10 @@ class LocationController extends Controller{
 
     public function conStockSinUbicar(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
@@ -917,6 +945,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -930,7 +960,10 @@ class LocationController extends Controller{
 
     public function sinStockUbicados(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where([["stock", "<=", "0"], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -951,6 +984,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -963,7 +998,11 @@ class LocationController extends Controller{
     }
 
     public function generalVsExhibicion(){
-        $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['stocks' => function($query){
+        $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+        ->with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -982,6 +1021,8 @@ class LocationController extends Controller{
                 "Descripción" => $producto->description,
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Categoría" => $producto->categoryy,
                 "Piezas por caja" => $producto->pieces,
                 "GENERAL" => $producto->stocks[0]->pivot->gen,
@@ -996,6 +1037,8 @@ class LocationController extends Controller{
         if($this->account->_workpoint == 1){
             $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
                         ->with([
+                            'provider',
+                            'maker',
                             'category',
                             'stocks' => fn($q) => $q->where("_workpoint", 2),
                             'locations' => fn($q) => $q->whereHas('celler', fn($q) => $q->where('_workpoint', 2))
@@ -1004,7 +1047,11 @@ class LocationController extends Controller{
                         ->where('_status', '!=', 4)
                         ->get();
         }else{
-            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->with(['category', 'stocks' => function($query){
+            $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
+            ->with([
+                'provider',
+                'maker',
+                'category', 'stocks' => function($query){
                 $query->where("_workpoint", 1);
             }, 'locations' => function($query){
                 $query->whereHas('celler', function($query){
@@ -1015,7 +1062,10 @@ class LocationController extends Controller{
             })->where('_status', '!=', 4)->get();
         }
 
-        $general = Product::with(['category', 'locations' => function($query){
+        $general = Product::with([
+            'provider',
+            'maker',
+            'category', 'locations' => function($query){
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
@@ -1043,6 +1093,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -1057,7 +1109,10 @@ class LocationController extends Controller{
 
     public function cedisStock(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -1074,6 +1129,8 @@ class LocationController extends Controller{
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -1089,7 +1146,10 @@ class LocationController extends Controller{
 
     public function sinMaximos(){ // Función que retorna todos los productos que no tiene máximo y si stock
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(["stocks" => function($query){
+        with([
+        'provider',
+        'maker',
+        "stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -1103,6 +1163,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Piezas por caja" => $producto->pieces,
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
@@ -1118,7 +1180,10 @@ class LocationController extends Controller{
 
     public function conMaximos(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(["stocks" => function($query){
+        with([
+        'provider',
+        'maker',
+        "stocks" => function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -1132,6 +1197,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Piezas por caja" => $producto->pieces,
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
@@ -1148,7 +1215,10 @@ class LocationController extends Controller{
 
     public function catologoStocks(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where("_workpoint", $this->account->_workpoint);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -1163,6 +1233,8 @@ class LocationController extends Controller{
                 "codigo" => $producto->name,
                 "modelo" => $producto->code,
                 "descripcion" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
@@ -1178,7 +1250,10 @@ class LocationController extends Controller{
 
     public function catologo(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks' => function($query){
             $query->where("_workpoint", $this->account->_workpoint);
         }, 'locations' => function($query){
             $query->whereHas('celler', function($query){
@@ -1193,6 +1268,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Status" => $producto->status->name,
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
@@ -1209,7 +1286,10 @@ class LocationController extends Controller{
 
     public function catologo2(){
         $productos = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')->
-        with(['stocks', 'category', 'prices' => function($query){
+        with([
+        'provider',
+        'maker',
+        'stocks', 'category', 'prices' => function($query){
             $query->where('_type', 7);
         }])->get();
         $result = $productos->map(function($producto){
@@ -1217,6 +1297,8 @@ class LocationController extends Controller{
                 "Código" => $producto->name,
                 "Modelo" => $producto->code,
                 "Descripción" => $producto->description,
+                "Proveedor"=>$producto->provider->name,
+                "Fabricante"=>isset($producto->maker) ? $producto->maker->name : '',
                 "Sección" => $producto->section,
                 "Familia" => $producto->family,
                 "Categoría" => $producto->categoryy,
