@@ -592,4 +592,17 @@ class LRestockController extends Controller{
             }
         } catch (\Exception $e) { return response()->json($e, 500); }
     }
+
+    public function getCategoryId($family, $category, $categories, $families, $array_families){// Función para obtener el id de una categoría que viene de access
+        $keyFamily = array_search($family, $array_families, true);
+        if($keyFamily>0 || $keyFamily === 0){
+            $array_categories = array_column($categories[$families[$keyFamily]->id]->toArray(),'alias');
+            $keyCategory = array_search($category, $array_categories, true);
+            if($keyCategory>0 || $keyCategory === 0){
+                return $categories[$families[$keyFamily]->id][$keyCategory]->id;
+            }else{
+                return $families[$keyFamily]->id;
+            }
+        }else{ return 404; }
+    }
 }
