@@ -9,6 +9,17 @@ use App\WorkPoint;
 use App\Product;
 use Carbon\CarbonImmutable;
 
+
+
+use App\ProductVariant;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use App\ProductCategory;
+use App\ProductStatus;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ArrayExport;
+
+
 class LRestockController extends Controller{
 
     public function index(Request $request){
@@ -473,5 +484,112 @@ class LRestockController extends Controller{
         }
 
         return response()->json($printed);
+    }
+
+    public function updateTable(Request $request){
+        /*
+            Actualización y replicación de los productos y precios son almacenados en MySQL
+            y se envian a todas las sucursales con excepción de puebla, ya que
+            en esta sucursal solo se dan de alta los productos que habra en su inventario
+            y se manejan otras tarifas.
+            Nota: El precio AAA de CEDIS es el Costo de las sucursales, por lo que este no es replicado a las sucursales
+         */
+
+        try {
+            $start = microtime(true);
+            $date = isset($request->date) ? $request->date : null;
+            $_cedis = env("CEDIS") ? env("CEDIS") : 1; //Se valida quien es la sucursal de CEDIS del cual se tomaran los datos
+            $workpoint = \App\WorkPoint::find($_cedis); // Se busca la instancia de CEDIS
+            $access = new AccessController($workpoint->dominio); // Se hace la conexión al ACCESS de la sucursal
+            $required_products = $request->products ? : false; // define si se actualizara la tabla de productos
+            $required_prices = $request->prices ? : false; // define si se actualizara la tabla de los precios
+            $store_success = []; // Almacena sucurdsales actualizadas (si se pudo)
+            $store_fail = []; // Almacena sucursales no actualizadas
+            $products = $access->getUpdatedProducts($date); //Se traen los productos actualizados para almacenar en MySQL
+            $raw_data = $access->getRawProducts($date, $required_prices, $required_products); //Se traen los product actualizados para replicar a las sucursales
+
+            if($request->stores == "all"){ //Se envian los cambios a todas las sucursales
+                $categories = ProductCategory::where([['id', '>', 403], ['deep', 2]])->get()->groupBy('root');
+                $families = ProductCategory::where([['id', '>', 403], ['deep', 1]])->get();
+                $array_families = array_column($families->toArray(), 'alias');
+
+                if($products && $request->complete){
+                    DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
+                        foreach($products as $product){
+                            $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
+                            $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
+                            $instance = Product::firstOrCreate([
+                                'code'=> trim($product['code'])
+                            ], [
+                                'name' => trim($product['name']),
+                                'barcode' => $product['barcode'],
+                                'description' => trim($product['description']),
+                                'label' => trim($product['label']),
+                                'reference' => trim($product['reference']),
+                                'large' => $product['large'],
+                                'dimensions' => $product['dimensions'],
+                                'pieces' => $product['pieces'],
+                                '_category' => $_category,
+                                '_status' => $product['_status'],
+                                '_provider' => $_provider,
+                                '_unit' => $product['_unit'],
+                                'created_at' => new \DateTime(),
+                                'updated_at' => new \DateTime(),
+                                'cost' => $product['cost'],
+                                'refillable' => $product['refillable']
+                            ]);
+                            $instance->barcode = $product['barcode'];
+                            $instance->large = $product['large'];
+                            $instance->name = $product['name'];
+                            $instance->cost = $product['cost'];
+                            //$instance->_status = $product['_status'];
+                            $instance->_category = $_category;
+                            $instance->description = $product['description'];
+                            $instance->label = $product['label'];
+                            $instance->reference = $product['reference'];
+                            $instance->pieces = $product['pieces'];
+                            $instance->_provider = $_provider;
+                            $instance->updated_at = new \DateTime();
+                            $instance->save();
+                            $prices = [];
+                            if($required_prices && count($products)<1000){
+                                foreach($product['prices'] as $price){
+                                    $prices[$price['_type']] = ['price' => $price['price']];
+                                }
+                                $instance->prices()->sync($prices);
+                            }
+                        }
+                    });
+                }
+
+                $stores = \App\Workpoint::where([['_type', 2], ['id', '!=', 18], ['active', true]])->get();
+            }else{ $stores = \App\WorkPoint::whereIn('id', $request->stores)->get(); }
+
+            if($raw_data){
+                if($_cedis == 1){
+                    foreach($stores as $store){
+                        $access_store = new AccessController($store->dominio);
+                        $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
+                        if($result){
+                            $store_success[] = $store->alias;
+                        }else{
+                            $store_fail[] = $store->alias;
+                        }
+                    }
+                }
+                return response()->json([
+                    "success" => true,
+                    "products" => count($products),
+                    "time" => microtime(true) - $start,
+                    "tiendas actualizadas" => $store_success,
+                    "tiendas que no se pudieron actualizar" => $store_fail
+                ]);
+            }else{
+                return response()->json([
+                    "success" => false,
+                    "msg" => "No se tuvo conexión a CEDIS"
+                ]);
+            }
+        } catch (\Exception $e) { return response()->json($e, 500); }
     }
 }

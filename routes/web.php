@@ -288,6 +288,6 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             });
         });
 
-        $router->group(['prefix' => 'product'], function () use ($router){ // Modulo de productos
-            $router->get('/updateTable', 'ProductController@updateTable'); // Se actualiza la BD de mysql y los ACCESS de todas las sucursales con base a una fecha de actualización
+        $router->group(['prefix' => 'productD'], function () use ($router){ // Modulo de productos
+            $router->get('/updateTable', 'LRestockController@updateTable'); // Se actualiza la BD de mysql y los ACCESS de todas las sucursales con base a una fecha de actualización
         });
