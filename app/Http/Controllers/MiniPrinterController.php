@@ -1232,11 +1232,12 @@ class MiniPrinterController extends Controller{
         $locations = $product->locations->reduce(function($res, $location){
             return $res.$location->path.",";
         }, '');
+        $stock =$product->stocks;
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->setFont(Printer::FONT_B);
         $printer->setTextSize(3,1);
         $printer->text($y."█ ".trim($locations)."\n█ ");
-        $printer->text($product->code." █\n");
+        $printer->text($product->code." █ \n");
         $printer->setEmphasis(true);
         $printer->setTextSize(1,1);
         $printer->text($product->description."\n");
@@ -1265,8 +1266,9 @@ class MiniPrinterController extends Controller{
                 break;
         }
         $printer->setReverseColors(true);
-        $printer->text(" ".$product->pivot->units."pz \n");
+        $printer->text(" ".$product->pivot->units."pz");
         $printer->setReverseColors(false);
+        $printer->text(" D->".$stock[0]->pivot->gen." \n");
         if($product->pivot->comments){
             $printer->setTextSize(1,1);
             $printer->setReverseColors(true);

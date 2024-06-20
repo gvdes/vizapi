@@ -149,13 +149,26 @@ class OrderController extends Controller{
             case 5: //Surtiendo
                 $_workpoint_to = $order->_workpoint_from;
 
-                $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
-                    $query->with(['locations' => function($query)  use ($_workpoint_to){
-                        $query->whereHas('celler', function($query) use ($_workpoint_to){
-                            $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
-                        });
-                    }]);
-                }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
+                $order->load([
+                'created_by',
+                'products' => function($query) use ($_workpoint_to){
+                    $query->with([
+                        'locations' => function($query)  use ($_workpoint_to){
+                            $query->whereHas('celler', function($query) use ($_workpoint_to){
+                                $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
+                            });
+                        },
+                        'stocks' => function($query) use ($_workpoint_to){
+                        $query->where('_workpoint', $_workpoint_to);
+                        }
+                    ]);
+                },
+                'client',
+                'price_list',
+                'status',
+                'created_by',
+                'workpoint',
+                'history']);
                 $cash_ = $order->history->filter(function($log){
                     return $log->pivot->_status == 2;
                 })->values()->all()[0];
@@ -965,11 +978,16 @@ class OrderController extends Controller{
         $order = Order::find($request->_order);
         $_workpoint_to = $order->_workpoint_from;
         $order->load(['created_by', 'products' => function($query) use ($_workpoint_to){
-            $query->with(['locations' => function($query)  use ($_workpoint_to){
+            $query->with([
+                'locations' => function($query)  use ($_workpoint_to){
                 $query->whereHas('celler', function($query) use ($_workpoint_to){
                     $query->where([['_workpoint', $_workpoint_to], ['_type', 1]]);
                 });
-            }]);
+            },
+            'stocks' => function($query) use ($_workpoint_to){
+                $query->where('_workpoint', $_workpoint_to);
+                }
+            ]);
         }, 'client', 'price_list', 'status', 'created_by', 'workpoint', 'history']);
 
         $cash_ = $order->history->filter(function($log){
