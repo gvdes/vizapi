@@ -153,6 +153,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/remove', 'RequisitionController@removeProduct');
         $router->post('/next', 'RequisitionController@nextStep');
         $router->post('/reimpresion', 'RequisitionController@reimpresion');
+        $router->post('/reimpresionPartition', 'RequisitionController@reimpresionPartition');
         $router->post('/toDelivered', 'RequisitionController@setDeliveryValue');
 
     });

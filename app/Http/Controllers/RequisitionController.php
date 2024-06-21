@@ -11,6 +11,7 @@ use App\RequisitionProcess as Process;
 use App\Product;
 use App\WorkPoint;
 use App\Account;
+use App\RequisitionPartition;
 use App\Http\Resources\Requisition as RequisitionResource;
 use App\Http\Resources\ProductRequired as ProductResource;
 use Carbon\Carbon;
@@ -1007,5 +1008,29 @@ class RequisitionController extends Controller{
 
         // con esta función solo saldran las impresiones en la parte de arriba
         return \App\Printer::where([['_type', 2], ['_workpoint', $_workpoint], ["name", "LIKE", "%1%"]])->first();
+    }
+
+    public function reimpresionPartition(Request $request){
+        $requisition = RequisitionPartition::find($request->_partition);
+        $workpoint_to_print = Workpoint::find(1);
+        $requisition->load(['requisition.from','requisition.created_by','requisition.to', 'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', 1);
+                });
+            }]);
+        }]);
+        // return $requisition;
+        $printer = \App\Printer::find($request->_printer);
+        $port = 9100;
+        // if($this->account->_workpoint == 2){ $port = 4065; }else{ $port = 9100; }
+        $cellerPrinter = new MiniPrinterController($printer->ip, $port);
+        $cellerPrinter;
+        $res = $cellerPrinter->PartitionTicket($requisition);
+        // if($requisition->_workpoint_to == $this->account->_workpoint){
+        //     $requisition->printed = $requisition->printed +1;
+        //     $requisition->save();
+        // }
+        return response()->json(["success" => $res, "printer" => $printer]);
     }
 }
