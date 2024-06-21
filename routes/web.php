@@ -274,6 +274,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->post('/massaction', 'LRestockController@massaction');
                 $router->post('/print/key', 'LRestockController@printkey');
                 $router->post('/print/forsupply', 'LRestockController@printforsupply');
+                $router->post('/print/Partition', 'LRestockController@pritnforPartition');
             });
 
             $router->group(['prefix' => 'faks'], function() use($router){

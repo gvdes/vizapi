@@ -498,6 +498,25 @@ class LRestockController extends Controller{
         return response()->json($printed);
     }
 
+    public function pritnforPartition(Request $request){
+        $ip = $request->ip;
+        $port = $request->port;
+        $requisition = RequisitionPartition::find($request->_partition);
+        $workpoint_to_print = Workpoint::find(1);
+        $requisition->load(['requisition.from','requisition.created_by','requisition.to', 'log', 'products' => function($query){
+            $query->with(['locations' => function($query){
+                $query->whereHas('celler', function($query){
+                    $query->where('_workpoint', 1);
+                });
+            }]);
+        }]);
+
+        $cellerPrinter = new MiniPrinterController($ip, $port);
+        $cellerPrinter;
+        $res = $cellerPrinter->PartitionTicket($requisition);
+        return response()->json(["success" => $res, "printer" => $ip]);
+    }
+
     public function create(Request $request){
         // try{
             // return $request;
