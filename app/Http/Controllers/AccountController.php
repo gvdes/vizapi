@@ -79,7 +79,7 @@ class AccountController extends Controller{
 
             foreach($workpoints as $workpoint){ // Se crea el acceso para cada una de las sucursales a las que se le dara acceso
                 if($workpoint['id']!=404){
-		    $_rool = ($user->_rol==9||$user->_rol==8) ? $user->_rol : $workpoint['_rol'];
+		    $_rool =  $user->_rol;
                     $account = \App\Account::create([
                         '_account' => $user->id,
                         '_workpoint' => $workpoint['id'],
