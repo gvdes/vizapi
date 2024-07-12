@@ -20,7 +20,7 @@ class AccountController extends Controller{
     public function __construct(){
         $this->account = Auth::payload()['workpoint'];
     }
-    
+
     public function checkData($request){
         $msg = [
             'required' => 'Campo necesario',
@@ -56,7 +56,7 @@ class AccountController extends Controller{
      */
 
     public function create(Request $request){ // Función para crear una cuenta de usuario
-        $this->checkData($request); // Validación de los datos 
+        $this->checkData($request); // Validación de los datos
         $id = DB::transaction( function() use ($request){ // Se realiza una trasacción para asegurar que todos los cambios sean realizado
             $user = User::create([
                 'nick'=> $request->nick,
@@ -69,17 +69,17 @@ class AccountController extends Controller{
                 '_rol'=> $request->_rol
             ]); // Se crea el usuario con todos los datos necesarios
 
-            if($user->_rol==1 || $user->_rol==8){
+            // if($user->_rol==1 || $user->_rol==8){
                 // Si el usuario sera root se obtiene la info de todas las tiendas para darle el acceso
                 $workpoints = \App\WorkPoint::all();
-            }else{
-                // Solo se le dara acceso a la tienda que nos indican en el parametro workpoints
-                $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
-            }
+            // }else{
+            //     // Solo se le dara acceso a la tienda que nos indican en el parametro workpoints
+            //     $workpoints = $request->workpoints ? (object)$request->workpoints : [['id' => $user->_wp_principal, '_rol' => $user->_rol]];
+            // }
 
             foreach($workpoints as $workpoint){ // Se crea el acceso para cada una de las sucursales a las que se le dara acceso
                 if($workpoint['id']!=404){
-		    $_rool = ($user->_rol==1||$user->_rol==8) ? $user->_rol : $workpoint['_rol'];
+		    $_rool = ($user->_rol==9||$user->_rol==8) ? $user->_rol : $workpoint['_rol'];
                     $account = \App\Account::create([
                         '_account' => $user->id,
                         '_workpoint' => $workpoint['id'],
@@ -199,7 +199,7 @@ class AccountController extends Controller{
                     return response()->json(["success" => $save]);
                 }
             }else{
-                return response()->json(['message' => 'La contraseña actual no es correcta']);    
+                return response()->json(['message' => 'La contraseña actual no es correcta']);
             }
         }catch(\Exception $e){
             return response()->json(['message' => 'No se ha podido cambiar la contraseña']);
