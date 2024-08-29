@@ -37,7 +37,7 @@ class LRestockController extends Controller{
                 case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
                 case 'SAP': case 'sap': $query->whereIn("_workpoint_to", [1]); break;
                 case 'BOL': case 'bol': $query->whereIn("_workpoint_to", [13]); break;
-                case 'PAN': case 'pan': $query->whereIn("_workpoint_to", [2]); break;
+                case 'TEX': case 'tex': $query->whereIn("_workpoint_to", [2]); break;
                 default: break;
             }
 
@@ -93,6 +93,7 @@ class LRestockController extends Controller{
                         'status',
                         'log',
                         'from',
+                        'to',
                         'partition.status',
                         'partition.log',
                         'partition.products',
@@ -248,6 +249,105 @@ class LRestockController extends Controller{
         } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
     }
 
+    public function newTransfer(Request $request){
+        try {
+            $oid = $request->route("oid");
+            $supply = $request->route("supply");
+            $resp = $this->accessGenTransfer($oid,$supply);
+            if($resp["error"]){
+                return response()->json($resp["error"],500);
+            }else{
+                if($resp["httpcode"]==201){
+                    $requisition = RequisitionPartition::where([['_requisition',$oid],['_suplier_id',$supply]])->first();
+                    // $now = CarbonImmutable::now();
+                    // $prevstate = null;
+
+                    // $logs = $requisition->log->toArray();
+                    // $end = end($logs);
+                    // $prevstate = $end['pivot']['_status'];
+                    // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                    // $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                    $requisition->_status=6; // se actualiza el status del pedido
+                    $requisition->entry_key = md5($requisition->id);
+                    $requisition->save(); // se guardan los cambios
+                    $requisition->fresh(); // se refresca el log del pedido
+                    return response()->json(["transfer"=>$resp['done'], "requisition"=>$requisition]);
+                }else{ return response()->json($resp["done"],$resp["httpcode"]); }
+            }
+        } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
+    }
+
+    private function accessGenTransfer($oid,$supply){
+        $data = json_encode([ "id"=>$oid, "supply"=>$supply ]);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Transfer/Transfer");
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+        $exec = json_decode(curl_exec($curl));
+        $info = curl_getinfo($curl);
+
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
+
+        curl_close($curl);
+    }
+
+    public function newTransferRec(Request $request){
+        try {
+            $oid = $request->route("oid");
+            $supply = $request->route("supply");
+            $resp = $this->accessGenTransferRec($oid,$supply);
+            if($resp["error"]){
+                return response()->json($resp["error"],500);
+            }else{
+                if($resp["httpcode"]==201){
+                    $requisition = RequisitionPartition::where([['_requisition',$oid],['_suplier_id',$supply]])->first();
+                    // $now = CarbonImmutable::now();
+                    // $prevstate = null;
+
+                    // $logs = $requisition->log->toArray();
+                    // $end = end($logs);
+                    // $prevstate = $end['pivot']['_status'];
+                    // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
+                    // $requisition->log()->attach(7, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
+                    $requisition->_status=10; // se actualiza el status del pedido
+                    // $requisition->entry_key = md5($requisition->id);
+                    $requisition->save(); // se guardan los cambios
+                    $requisition->fresh(); // se refresca el log del pedido
+                    return response()->json(["transfer"=>$resp['done'], "requisition"=>$requisition]);
+                }else{ return response()->json($resp["done"],$resp["httpcode"]); }
+            }
+        } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
+    }
+
+    private function accessGenTransferRec($oid,$supply){
+        $data = json_encode([ "id"=>$oid, "supply"=>$supply ]);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Transfer/TransferRec");
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+        $exec = json_decode(curl_exec($curl));
+        $info = curl_getinfo($curl);
+
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
+
+        curl_close($curl);
+    }
+
+
     public function newentry(Request $request){
         try {
             $oid = $request->route("oid");
@@ -355,6 +455,7 @@ class LRestockController extends Controller{
                         'status',
                         // 'log',
                         'requisition.from',
+                        'requisition.to',
                         'products' => function($query){
                             $query->selectRaw('
                                         products.*,

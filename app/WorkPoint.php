@@ -1,13 +1,13 @@
-<?php 
+<?php
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
 class WorkPoint extends Model{
-    
+
     protected $table = 'workpoints';
     protected $fillable = ['fullname', 'alias', 'dominio', 'active', '_type', '_client'];
-    protected $hidden = ['_type'];
+    // protected $hidden = ['_type'];//descomentalo si algo pasa en vizapi y en la de resurtido lo tienes que hacer manual por favor gracias
     protected $dateFormat = 'U';
     public $timestamps = false;
 
@@ -32,14 +32,14 @@ class WorkPoint extends Model{
     public function cyclecounts(){
         return $this->hasMany('App\CycleCount', '_workpoint', 'id');
     }
-    
+
     /**
      * RELATIONSHIPS WITH REQUISITION'S MODELS
      */
     public function supplied(){
         return $this->hasMany('App\Requisition','_workpoint_to', 'id');
     }
-    
+
     public function to_supply(){
         return $this->hasMany('App\Requisition','_workpoint_from', 'id');
     }

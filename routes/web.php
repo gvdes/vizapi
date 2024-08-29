@@ -261,6 +261,8 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/crypt', 'LRestockController@crypt');
                 $router->get('/{oid}', 'LRestockController@order');
                 $router->get('/{oid}/{supply}/newinvoice', 'LRestockController@newinvoice');
+                $router->get('/{oid}/{supply}/newTransfer', 'LRestockController@newTransfer');
+                $router->get('/{oid}/{supply}/newTransferRec', 'LRestockController@newTransferRec');
                 $router->get('/{oid}/fresh', 'LRestockController@orderFresh');
                 $router->get('/{oid}/newentry', 'LRestockController@newentry');
                 $router->post('/changestate', 'LRestockController@changestate');
@@ -292,5 +294,9 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->group(['prefix' => 'ciclicos'], function() use($router){
                 $router->get('/', 'CiclicosController@index');
                 $router->get('/{folio}', 'CiclicosController@find');
+            });
+            $router->group(['prefix' => 'product'], function () use ($router){
+                $router->post('/', 'CiclicosController@getProducts');
+                $router->post('/getMassive', 'CiclicosController@getMassiveProducts');
             });
         });
