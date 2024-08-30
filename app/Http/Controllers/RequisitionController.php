@@ -879,7 +879,7 @@ class RequisitionController extends Controller{
         switch($_workpoint){
             case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Mochila","Papeleria","Juguete","Paraguas","Electronicos" '; break;
             case 3: return '"Paraguas"'; break;
-            case 4: return '"Mochils"'; break;
+            case 4: return '"Mochila"'; break;
             case 5: return '"Mochila"'; break;
             case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
             case 7: return '"Mochila"'; break;
