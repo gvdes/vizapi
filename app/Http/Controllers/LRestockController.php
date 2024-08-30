@@ -623,11 +623,14 @@ class LRestockController extends Controller{
             // return $request;
             $requisition = DB::transaction(function() use ($request){
                 $_workpoint_from = $request->_workpoint_from;
-
                 $_workpoint_to = $request->_workpoint_to;
-               $request->_type;
-
-                        $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+                $request->_type;
+                // $seccion = isset($request->cats) ? $request->cats : null;
+                if( isset($request->cats)){
+                    $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to,$request->cats );
+                }else{
+                    $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
+                }
 
                 if(isset($data['msg'])){
                     return response()->json([
@@ -674,10 +677,15 @@ class LRestockController extends Controller{
         // }
     }
 
-    public function getToSupplyFromStore($workpoint_id, $workpoint_to){ // Función para hacer el pedido de minimos y máximos de la sucursal
+    public function getToSupplyFromStore($workpoint_id, $workpoint_to, $seccion = null){ // Función para hacer el pedido de minimos y máximos de la sucursal
 
         // $workpoint = WorkPoint::find($workpoint_id); // Obtenemos la sucursal a la que se le realizara el pedido
-        $cats = $this->categoriesByStore($workpoint_id); // Obtener todas las categorias que puede pedir la sucursal
+        if($workpoint_id == 1 || $workpoint_id == 2 || $workpoint_id == 22 || $workpoint_id == 24 ){
+            $cats= $seccion;
+        }else{
+            $cats = $this->categoriesByStore($workpoint_id);
+        }
+        // Obtener todas las categorias que puede pedir la sucursal
         // Todos los productos antes de ser solicitados se válida que haya en CEDIS y la sucursal los necesite en verdad, verificando que la existencia actual sea menor al máximo en primer instancia
 
         $wkf = $workpoint_id;
@@ -843,7 +851,7 @@ class LRestockController extends Controller{
 
 
                 if($requisition->_workpoint_to == 2){
-                    // $ipprinter = env("PRINTERTEX");
+                    $ipprinter = env("PRINTERTEX");
                     // $groupvi = "120363185463796253@g.us";
                     // $mess = "Has recibido el pedido ".$requisition->id;
                     // $this->sendWhatsapp($groupvi, $mess);
@@ -969,6 +977,10 @@ class LRestockController extends Controller{
         return response()->json($sucursales,200);
     }
 
+    public function cedis(){
+        $sucursales = Workpoint::where([['_type',1],['active',1]])->get();
+        return response()->json($sucursales,200);
+    }
     // public function create($store){
     //     // try{
     //         // return $request;

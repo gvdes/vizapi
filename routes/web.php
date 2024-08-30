@@ -258,6 +258,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->group(['prefix' => 'restock'], function() use($router){
                 $router->get('/', 'LRestockController@index');
                 $router->get('/suc', 'LRestockController@suc');
+                $router->get('/cedis', 'LRestockController@cedis');
                 $router->get('/crypt', 'LRestockController@crypt');
                 $router->get('/{oid}', 'LRestockController@order');
                 $router->get('/{oid}/{supply}/newinvoice', 'LRestockController@newinvoice');
