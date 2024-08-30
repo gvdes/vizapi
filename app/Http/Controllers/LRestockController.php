@@ -692,8 +692,9 @@ class LRestockController extends Controller{
                     (SELECT stock FROM product_stock WHERE _workpoint=$wkf AND _product = P.id AND _status != 4 AND min > 0 AND max > 0) AS stock,
                     (SELECT min FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS min,
                     (SELECT max FROM product_stock WHERE _workpoint=$wkf AND _product = P.id) AS max,
-                    SUM(IF(PS._workpoint=$wkf, PS.stock, 0)) AS CEDIS,
-                    (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO
+                    SUM(IF(PS._workpoint= 1 , PS.stock, 0)) AS CEDIS,
+                    (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO,
+                    (SELECT SUM(in_transit) FROM product_stock WHERE _workpoint = $wkf AND _product = P.id) AS transito
                 FROM
                     products P
                         INNER JOIN product_categories PC ON PC.id = P._category
@@ -713,20 +714,39 @@ class LRestockController extends Controller{
             $stock = $product->stock;
             $min = $product->min;
             $max = $product->max;
+            $transit = $product->transito;
 
             // $required = ($stock<=$min) ? ($max-$stock) : 0;
 
             // if($required){
-                if( $product->unitsupply==3 ){
-                    $required = ($stock<=$min) ? ($max-$stock) : 0;
-                    $ipack = $product->ipack == 0 ? 1 : $product->ipack;
-                    $boxes = floor($required/$ipack);
+                if($workpoint_id == 1){
+                    if( $product->unitsupply==3 ){
+                        $required = ($stock<=$min) ? ($max-$stock)-$transit : 0;
+                        $ipack = $product->ipack == 0 ? 1 : $product->ipack;
+                        $boxes = floor($required/$ipack);
 
-                    ($boxes>=1) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ] : null;
-                }else if( $product->unitsupply==1){
-                    $required = ($max-$stock);
-                    if($required >=6 ){
-                        ($stock<=$min) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0] : null ;
+                        ($boxes>=1) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ] : null;
+                    }else if( $product->unitsupply==1){
+                        $required = ($max-$stock) - $transit;
+                        if($required >= 6){
+                            ($stock<=$min) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0] : null ;
+                        }
+
+                    }
+
+                }else{
+                    if( $product->unitsupply==3 ){
+                        $required = ($stock<=$min) ? ($max-$stock) : 0;
+                        $ipack = $product->ipack == 0 ? 1 : $product->ipack;
+                        $boxes = floor($required/$ipack);
+
+                        ($boxes>=1) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ] : null;
+                    }else if( $product->unitsupply==1){
+                        $required = ($max-$stock);
+                        if($required >= 6){
+                            ($stock<=$min) ? $tosupply[$product->id] = [ 'units'=>$required, "cost"=>$product->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0] : null ;
+                        }
+
                     }
                 }
             // }
