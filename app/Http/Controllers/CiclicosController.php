@@ -265,14 +265,25 @@ class CiclicosController extends Controller{
     public function getMassiveProducts(Request $request){
         // Función para obtener los productos y obtener la lista de los que se encontraron y no
         $codes = $request->codes;
+        $workpoint = $request->_workpoint;
         $products = [];
         $notFound = [];
         $uniques = array_unique($codes);
         $repeat = array_values(array_diff_assoc($codes, $uniques));
         foreach($uniques as $code){
-            $product = Product::with(['prices' => function($query){
+            $product = Product::with([
+            'prices' => function($query){
                 $query->whereIn('_type', [1,2,3,4])->orderBy('_type');
-            }, 'units', 'variants', 'status'])
+            },
+            'units',
+            'variants',
+            'status',
+            'locations' => function($query) use ($workpoint) {
+                $query->whereHas('celler', function($query) use ($workpoint) {
+                    $query->where([['_workpoint', $workpoint],['_type',2]]);
+                });
+            }
+            ])
             ->whereHas('variants', function(Builder $query) use ($code){
                 $query->where('barcode', $code);
             })
