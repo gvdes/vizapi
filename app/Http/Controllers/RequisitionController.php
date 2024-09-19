@@ -877,23 +877,23 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Mochila","Papeleria","Juguete","Paraguas","Electronicos" '; break;
-            case 3: return '"Paraguas"'; break;
-            case 4: return '"Mochila"'; break;
-            case 5: return '"Mochila"'; break;
-            case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 7: return '"Mochila"'; break;
-            case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
-            case 9: return '"Mochila"'; break;
-            case 10: return '"Calculadora", "Electronico", "Hogar"'; break;
-            case 11: return '"Juguete"'; break;
-            case 12: return '"Mochila"'; break;
-            case 13: return '"Mochila"'; break;
-            case 18: return '"Mochila", "Electronico", "Hogar"'; break;
-            case 19: return '"Juguete"'; break;
-            case 22: return '"Mochila"'; break;
-            case 23: return '"Mochila"'; break;
-            case 24: return '"Juguete"'; break;
+            case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos" '; break;//cedis
+            case 3: return '"Navidad"'; break;//san pablo 1
+            case 4: return '"Navidad"'; break;//san pablo 2
+            case 5: return '"Navidad"'; break;// correo 1
+            case 6: return '"Calculadora", "Electronico", "Hogar"'; break;//correo 2
+            case 7: return '"Navidad"'; break;// apartado 1
+            case 8: return '"Calculadora", "Juguete"'; break;//apartado dos
+            case 9: return '"Navidad"'; break;//ramon c 1
+            case 10: return '"Calculadora", "Electronico", "Hogar"'; break;//ramon c 2
+            case 11: return '"Juguete"'; break;//brasil 1
+            case 12: return '"Navidad"'; break;
+            case 13: return '"Navidad"'; break;//bolivia
+            case 18: return '"Navidad"'; break;//puebla
+            case 19: return '"Juguete"'; break;//sotano
+            case 22: return '"Navidad"'; break;//braasil 3
+            case 23: return '"Navidad"'; break;//corregidora
+            case 24: return '"Juguete"'; break;//cedis bolivia
         }
     }
 
