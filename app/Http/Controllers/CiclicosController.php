@@ -234,34 +234,6 @@ class CiclicosController extends Controller{
         return response()->json($products);
     }
 
-    // public function getProducts(Request $request){
-    //     $workpoint = $request->workpoint;
-    //     $codigo = $request->code;
-
-    //     $pquery = "SELECT
-    //         P.id as ID,
-    //         P.code as Codigo,
-    //         P.name as CodigoCorto,
-    //         P.description as Descripcion,
-    //         PST.name as PS_status,
-    //         PSS.name as P_status,
-    //         P.large as Largo,
-    //         P.dimensions as Dimenciones,
-    //         PP._type as Tarifa,
-    //         PP.price as Precio
-    //         FROM products P
-    //         LEFT JOIN  product_variants PV ON  P.id = PV._product
-    //         LEFT JOIN product_stock PS ON PS._product = P.id AND PS._workpoint = $workpoint
-    //         LEFT JOIN product_prices PP ON PP._product = P.id AND _type IN (1,2,3,4)
-    //         INNER JOIN product_status  PST ON PST.id = PS._status
-    //         INNER JOIN product_status PSS ON PSS.id = P._status
-    //         WHERE (P.name LIKE '%$codigo%' OR P.barcode LIKE '%$codigo%' OR P.code LIKE '%$codigo%' OR PV.barcode LIKE '%$codigo%') AND P._status != 4";
-
-    //     $rows = DB::select($pquery);
-
-    //     return response()->json($rows,200);
-    // }
-
     public function getMassiveProducts(Request $request){
         // Función para obtener los productos y obtener la lista de los que se encontraron y no
         $codes = $request->codes;
@@ -308,5 +280,33 @@ class CiclicosController extends Controller{
                 "repeat" => $repeat
             ]
         ]);
+    }
+
+    public function getProductsCompare($sid,$seccion){
+            $products = Product::with([
+                'categories.familia.seccion',
+                'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
+                    $query->whereIn('_workpoint',[1,2,$sid])->distinct();
+                }
+                ])
+                ->whereHas('categories.familia.seccion', function($query) use ($seccion) { // Aplicamos el filtro en la relación seccion
+                    $query->where('name',$seccion);
+                })
+                ->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+                    $query->whereIn('_workpoint', [1, 2])
+                          ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+                })
+                ->whereHas('stocks', function($query) use ($sid) { // Solo productos con stock mayor a 0 en el workpoint
+                    $query->where('_workpoint',$sid)
+                          ->where('stock', '=', 0); // Filtra solo aquellos con stock positivo
+                })
+                ->where('_status','!=',4)->get();
+        return response()->json($products);
+
+    }
+
+    public function secciones(){
+        $seccion = ProductCategory::where('deep',0)->where('alias','!=',null)->get();
+        return response()->json($seccion);
     }
 }

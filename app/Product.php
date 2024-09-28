@@ -47,6 +47,11 @@ class Product extends Model{
         return $this->belongsTo('App\ProductCategory', '_category');
     }
 
+    public function categories(){
+         return $this->hasOne('App\ProductCategory','id','_category');
+        }//este se quita si hay algun problema va ?
+
+
     public function variants(){
         return $this->hasMany('App\ProductVariant', '_product', 'id');
     }
