@@ -201,7 +201,9 @@ class ProductController extends Controller{
                 if($products && $request->complete){
                     DB::transaction(function() use ($products, $required_prices, $families, $categories, $array_families){
                         foreach($products as $product){
-                            $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
+                            // $_category = $this->getCategoryId($product['_family'], $product['_category'], $categories, $families, $array_families);
+                            $caty = DB::table('product_categories as PC')->join('product_categories as PF', 'PF.id', '=','PC.root')->where('PC.alias', $product['_category'])->where('PF.alias', $product['_family'])->value('PC.id');
+                            $_category = $caty ? $caty : 404 ;
                             $_provider = $product['_provider'] <= 0 ? 1 : $product['_provider'];
                             $instance = Product::firstOrCreate([
                                 'code'=> trim($product['code'])
