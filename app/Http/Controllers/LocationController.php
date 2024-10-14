@@ -423,11 +423,11 @@ class LocationController extends Controller{
         $withStock = Product::whereHas('stocks', function($query){
                         $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
                             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-                        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+                        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se obtiene la cantidad de articulos sin stock en el inventario de la sucursal
         $withoutStock = Product::whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se obtiene la cantidad de articulos con stock y ubicación en el inventario de la sucursal
         $withLocation = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
@@ -436,7 +436,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'>',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        },'>',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se obtiene la cantidad de articulos con stock y sin ubicación en el inventario de la sucursal
         $withoutLocation = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
@@ -445,7 +445,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'<=',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        },'<=',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se obtiene la cantidad de articulos sin stock y con ubicación en el inventario de la sucursal
         $withLocationWithoutStock = Product::whereHas('stocks', function($query){
             $query->where([["stock", "<=", 0], ["stock", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
@@ -453,11 +453,11 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'>',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        },'>',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se obtiene un comparativo del almacen general vs el de exhibición para saber que mercancia no ha sido exhibida
         $generalVsExhibicion = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
         // Se valida quien es la sucursal de CEDIS para cada tienda
         /* Regla
             El CEDIS de las sucursales es CEDIS SAN PABLO
@@ -466,16 +466,16 @@ class LocationController extends Controller{
         if($this->account->_workpoint == 1){
             $cedis = Product::whereHas('stocks', function($query){
                 $query->where([["stock", ">", 0], ["_workpoint", 2]]);
-            })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+            })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         }else{
             $cedis = Product::whereHas('stocks', function($query){
                 $query->where([["gen", ">", 0], ["_workpoint", 1]]);
-            })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+            })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         }
         // Se obtiene los productos que tiene el alamcen general con stock
         $general = Product::whereHas('stocks', function($query){
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $generalVsCedis = [];
         $arr_general = array_column($general->toArray(), 'code');
         foreach($cedis as $product){
@@ -491,17 +491,17 @@ class LocationController extends Controller{
         // Se obtiene un reporte de todos los articulos con stock y que no tienen un min/max
         $sinMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
 
         // Se obtiene la cantidad de articulos con stock y máximo
         $conMaximos = Product::whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
 
         //Se obtiene la cantidad de articulos que tienen un inventario negativo y son producto válido para el catalogo
         $negativos = Product::whereHas('stocks', function($query){
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->count();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->count();
 
         // reporte de ventas en negativo
         $devoluciones = DB::table('sales as S')
@@ -712,7 +712,7 @@ class LocationController extends Controller{
             $query->where([["gen", ">", 0], ["_workpoint", $this->account->_workpoint]])
             ->orWhere([["exh", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         })
-        ->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        ->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
 
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
@@ -817,7 +817,7 @@ class LocationController extends Controller{
             });
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["_workpoint", $this->account->_workpoint], ['gen', '<', 0]])->orWhere([["_workpoint", $this->account->_workpoint], ['exh', '<', 0]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -857,7 +857,7 @@ class LocationController extends Controller{
             });
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", "<=", 0],["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
 
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
@@ -901,7 +901,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'>',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        },'>',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -943,7 +943,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'<=',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        },'<=',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -983,7 +983,7 @@ class LocationController extends Controller{
             $query->whereHas('celler', function($query){
                 $query->where('_workpoint', $this->account->_workpoint);
             });
-        },'>',0)->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        },'>',0)->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -1020,7 +1020,7 @@ class LocationController extends Controller{
             });
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["gen", ">", "0"], ["exh", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -1055,7 +1055,7 @@ class LocationController extends Controller{
                             'locations' => fn($q) => $q->whereHas('celler', fn($q) => $q->where('_workpoint', 2))
                         ])
                         ->whereHas('stocks', fn($q) => $q->where([["stock", ">", 0], ["_workpoint", 2]]))
-                        ->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])
+                        ->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)
                         ->get();
         }else{
             $cedis = Product::selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy')
@@ -1070,7 +1070,7 @@ class LocationController extends Controller{
                 });
             }])->whereHas('stocks', function($query){
                 $query->where([["gen", ">", 0], ["_workpoint", 1]]);
-            })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+            })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         }
 
         $general = Product::with([
@@ -1132,7 +1132,7 @@ class LocationController extends Controller{
             });
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", "0"], ["_workpoint", 1]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
                 return $res.$location->path.",";
@@ -1166,7 +1166,7 @@ class LocationController extends Controller{
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", "<=", 0], ["max", "<=", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
 
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
@@ -1201,7 +1201,7 @@ class LocationController extends Controller{
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
         }, 'category'])->whereHas('stocks', function($query){
             $query->where([["stock", ">", 0], ["min", ">", 0], ["max", ">", 0], ["_workpoint", $this->account->_workpoint]]);
-        })->where([['_status', '!=', 4], [DB::raw('getSection(products._category)'),$seccion]])->get();
+        })->where('_status', '!=', 4)->whereIn(DB::raw('getSection(products._category)'),$seccion)->get();
 
         $res = $productos->map(function($producto){
             $locations = $producto->locations->reduce(function($res, $location){
