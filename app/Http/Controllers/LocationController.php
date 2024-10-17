@@ -1539,7 +1539,7 @@ class LocationController extends Controller{
             case 11: return ["Juguete"]; break;//brasil 1
             case 12: return ["Navidad"]; break;
             case 13: return ["Navidad"]; break;//bolivia
-            case 17: return '"Calculadora", "Electronico", "Hogar","Papeleria","Mochila"'; break;//san pablo c
+            case 17: return ["Calculadora", "Electronico", "Hogar","Papeleria","Mochila"]; break;//san pablo c
             case 18: return ["Navidad"]; break;//puebla
             case 19: return ["Juguete"]; break;//sotano
             case 22: return ["Navidad"]; break;//braasil 3
