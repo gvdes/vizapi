@@ -869,7 +869,7 @@ class LRestockController extends Controller{
             case 3: return '"Paraguas"'; break;
             case 4: return '"Navidad"'; break;
             case 5: return '"Navidad"'; break;
-            case 6: return '"Calculadora", "Electronico", "Hogar"'; break;
+            case 6: return '"Calculadora", "Electronico", "Hogar","Papeleria"'; break;
             case 7: return '"Navidad"'; break;
             case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
             case 9: return '"Navidad"'; break;

@@ -1531,7 +1531,7 @@ class LocationController extends Controller{
             case 3: return ["Navidad"]; break;//san pablo 1
             case 4: return ["Navidad"]; break;//san pablo 2
             case 5: return ["Navidad"]; break;// correo 1
-            case 6: return ["Calculadora", "Electronico", "Hogar"]; break;//correo 2
+            case 6: return ["Calculadora", "Electronico", "Hogar","Papeleria"]; break;//correo 2
             case 7: return ["Navidad"]; break;// apartado 1
             case 8: return ["Calculadora", "Juguete"]; break;//apartado dos
             case 9: return ["Navidad"]; break;//ramon c 1
