@@ -885,7 +885,7 @@ class RequisitionController extends Controller{
             case 7: return '"Navidad"'; break;// apartado 1
             case 8: return '"Calculadora", "Juguete"'; break;//apartado dos
             case 9: return '"Navidad"'; break;//ramon c 1
-            case 10: return '"Calculadora", "Electronico", "Hogar"'; break;//ramon c 2
+            case 10: return '"Calculadora", "Electronico", "Hogar","Papeleria"'; break;//ramon c 2
             case 11: return '"Juguete"'; break;//brasil 1
             case 12: return '"Navidad"'; break;
             case 13: return '"Navidad"'; break;//bolivia
