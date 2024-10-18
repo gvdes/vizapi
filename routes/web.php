@@ -304,7 +304,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             });
             $router->group(['prefix' => 'compare'], function () use ($router){
                 $router->get('', 'CiclicosController@secciones');
-                $router->get('/getProducts/{sid}/{seccion}', 'CiclicosController@getProductsCompare');
+                $router->post('/getProducts/{sid}', 'CiclicosController@getProductsCompare');
 
             });
         });

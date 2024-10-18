@@ -282,7 +282,9 @@ class CiclicosController extends Controller{
         ]);
     }
 
-    public function getProductsCompare($sid,$seccion){
+    public function getProductsCompare(Request $request){
+        $sid = $request->route('sid');
+        $seccion = $request->sections;
             $products = Product::with([
                 'categories.familia.seccion',
                 'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
@@ -290,7 +292,7 @@ class CiclicosController extends Controller{
                 }
                 ])
                 ->whereHas('categories.familia.seccion', function($query) use ($seccion) { // Aplicamos el filtro en la relación seccion
-                    $query->where('name',$seccion);
+                    $query->whereIn('name',$seccion);
                 })
                 ->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
                     $query->whereIn('_workpoint', [1, 2])
@@ -302,7 +304,6 @@ class CiclicosController extends Controller{
                 })
                 ->where('_status','!=',4)->get();
         return response()->json($products);
-
     }
 
     public function secciones(){
