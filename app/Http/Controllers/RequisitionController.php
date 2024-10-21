@@ -340,6 +340,8 @@ class RequisitionController extends Controller{
                     $this->sendWhatsapp($groupvi, $mess);
                 }else if($requisition->_workpoint_to == 24){
                     $ipprinter = env("PRINTERBOL");
+                }else if($requisition->_workpoint_to == 16){
+                    $ipprinter = env("PRINTERBRASIL");
                 }else{
                     // $stores_p3 = [ 1, 3, 4, 5, 7, 9, 13, 18 , 22 ];
                     // $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
