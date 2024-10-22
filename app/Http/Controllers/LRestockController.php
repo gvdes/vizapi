@@ -60,7 +60,7 @@ class LRestockController extends Controller{
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
             $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
 
-            $printers = WorkPoint::with("printers")->whereIn("id",[1,2,13])->get();
+            $printers = WorkPoint::with("printers")->whereIn("id",[1,2,13,16])->get();
 
             return response()->json([
                 "view"=>$view,
@@ -866,7 +866,7 @@ class LRestockController extends Controller{
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
             case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete"'; break;
-            case 3: return '"Paraguas"'; break;
+            case 3: return '"Navidad"'; break;
             case 4: return '"Navidad"'; break;
             case 5: return '"Navidad"'; break;
             case 6: return '"Calculadora", "Electronico", "Hogar","Papeleria"'; break;
