@@ -711,7 +711,7 @@ class LRestockController extends Controller{
 
                 // return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
             // });
-            // $this->nextStep($requisition->id);
+            $this->nextStep($requisition->id);
             return response()->json([
                 "success" => true,
                 "order" => $requisition
