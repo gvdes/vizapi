@@ -244,7 +244,7 @@ class LRestockController extends Controller{
                     $requisition->save(); // se guardan los cambios
                     $requisition->fresh(); // se refresca el log del pedido
                     return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
-                }else{ return response()->json($resp["done"],$resp["httpcode"]); }
+                }else{ return response()->json($resp["done"],$resp["httpcode"],500); }
             }
         } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
     }
@@ -380,7 +380,7 @@ class LRestockController extends Controller{
                         // $requisition->fresh(['log']); // se refresca el log del pedido
 
                         return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
-                    }else{ return response()->json($resp["done"],$resp["httpcode"]); }
+                    }else{ return response()->json($resp["done"],$resp["httpcode"],500); }
                 }
             }else{ return response("El status actual de esta orden no permite generar entrada (orderState: $cstate)",400); }
         } catch (\Error $e) { return response()->json($e->getMessage(), 500); }
