@@ -33,11 +33,13 @@ class LRestockController extends Controller{
                 ->whereBetween("created_at",[$from,$to]);
 
             switch ($dash) {
-                case 'P3': case 'p3': $query->whereIn("_workpoint_from", [1,2,3,4,5,6,7,9,10,12,14,17]); break;
-                case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
+                // case 'P3': case 'p3': $query->whereIn("_workpoint_from", [1,2,3,4,5,6,7,9,10,12,14,17]); break;
+                // case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
                 case 'SAP': case 'sap': $query->whereIn("_workpoint_to", [1]); break;
                 case 'BOL': case 'bol': $query->whereIn("_workpoint_to", [13]); break;
                 case 'TEX': case 'tex': $query->whereIn("_workpoint_to", [2]); break;
+                case 'BRA': case 'bra': $query->whereIn("_workpoint_to", [16]); break;
+
                 default: break;
             }
 
