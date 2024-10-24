@@ -38,8 +38,6 @@ class LRestockController extends Controller{
                 case 'SAP': case 'sap': $query->whereIn("_workpoint_to", [1]); break;
                 case 'BOL': case 'bol': $query->whereIn("_workpoint_to", [13]); break;
                 case 'TEX': case 'tex': $query->whereIn("_workpoint_to", [2]); break;
-                case 'BRA': case 'bra': $query->whereIn("_workpoint_to", [16]); break;
-
                 default: break;
             }
 
@@ -604,16 +602,17 @@ class LRestockController extends Controller{
     public function pritnforPartition(Request $request){
         $ip = $request->ip;
         $port = $request->port;
+        $workpoint_to = $request->_workpoint_to;
         $requisition = RequisitionPartition::find($request->_partition);
-        $workpoint_to_print = Workpoint::find(1);
-        $requisition->load(['requisition.from','requisition.created_by','requisition.to', 'log', 'products' => function($query){
-            $query->with(['locations' => function($query){
-                $query->whereHas('celler', function($query){
-                    $query->where('_workpoint', 1);
+        // $workpoint_to_print = Workpoint::find(1);
+        $requisition->load(['requisition.from','requisition.created_by','requisition.to', 'log', 'products' => function($query) use($workpoint_to)  {
+            $query->with(['locations' => function($query) use($workpoint_to){
+                $query->whereHas('celler', function($query) use($workpoint_to){
+                    $query->where('_workpoint', $workpoint_to);
                 });
             }]);
         }]);
-
+        // return $requisition;
         $cellerPrinter = new MiniPrinterController($ip, $port);
         $cellerPrinter;
         $res = $cellerPrinter->PartitionTicket($requisition);
@@ -957,6 +956,8 @@ class LRestockController extends Controller{
                     // $this->sendWhatsapp($groupvi, $mess);
                 }else if($requisition->_workpoint_to == 24){
                     $ipprinter = env("PRINTERBOL");
+                }else if($requisition->_workpoint_to == 16){
+                    $ipprinter = env("PRINTERBRASIL");
                 }else{
                     // $stores_p3 = [ 1, 3, 4, 5, 7, 9, 13, 18 , 22 ];
                     // $ipprinter = in_array($requisition->_workpoint_from, $stores_p3) ? env("PRINTER_P3") : env("PRINTER_P2");
@@ -1081,69 +1082,6 @@ class LRestockController extends Controller{
         $sucursales = Workpoint::where([['_type',1],['active',1]])->get();
         return response()->json($sucursales,200);
     }
-    // public function create($store){
-    //     // try{
-    //         // return $request;
-    //         $requisition = DB::transaction(function() use ($store){
-    //             $_workpoint_from = $store;
-
-    //             $_workpoint_to = 1;
-
-
-    //              $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
-
-    //             if(isset($data['msg'])){
-    //                 return response()->json([
-    //                     "success" => false,
-    //                     "msg" => $data['msg']
-    //                 ]);
-    //             }
-
-    //             $now = new \DateTime();
-    //             $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
-    //                                         ->whereDate('created_at', $now)
-    //                                         ->count()+1;
-    //             $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
-    //                                             ->whereDate('created_at', $now)
-    //                                             ->count()+1;
-    //             $requisition =  Requisition::create([
-    //                 "notes" => 'Pedido '.$num_ticket,
-    //                 "num_ticket" => $num_ticket,
-    //                 "num_ticket_store" => $num_ticket_store,
-    //                 "_created_by" => 1,
-    //                 "_workpoint_from" => $_workpoint_from,
-    //                 "_workpoint_to" => $_workpoint_to,
-    //                 "_type" => 2,
-    //                 "printed" => 0,
-    //                 "time_life" => "00:15:00",
-    //                 "_status" => 1
-    //             ]);
-
-    //             $this->log(1, $requisition);
-
-    //             if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
-
-    //             if(2 != 1){ $this->refreshStocks($requisition); }
-
-    //             return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
-    //         });
-    //         $this->nextStep($requisition->id);
-    //         return response()->json([
-    //             "success" => true,
-    //             "order" => new RequisitionResource($requisition)
-    //         ]);
-    //     // }catch(\Exception $e){
-    //     //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
-    //     // }
-    // }
-
-    // public function automate(){
-    //     $stores = Workpoint::where([['_type',2],['active',1]])->whereIn('id',[1])->get();
-    //     foreach($stores as $store){
-    //         $this->create($store);
-    //     }
-
-    // }
 
     public function changeStatus(Request $request){
         $id = $request->id;
