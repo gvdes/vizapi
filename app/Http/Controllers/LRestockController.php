@@ -878,6 +878,7 @@ class LRestockController extends Controller{
             case 11: return '"Juguete"'; break;
             case 12: return '"Navidad"'; break;
             case 13: return '"Navidad"'; break;
+            case 13: return '"Navidad","Juguete"'; break;
             case 17: return '"Calculadora", "Electronico", "Hogar","Papeleria","Mochila"'; break;//san pablo c
             case 18: return '"Navidad", "Electronico", "Hogar"'; break;
             case 19: return '"Juguete"'; break;
