@@ -1531,16 +1531,16 @@ class LocationController extends Controller{
             case 3: return ["Navidad"]; break;//san pablo 1
             case 4: return ["Navidad"]; break;//san pablo 2
             case 5: return ["Navidad"]; break;// correo 1
-            case 6: return ["Calculadora", "Electronico", "Hogar","Papeleria"]; break;//correo 2
+            case 6: return ["Calculadora", "Electronicos", "Hogar","Papeleria"]; break;//correo 2
             case 7: return ["Navidad"]; break;// apartado 1
             case 8: return ["Calculadora", "Juguete"]; break;//apartado dos
             case 9: return ["Navidad"]; break;//ramon c 1
-            case 10: return ["Calculadora", "Electronico", "Hogar","Papeleria"]; break;//ramon c 2
+            case 10: return ["Calculadora", "Electronicos", "Hogar","Papeleria"]; break;//ramon c 2
             case 11: return ["Juguete"]; break;//brasil 1
             case 12: return ["Navidad"]; break;
             case 13: return ["Navidad"]; break;//bolivia
             case 16: return ["Navidad","Juguete"]; break;//bolivia
-            case 17: return ["Calculadora", "Electronico", "Hogar","Papeleria","Mochila"]; break;//san pablo c
+            case 17: return ["Calculadora", "Electronicos", "Hogar","Papeleria","Mochila"]; break;//san pablo c
             case 18: return ["Navidad"]; break;//puebla
             case 19: return ["Juguete"]; break;//sotano
             case 22: return ["Navidad"]; break;//braasil 3
