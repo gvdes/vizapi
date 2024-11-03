@@ -20,26 +20,31 @@ class LRestockController extends Controller{
 
     public function index(Request $request){
         try {
-            $view = $request->query("v");
-            $dash = $request->query("d");
+            // $view = $request->query("v");
+            // $dash = $request->query("d");
+            $fechas = $request->date;
             $now = CarbonImmutable::now();
-
-            $from = $now->startOf($view)->format("Y-m-d H:i");
-            $to = $now->endOf("day")->format("Y-m-d H:i");
+            if(isset($fechas['from'])){
+                $from = $fechas['from'];
+                $to = $fechas['to'];
+            }else{
+                $from = $fechas;
+                $to = $fechas;
+            }
             $resume = [];
 
             $query = Requisition::with(['type', 'status', 'to', 'from', 'created_by', 'log', 'partition.status', 'partition.log'])
                 ->withCount(["products"])
-                ->whereBetween("created_at",[$from,$to]);
+                ->whereBetween(DB::raw('DATE(created_at)'),[$from,$to]);
 
-            switch ($dash) {
-                // case 'P3': case 'p3': $query->whereIn("_workpoint_from", [1,2,3,4,5,6,7,9,10,12,14,17]); break;
-                // case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
-                case 'SAP': case 'sap': $query->whereIn("_workpoint_to", [1]); break;
-                case 'BOL': case 'bol': $query->whereIn("_workpoint_to", [13]); break;
-                case 'TEX': case 'tex': $query->whereIn("_workpoint_to", [2]); break;
-                default: break;
-            }
+            // switch ($dash) {
+            //     // case 'P3': case 'p3': $query->whereIn("_workpoint_from", [1,2,3,4,5,6,7,9,10,12,14,17]); break;
+            //     // case 'P2': case 'p2': $query->whereIn("_workpoint_from", [8,11,19]); break;
+            //     case 'SAP': case 'sap': $query->whereIn("_workpoint_to", [1]); break;
+            //     case 'BOL': case 'bol': $query->whereIn("_workpoint_to", [13]); break;
+            //     case 'TEX': case 'tex': $query->whereIn("_workpoint_to", [2]); break;
+            //     default: break;
+            // }
 
             $orders = $query->get();
 
@@ -63,13 +68,11 @@ class LRestockController extends Controller{
             $printers = WorkPoint::with("printers")->whereIn("id",[1,2,13,16])->get();
 
             return response()->json([
-                "view"=>$view,
                 "orders"=>$orders,
                 "from"=>$from,
                 "to"=>$to,
                 "resume"=>$resume,
                 "printers"=>$printers,
-                "dash"=>$dash
             ]);
         } catch (\Error $e) { return response()->json($e,500); }
     }
