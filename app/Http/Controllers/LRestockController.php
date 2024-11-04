@@ -739,7 +739,7 @@ class LRestockController extends Controller{
         $wkf = $workpoint_id;
         $wkt = $workpoint_to;
 
-        if($workpoint_id == 1 || $workpoint_id == 2 || $workpoint_id == 22 || $workpoint_id == 24){
+        if($workpoint_id == 1 || $workpoint_id == 2 || $workpoint_id == 22 || $workpoint_id == 24 || $workpoint_id == 16){
             $pquery = "SELECT
             P.id AS id,
             P.code AS code,
