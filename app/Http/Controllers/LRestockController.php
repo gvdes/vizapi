@@ -623,7 +623,6 @@ class LRestockController extends Controller{
     }
 
     public function create(Request $request){
-
         $_workpoint_from = $request->_workpoint_from;
         $_workpoint_to = $request->_workpoint_to;
         $request->_type;
@@ -728,7 +727,7 @@ class LRestockController extends Controller{
     public function getToSupplyFromStore($workpoint_id, $workpoint_to, $seccion = null){ // Función para hacer el pedido de minimos y máximos de la sucursal
 
         // $workpoint = WorkPoint::find($workpoint_id); // Obtenemos la sucursal a la que se le realizara el pedido
-        if($workpoint_id == 1 || $workpoint_id == 2 || $workpoint_id == 22 || $workpoint_id == 24 ){
+        if($workpoint_id == 1 || $workpoint_id == 2 || $workpoint_id == 22 || $workpoint_id == 24 || $workpoint_id == 16 ){
             $cats= $seccion;
         }else{
             $cats = $this->categoriesByStore($workpoint_id);
