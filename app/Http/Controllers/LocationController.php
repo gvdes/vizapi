@@ -1528,6 +1528,7 @@ class LocationController extends Controller{
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
             case 1: return ["Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos"]; break;//cedis
+            case 2: return ["Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos"]; break;//cedis
             case 3: return ["Navidad"]; break;//san pablo 1
             case 4: return ["Navidad"]; break;//san pablo 2
             case 5: return ["Navidad"]; break;// correo 1

@@ -869,6 +869,7 @@ class LRestockController extends Controller{
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
             case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete"'; break;
+            case 2: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete"'; break;
             case 3: return '"Navidad"'; break;
             case 4: return '"Navidad"'; break;
             case 5: return '"Navidad"'; break;
