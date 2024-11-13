@@ -298,6 +298,14 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'CiclicosController@index');
                 $router->get('/{folio}', 'CiclicosController@find');
             });
+
+            $router->group(['prefix' => 'resources'], function() use($router){
+                $router->get('/getSeccion', 'CiclicosController@getSeccion');
+                $router->post('/create', 'CiclicosController@create');
+                $router->post('/getProductReport/{sid}', 'CiclicosController@getProductReport');
+            });
+
+
             $router->group(['prefix' => 'product'], function () use ($router){
                 $router->post('/', 'CiclicosController@getProducts');
                 $router->post('/getMassive', 'CiclicosController@getMassiveProducts');
@@ -305,6 +313,5 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->group(['prefix' => 'compare'], function () use ($router){
                 $router->get('', 'CiclicosController@secciones');
                 $router->post('/getProducts/{sid}', 'CiclicosController@getProductsCompare');
-
             });
         });

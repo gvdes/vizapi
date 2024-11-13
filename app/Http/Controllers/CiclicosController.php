@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
 use App\Http\Resources\Inventory as InventoryResource;
 use App\Product;
+use App\Requisition;
 use App\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,10 @@ use App\ProductStatus;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Resources\Product as ProductResource;
 use App\Exports\ArrayExport;
+use App\Account;
+use Carbon\Carbon;
+use App\RequisitionProcess as Process;
+
 
 class CiclicosController extends Controller{
 
@@ -310,4 +315,222 @@ class CiclicosController extends Controller{
         $seccion = ProductCategory::where('deep',0)->where('alias','!=',null)->get();
         return response()->json($seccion);
     }
+
+    public function getSeccion(){
+        $families = ProductCategory::with('seccion')->where([['alias','!=',null],['deep',1]])
+        ->whereHas('seccion', function($query)  { // Aplicamos el filtro en la relación seccion
+            $query->where('name','Navidad');
+        })
+        ->get();
+        return response()->json($families);
+    }
+
+    public function getProductReport(Request $request){
+        $sid = $request->route('sid');
+        $seccion = $request->data;
+        $products = Product::with([
+            'categories.familia.seccion',
+            'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
+                $query->whereIn('_workpoint',[1,2,$sid])->distinct();
+            }])
+            ->whereHas('categories.familia', function($query) use ($seccion) { // Aplicamos el filtro en la relación seccion
+                $query->whereIn('id',$seccion);
+            })
+            ->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+                $query->whereIn('_workpoint', [1, 2])
+                        ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+            })
+            ->where('_status','!=',4)->get();
+        return response()->json($products);
+    }
+
+
+    public function create(Request $request){//creacion de pedido
+        $_workpoint_from = $request->workpoint_from;//hacia donde
+        $_workpoint_to = $request->workpoint_to;//de donde
+        $products = $request->products;
+        // return $products;
+        $data = $this->getToSupplyFromStore($products);
+
+        if(isset($data['msg'])){
+            return response()->json([
+                "success" => false,
+                "msg" => $data['msg']
+            ]);
+        }
+
+        $now = new \DateTime();
+        $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
+                                    ->whereDate('created_at', $now)
+                                    ->count()+1;
+        $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
+                                        ->whereDate('created_at', $now)
+                                        ->count()+1;
+
+        $requisition =  Requisition::create([
+            "notes" => $request->notes,
+            "num_ticket" => $num_ticket,
+            "num_ticket_store" => $num_ticket_store,
+            "_created_by" => $request->id_userviz,
+            "_workpoint_from" => $_workpoint_from,
+            "_workpoint_to" => $_workpoint_to,
+            "_type" => $request->type,
+            "printed" => 0,
+            "time_life" => "00:15:00",
+            "_status" => 1
+        ]);
+        $this->log(1, $requisition);
+        if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
+
+        if($request->_type != 1){ $this->refreshStocks($requisition); }
+
+        $requisition->load('type', 'status', 'products.categories.familia.seccion', 'to', 'from', 'created_by', 'log');
+            $this->nextStep($requisition->id);
+            return response()->json([
+                "success" => true,
+                "order" => $requisition
+            ]);
+    }
+
+    public function getToSupplyFromStore($products){ // Función para hacer el pedido de productos de familia
+
+        $tosupply = [];
+        foreach ($products as $product) {
+                $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>1, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
+    }
+        return ["products" => $tosupply];
+    }
+
+    public function log($case, Requisition $requisition, $_printer=null, $actors=[]){
+        $account = Account::with('user')->find(1);
+        $responsable = $account->user->names.' '.$account->user->surname_pat;
+        $previous = null;
+        if($case != 1){
+            $logs = $requisition->log->toArray();
+            $end = end($logs);
+            $previous = $end['pivot']['_status'];
+        }
+
+        if($previous){
+            $requisition->log()->syncWithoutDetaching([$previous => [ 'updated_at' => new \DateTime()]]);
+        }
+
+        switch($case){
+            case 1: // LEVANTAR PEDIDO
+                $requisition->log()->attach(1, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->format('Y-m-d H:i:s'), 'updated_at' => carbon::now()->format('Y-m-d H:i:s') ]);
+            break;
+
+            case 2: // POR SURTIR => IMPRESION DE COMPROBANTE EN TIENDA
+                $port = 9100;
+                $requisition->log()->attach(2, [ 'details'=>json_encode([ "responsable"=>$responsable ]), 'created_at' => carbon::now()->format('Y-m-d H:i:s'), 'updated_at' => carbon::now()->format('Y-m-d H:i:s') ]);// se inserta el log dos al pedido con su responsable
+                $requisition->_status=2; // se prepara el cambio de status del pedido (a por surtir (2))
+                $requisition->save(); // se guardan los cambios
+                $requisition->fresh(['log']); // se refresca el log del pedido
+                $_workpoint_to = $requisition->_workpoint_to;
+                $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+                    $query->with(['locations' => function($query)  use ($_workpoint_to){
+                        $query->whereHas('celler', function($query) use ($_workpoint_to){
+                            $query->where('_workpoint', $_workpoint_to);
+                        });
+                    }]);
+                }]);
+                if($requisition->_workpoint_to == 2){
+                    $ipprinter = env("PRINTERTEX");
+                }else if($requisition->_workpoint_to == 24){
+                    $ipprinter = env("PRINTERBOL");
+                }else if($requisition->_workpoint_to == 16){
+                    $ipprinter = env("PRINTERBRASIL");
+                }else{
+                    $ipprinter = env("PRINTER_P3") ;
+                }
+
+                $miniprinter = new MiniPrinterController($ipprinter, $port);
+                $printed_provider = $miniprinter->requisitionTicket($requisition);
+
+                if($printed_provider){
+                    $requisition->printed = ($requisition->printed+1);
+                    $requisition->save();
+                }else {
+                    $groupvi = "120363185463796253@g.us";
+                    $mess = "El pedido ".$requisition->id." no se logro imprimir, favor de revisarlo";
+                    $this->sendWhatsapp($groupvi, $mess);
+                }
+
+            $requisition->refresh('log');
+
+            $log = $requisition->log->filter(function($event) use($case){
+                return $event->id >= $case;
+            })->values()->map(function($event){
+                return [
+                    "id" => $event->id,
+                    "name" => $event->name,
+                    "active" => $event->active,
+                    "allow" => $event->allow,
+                    "details" => json_decode($event->pivot->details),
+                    "created_at" => $event->pivot->created_at->format('Y-m-d H:i'),
+                    "updated_at" => $event->pivot->updated_at->format('Y-m-d H:i')
+                ];
+            });
+
+            return [
+                "success" => (count($log)>0),
+                "printed" => $requisition->printed,
+                "status" => $requisition->status,
+                "log" => $log
+            ];
+        }
+    }
+
+    public function refreshStocks(Requisition $requisition){ // Función para actualizar los stocks de un pedido de resurtido
+        $_workpoint_to = $requisition->_workpoint_to;
+        $requisition->load(['log', 'products' => function($query) use ($_workpoint_to){
+            $query->with(['stocks' => function($query) use($_workpoint_to){
+                $query->where('_workpoint', $_workpoint_to);
+            }]);
+        }]);
+        foreach($requisition->products as $product){
+            $requisition->products()->syncWithoutDetaching([
+                $product->id => [
+                    'units' => $product->pivot->units,
+                    'comments' => $product->pivot->comments,
+                    'stock' => count($product->stocks) > 0 ? $product->stocks[0]->pivot->stock : 0
+                ]
+            ]);
+        }
+        return true;
+    }
+
+    public function nextStep($id){
+        $requisition = Requisition::with(["to", "from", "created_by"])->find($id);
+        $server_status = 200;
+        if($requisition){
+            $_status = $requisition->_status+1;
+
+            $process = Process::all()->toArray();
+
+            if(in_array($_status, array_column($process, "id"))){
+                $result = $this->log($_status, $requisition);
+                $msg = $result["success"] ? "" : "No se pudo cambiar el status";
+                $server_status = $result ["success"] ? 200 : 500;
+            }else{
+                $msg = "Status no válido";
+                $server_status = 400;
+            }
+        }else{
+            $msg = "Pedido no encontrado";
+            $server_status = 404;
+        }
+
+        return response()->json([
+            "success" => isset($result) ? $result["success"] : false,
+            "serve_status" => $server_status,
+            "msg" => $msg,
+            "updates" =>[
+                "status" => isset($result) ? $result["status"] : null,
+                "log" => isset($result) ? $result["log"] : null,
+                "printed" =>  isset($result) ? $result["printed"] : null
+            ]
+        ]);
+    }
+
 }
