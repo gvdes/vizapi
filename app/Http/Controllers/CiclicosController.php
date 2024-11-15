@@ -397,7 +397,7 @@ class CiclicosController extends Controller{
         $tosupply = [];
         foreach ($products as $product) {
                 $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>1, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
-    }
+        }
         return ["products" => $tosupply];
     }
 
@@ -531,6 +531,17 @@ class CiclicosController extends Controller{
                 "printed" =>  isset($result) ? $result["printed"] : null
             ]
         ]);
+    }
+
+    public function impPreview(Request $request){
+        $requisition =  $request->all();
+        $miniprinter = new MiniPrinterController($request->ip_address, 9100);
+        $printed_provider = $miniprinter->previewRequisition($requisition);
+        if($printed_provider){
+            return response()->json('Impresion Correcta',200);
+        }else{
+            return response()->json('Impresion Incorrecta',401);
+        }
     }
 
 }

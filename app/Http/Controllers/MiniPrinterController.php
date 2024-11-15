@@ -1590,4 +1590,189 @@ class MiniPrinterController extends Controller{
         return true;
     }
 
+    public function previewRequisition($requisition){
+        $printer = $this->printer;
+        if(!$printer){ return false; }
+
+        $summary = collect($requisition['products'])->reduce(function($summary, $product){
+            if($product['sucursal'] > 0){
+                $summary['models'] = $summary['models'] + 1;
+                $summary['articles'] = $summary['articles'] + 1;
+                // $volumen = ($product->dimensions->length * $product->dimensions->height * $product->dimensions->width) / 1000000;
+                // if($volumen<=0){
+                //     $summary['sinVolumen'] = $summary['sinVolumen'] + $product->pivot->units;
+                // }
+                // $summary['volumen'] = $summary['volumen'] + $volumen;
+            }else{
+                $summary['modelsSouldOut'] = $summary['modelsSouldOut'] + 1;
+                $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + 1;
+            }
+            return $summary;
+        }, ["models"=>0, "articles"=>0,"modelsSouldOut"=>0, "articlesSouldOut"=>0]);
+
+        // $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=1);
+        // $finished_at = $finished_at[sizeof($finished_at) - 1];
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setReverseColors(true);
+        $printer->setEmphasis(true);
+
+
+            $printer->setTextSize(2,2);
+            $printer->text(" *** Previsualizacion *** \n");
+
+        $printer->setReverseColors(false);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->setEmphasis(false);
+        $printer->setTextSize(1,1);
+        $printer->text("------------------------------------------------\n");
+        $printer->setTextSize(2,2);
+        $printer->setReverseColors(true);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text(" ".$requisition['from']['alias']." \n");
+        $printer->setReverseColors(false);
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->setTextSize(1,1);
+        // $printer->text("\n AGENTE:    ".$requisition->created_by->names."\n");
+        // $printer->text(" SOLICITUD: ". new \DateTime()."\n");
+
+        // if($requisition->notes){
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->selectPrintMode(Printer::MODE_FONT_B);
+            $printer->setTextSize(2,1);
+            $printer->setReverseColors(true);
+            // $printer->text("\n ¡¡ NOTAS !! \n");
+            $printer->setReverseColors(false);
+            // $printer->text(" $requisition->notes \n\n");
+            $printer->setTextSize(1,1);
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->selectPrintMode(Printer::MODE_FONT_A);
+        // }
+
+        $printer->text("------------------------------------------------\n\n");
+        $printer->setTextSize(1,2);
+        $y = 1;
+        $products = $requisition['products'];
+        // $product2 = collect($requisition->products);
+        // $groupBy = $product->filter(function($product){
+        //     return $product->sucursal > 0;
+        // })->sortKeys();
+        // // $piso_num = 1;
+        // foreach($groupBy as $piso){
+            // $products = $piso->sortBy(function($product){
+            //     if(count($product->locations)>0){
+            //         $location = $product->locations[0]->path;
+            //         $res = '';
+            //         $parts = explode('-', $location);
+            //         foreach($parts as $part){
+            //             $numbers = preg_replace('/[^0-9]/', '', $part);
+            //             $letters = preg_replace('/[^a-zA-Z]/', '', $part);
+            //             if(strlen($numbers)==1){
+            //                 $numbers = '0'.$numbers;
+            //             }
+            //             $res = $res.$letters.$numbers.'-';
+            //         }
+            //         return $res;
+            //     }
+            //     return '';
+            // });
+            // if($piso_num>1){
+                // $printer->setJustification(Printer::JUSTIFY_LEFT);
+                // $printer->setTextSize(1,1);
+                // $printer->text("----------------------------------------------\n");
+                // $printer->text("----------------------------------------------\n");
+                // $printer->setTextSize(2,1);
+                // $printer->text("█ ".$requisition->id." ".$requisition->to->alias." >>> ".$requisition->from->alias." █\n");
+                // $printer->setTextSize(1,1);
+                // $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
+                // $printer->feed(1);
+            // }
+            foreach($products as $product){
+                    // $locations = $product->locations->reduce(function($res, $location){
+                    //     return $res.$location->path.",";
+                    // }, '');
+                    $printer->setJustification(Printer::JUSTIFY_LEFT);
+                    $printer->setTextSize(2,1);
+                    $printer->text($y."█ "."\n█ ".$product['code']." █\n");
+                    $printer->setTextSize(1,1);
+                    $printer->text($product['description']." \n");
+                    // $amount = '';
+                    // $multiple = "";
+                    // switch($product->pivot->_supply_by){
+                    //     case 1:
+                    //         $printer->text("UNIDADES SOLICITADAS: ");
+                    //         break;
+                    //     case 2:
+                    //         $printer->text("DOCENAS SOLICITADAS: ");
+                    //         $multiple = 'x12';
+                    //         break;
+                    //     case 3:
+                            $printer->text("CAJAS SOLICITADAS: ");
+                            $multiple = 'x'.$product['pieces'];
+                            // break;
+                    //     case 4:
+                    //         $printer->text("MEDIAS CAJAS SOLICITADAS: ");
+                    //         $multiple = "x".($product->pieces/2)."";
+                    //         break;
+                    // }
+                    $printer->setTextSize(2,1);
+                    $printer->text("1"."".$multiple);
+                    $printer->setTextSize(2,2);
+                    $printer->text("[  ]");
+                    $printer->setJustification(Printer::JUSTIFY_RIGHT);
+                    $printer->setTextSize(2,2);
+                    $printer->text("{  }\n");
+                    $printer->setTextSize(1,1);
+                    $printer->text("UF: ");
+                    $printer->setTextSize(2,1);
+                    $printer->text($product['pieces']);
+                    $printer->setTextSize(1,1);
+                    $printer->text(" - UD: ");
+                    $printer->setTextSize(2,1);
+                    $printer->text($product['sucursal']."\n");
+                    // if($product->pivot->comments){
+                    //     $printer->setTextSize(1,1);
+                    //     $printer->text("Notas: ".$product->pivot->comments."\n");
+                    // }
+                    $printer->feed(1);
+                    $y++;
+
+            }
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->setTextSize(1,1);
+        $printer->text("--------------------------------------------\n");
+        $printer->text("Modelos: ");
+        $printer->setTextSize(2,1);
+        $printer->text($summary['models']);
+        $printer->setTextSize(1,1);
+        $printer->text(" Piezas: ");
+        $printer->setTextSize(2,1);
+        $printer->text(round($summary['articles'])."\n");
+        $printer->setTextSize(1,1);
+        // $printer->text("Volumen ".$summary['volumen']." m^3\n");
+        // $printer->text($summary['sinVolumen']." cajas sin contabilizar\n");
+        if($summary['articlesSouldOut']>0){
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->text("Modelos agotados: ");
+            $printer->setTextSize(2,1);
+            $printer->text($summary['modelsSouldOut']."\n");
+            $printer->setTextSize(1,1);
+            $printer->text("Piezas agotadas: ");
+            $printer->setTextSize(2,1);
+            $printer->text(round($summary['articlesSouldOut'])."\n");
+        }
+        $printer->setTextSize(1,1);
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text("--------------------------------------------\n");
+        // $printer->setBarcodeHeight($this->barcode_height);
+        // $printer->setBarcodeWidth($this->barcode_width);
+        // $printer->barcode($requisition->id);
+        $printer->feed(1);
+        $printer->text("GRUPO VIZCARRA\n");
+        $printer->feed(1);
+        $printer->cut();
+        $printer->close();
+        return true;
+    }
+
 }

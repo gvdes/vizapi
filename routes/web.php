@@ -302,6 +302,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->group(['prefix' => 'resources'], function() use($router){
                 $router->get('/getSeccion', 'CiclicosController@getSeccion');
                 $router->post('/create', 'CiclicosController@create');
+                $router->post('/preview', 'CiclicosController@impPreview');
                 $router->post('/getProductReport/{sid}', 'CiclicosController@getProductReport');
             });
 
