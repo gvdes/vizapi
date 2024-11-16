@@ -19,6 +19,10 @@ use App\Exports\ArrayExport;
 use App\Account;
 use Carbon\Carbon;
 use App\RequisitionProcess as Process;
+use App\Celler;
+use App\Sales;
+use App\CashRegister;
+use App\CellerSection;
 
 
 class CiclicosController extends Controller{
@@ -316,13 +320,27 @@ class CiclicosController extends Controller{
         return response()->json($seccion);
     }
 
-    public function getSeccion(){
+    public function getSeccion(Request $request){
+        $sid = $request->route('sid');
         $families = ProductCategory::with('seccion')->where([['alias','!=',null],['deep',1]])
         ->whereHas('seccion', function($query)  { // Aplicamos el filtro en la relación seccion
             $query->where('name','Navidad');
         })
         ->get();
-        return response()->json($families);
+
+        $locations = Celler::where([['_workpoint',$sid],['_type',2]])->get();
+        $cellers = $locations->map(function($celler){
+            $celler->sections = \App\CellerSection::where([
+                ['_celler', '=',$celler->id],
+                ['deep', '=', 0],
+            ])->get();
+            return $celler;
+        });
+        $res = [
+            'families'=>$families,
+            'locations'=>$cellers
+        ];
+        return response()->json($res);
     }
 
     public function getProductReport(Request $request){
@@ -330,6 +348,11 @@ class CiclicosController extends Controller{
         $seccion = $request->data;
         $products = Product::with([
             'categories.familia.seccion',
+            'locations'  => function($query) use($sid ) {
+                $query->whereHas('celler', function($query)use($sid){
+                    $query->where('_workpoint', $sid );
+                });
+            },
             'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
                 $query->whereIn('_workpoint',[1,2,$sid])->distinct();
             }])
@@ -343,6 +366,34 @@ class CiclicosController extends Controller{
             ->where('_status','!=',4)->get();
         return response()->json($products);
     }
+
+    public function getProductReportLocations(Request $request){
+        $sid = $request->route('sid');
+        $locations = $request->data;
+        $products = Product::with([
+            'categories.familia.seccion',
+            'locations'  => function($query) use($sid ) {
+                $query->whereHas('celler', function($query)use($sid){
+                    $query->where('_workpoint', $sid );
+                });
+            },
+            'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
+                $query->whereIn('_workpoint',[1,2,$sid])->distinct();
+            }])
+            ->whereHas('locations',function($query) use ($locations)  {
+                $query->whereIn('root',$locations);
+            },)
+            // ->whereHas('categories.familia.seccion', function($query)  { // Aplicamos el filtro en la relación seccion
+            //     $query->whereIn('id',['Navidad']);
+            // })
+            ->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+                $query->whereIn('_workpoint', [1, 2])
+                        ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+            })
+            ->where('_status','!=',4)->get();
+        return response()->json($products);
+    }
+
 
 
     public function create(Request $request){//creacion de pedido
