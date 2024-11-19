@@ -23,6 +23,8 @@ use App\Celler;
 use App\Sales;
 use App\CashRegister;
 use App\CellerSection;
+use App\Workpoint;
+
 
 
 class CiclicosController extends Controller{
@@ -320,27 +322,38 @@ class CiclicosController extends Controller{
         return response()->json($seccion);
     }
 
+    public function getCedis(){
+        $cedis = Workpoint::where([['_type',1],['active',1]])->get();
+        return response()->json($cedis,200);
+    }
+
     public function getSeccion(Request $request){
         $sid = $request->route('sid');
-        $families = ProductCategory::with('seccion')->where([['alias','!=',null],['deep',1]])
-        ->whereHas('seccion', function($query)  { // Aplicamos el filtro en la relación seccion
-            $query->where('name','Navidad');
-        })
-        ->get();
-
-        $locations = Celler::where([['_workpoint',$sid],['_type',2]])->get();
-        $cellers = $locations->map(function($celler){
-            $celler->sections = \App\CellerSection::where([
-                ['_celler', '=',$celler->id],
-                ['deep', '=', 0],
-            ])->get();
-            return $celler;
-        });
-        $res = [
-            'families'=>$families,
-            'locations'=>$cellers
-        ];
-        return response()->json($res);
+        $type = $request->_type;
+        if($type == 1){
+            $families = ProductCategory::where([['alias','!=',null],['deep',0]])
+            ->get();
+            $locations = Celler::where([['_workpoint',$sid]])->get();
+            $cellers = $locations->map(function($celler){
+                $celler->sections = \App\CellerSection::where([
+                    ['_celler', '=',$celler->id],
+                    ['deep', '=', 0],
+                ])->get();
+                return $celler;
+            });
+            $res = ['locations'=>$cellers,'sections'=>$families];
+            return response()->json($res,200);
+        }else if($type == 2){
+            $families = ProductCategory::with('familia.seccion')->where([['alias','!=',null]])
+            ->get();
+            $res= ['families'=>$families];
+            return response()->json($res,200);
+        }else{
+            $res = [
+                "message"=>'No existe el tipo de resurtido',
+            ];
+            return response()->json($res,200);
+        }
     }
 
     public function getProductReport(Request $request){
@@ -368,30 +381,66 @@ class CiclicosController extends Controller{
     }
 
     public function getProductReportLocations(Request $request){
-        $sid = $request->route('sid');
-        $locations = $request->data;
+        // return $request->all();
+        $workpoint_to = $request->_workpoint_to;
+        $workpoint_from = $request->_workpoint_from;
+        $celler = isset($request->celler) ? $request->celler : false;
+        $locations = isset($request->locations) ? $request->locations : false;
+        if($locations){
+            $loc = $this->getAllDescendantLocations($locations);
+        }
+        $sections = isset($request->section) ? $request->section : false;
         $products = Product::with([
             'categories.familia.seccion',
-            'locations'  => function($query) use($sid ) {
-                $query->whereHas('celler', function($query)use($sid){
-                    $query->where('_workpoint', $sid );
+            'locations'  => function($query) use($workpoint_from, $celler ) {
+                $query->whereHas('celler', function($query)use($workpoint_from,$celler){
+                    $query->where('_workpoint', $workpoint_from );
+                    $query->whereIn('id',$celler);
                 });
             },
-            'stocks' => function($query) use ($sid) { //Se obtiene el stock de la sucursal
-                $query->whereIn('_workpoint',[1,2,$sid])->distinct();
-            }])
-            ->whereHas('locations',function($query) use ($locations)  {
-                $query->whereIn('root',$locations);
-            },)
-            // ->whereHas('categories.familia.seccion', function($query)  { // Aplicamos el filtro en la relación seccion
-            //     $query->whereIn('id',['Navidad']);
-            // })
-            ->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
-                $query->whereIn('_workpoint', [1, 2])
+            'stocks' => function($query) use ($workpoint_from) { //Se obtiene el stock de la sucursal
+                $query->whereIn('_workpoint',[1,2, 16,$workpoint_from])->distinct();
+            }]);
+            if($sections){
+                $products->whereHas('categories.familia.seccion', function($query) use ($sections) { // Aplicamos el filtro en la relación seccion
+                    $query->whereIn('id',$sections);
+                });
+            }
+            if($celler){
+                $products->whereHas('locations',function($query) use ($celler)  {
+                    $query->whereHas('celler', function($query)use($celler){
+                        $query->whereIn('id',$celler );
+                    });
+                });
+            }
+            if($loc){
+                $products->whereHas('locations',function($query) use ($loc)  {
+                    $query->whereIn('id',$loc);
+            });
+            }
+
+            $res = $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+                $query->whereIn('_workpoint', [1, 2, 16])
                         ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
             })
             ->where('_status','!=',4)->get();
-        return response()->json($products);
+        return response()->json($res);
+    }
+
+    public function getAllDescendantLocations($locations, $descendants = []) {
+        // Busca los hijos directos
+        $children = CellerSection::whereIn('root', $locations)->pluck('id');
+
+        // Si no hay hijos, terminamos
+        if ($children->isEmpty()) {
+            return $descendants;
+        }
+
+        // Agregar hijos encontrados a la lista de descendientes
+        $descendants = array_merge($descendants, $children->toArray());
+
+        // Llamada recursiva con los hijos encontrados
+        return $this->getAllDescendantLocations($children, $descendants);
     }
 
 
@@ -447,7 +496,7 @@ class CiclicosController extends Controller{
 
         $tosupply = [];
         foreach ($products as $product) {
-                $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>1, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
+                $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>$product['required'], "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
         }
         return ["products" => $tosupply];
     }
@@ -595,4 +644,44 @@ class CiclicosController extends Controller{
         }
     }
 
+    public function  reportProductsCategories(Request $request){
+        // return $request->all();
+        $workpoint_to = $request->_workpoint_to;
+        $workpoint_from = $request->_workpoint_from;
+        $seccion = isset($request->seccion) ? $request->seccion : false;
+        $familia = isset($request->familia) ? $request->familia : false;
+        $categoria = isset($request->categoria) ? $request->categoria : false;
+        $products = Product::with([
+            'categories.familia.seccion',
+            'locations'  => function($query) use($workpoint_from ) {
+                $query->whereHas('celler', function($query)use($workpoint_from){
+                    $query->where('_workpoint', $workpoint_from );
+                });
+            },
+            'stocks' => function($query) use ($workpoint_from) { //Se obtiene el stock de la sucursal
+                $query->whereIn('_workpoint',[1,2,16,$workpoint_from])->distinct();
+            }
+        ]);
+        if($seccion){
+            $products->whereHas('categories.familia.seccion', function($query) use ($seccion) { // Aplicamos el filtro en la relación seccion
+                $query->whereIn('id',$seccion);
+            });
+        }
+        if($familia){
+            $products->whereHas('categories.familia', function($query) use ($familia) { // Aplicamos el filtro en la relación seccion
+                $query->whereIn('id',$familia);
+            });
+        }
+        if($categoria){
+            $products->whereHas('categories', function($query) use ($categoria) { // Aplicamos el filtro en la relación seccion
+                $query->whereIn('id',$categoria);
+            });
+        }
+        $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+                $query->whereIn('_workpoint', [1, 2, 16])
+                        ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+        });
+        $result = $products->where('_status','!=',4)->get();
+        return response()->json($result);
+    }
 }

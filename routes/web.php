@@ -300,11 +300,14 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             });
 
             $router->group(['prefix' => 'resources'], function() use($router){
-                $router->get('/getSeccion/{sid}', 'CiclicosController@getSeccion');
+                $router->get('/getCedis', 'CiclicosController@getCedis');
+                $router->post('/getSeccion/{sid}', 'CiclicosController@getSeccion');
                 $router->post('/create', 'CiclicosController@create');
                 $router->post('/preview', 'CiclicosController@impPreview');
+                $router->post('/reportProductsCategories', 'CiclicosController@reportProductsCategories');
+                $router->post('/getProductReportLocations', 'CiclicosController@getProductReportLocations');
                 $router->post('/getProductReport/{sid}', 'CiclicosController@getProductReport');
-                $router->post('/getProductReportLocations/{sid}', 'CiclicosController@getProductReportLocations');
+
             });
 
 

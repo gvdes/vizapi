@@ -1598,21 +1598,12 @@ class MiniPrinterController extends Controller{
             if($product['sucursal'] > 0){
                 $summary['models'] = $summary['models'] + 1;
                 $summary['articles'] = $summary['articles'] + 1;
-                // $volumen = ($product->dimensions->length * $product->dimensions->height * $product->dimensions->width) / 1000000;
-                // if($volumen<=0){
-                //     $summary['sinVolumen'] = $summary['sinVolumen'] + $product->pivot->units;
-                // }
-                // $summary['volumen'] = $summary['volumen'] + $volumen;
             }else{
                 $summary['modelsSouldOut'] = $summary['modelsSouldOut'] + 1;
                 $summary['articlesSouldOut'] = $summary['articlesSouldOut'] + 1;
             }
             return $summary;
         }, ["models"=>0, "articles"=>0,"modelsSouldOut"=>0, "articlesSouldOut"=>0]);
-
-        // $finished_at = $requisition->log->filter(fn($log) => $log->pivot->_status=1);
-        // $finished_at = $finished_at[sizeof($finished_at) - 1];
-
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setReverseColors(true);
         $printer->setEmphasis(true);
@@ -1653,47 +1644,14 @@ class MiniPrinterController extends Controller{
         $printer->setTextSize(1,2);
         $y = 1;
         $products = $requisition['products'];
-        // $product2 = collect($requisition->products);
-        // $groupBy = $product->filter(function($product){
-        //     return $product->sucursal > 0;
-        // })->sortKeys();
-        // // $piso_num = 1;
-        // foreach($groupBy as $piso){
-            // $products = $piso->sortBy(function($product){
-            //     if(count($product->locations)>0){
-            //         $location = $product->locations[0]->path;
-            //         $res = '';
-            //         $parts = explode('-', $location);
-            //         foreach($parts as $part){
-            //             $numbers = preg_replace('/[^0-9]/', '', $part);
-            //             $letters = preg_replace('/[^a-zA-Z]/', '', $part);
-            //             if(strlen($numbers)==1){
-            //                 $numbers = '0'.$numbers;
-            //             }
-            //             $res = $res.$letters.$numbers.'-';
-            //         }
-            //         return $res;
-            //     }
-            //     return '';
-            // });
-            // if($piso_num>1){
-                // $printer->setJustification(Printer::JUSTIFY_LEFT);
-                // $printer->setTextSize(1,1);
-                // $printer->text("----------------------------------------------\n");
-                // $printer->text("----------------------------------------------\n");
-                // $printer->setTextSize(2,1);
-                // $printer->text("█ ".$requisition->id." ".$requisition->to->alias." >>> ".$requisition->from->alias." █\n");
-                // $printer->setTextSize(1,1);
-                // $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
-                // $printer->feed(1);
-            // }
             foreach($products as $product){
-                    // $locations = $product->locations->reduce(function($res, $location){
-                    //     return $res.$location->path.",";
-                    // }, '');
+                    $locations = collect($product['locations'])->reduce(function($res, $location){
+                        return $res.$location['path'].",";
+                    }, '');
                     $printer->setJustification(Printer::JUSTIFY_LEFT);
                     $printer->setTextSize(2,1);
-                    $printer->text($y."█ "."\n█ ".$product['code']." █\n");
+                    // $printer->text($y."█ "."\n█ ".$product['code']." █\n");
+                    $printer->text($y."█ ".trim($locations)."\n█ ".$product['code']." █\n");
                     $printer->setTextSize(1,1);
                     $printer->text($product['description']." \n");
                     // $amount = '';
@@ -1716,20 +1674,34 @@ class MiniPrinterController extends Controller{
                     //         break;
                     // }
                     $printer->setTextSize(2,1);
-                    $printer->text("1"."".$multiple);
+                    $printer->text($product['required']."".$multiple);
                     $printer->setTextSize(2,2);
                     $printer->text("[  ]");
                     $printer->setJustification(Printer::JUSTIFY_RIGHT);
                     $printer->setTextSize(2,2);
                     $printer->text("{  }\n");
                     $printer->setTextSize(1,1);
-                    $printer->text("UF: ");
+                    $printer->text("PXC: ");
                     $printer->setTextSize(2,1);
-                    $printer->text($product['pieces']);
+                    $printer->text($product['pieces']."\n");
                     $printer->setTextSize(1,1);
-                    $printer->text(" - UD: ");
-                    $printer->setTextSize(2,1);
+                    $printer->text("Min : ");
+                    $printer->text($product['min']." ");
+                    $printer->text("Max : ");
+                    $printer->text($product['max']."\n");
+                    $printer->setTextSize(1,1);
+                    $printer->text("S-> Sucursal: ");
+                    $printer->setTextSize(1,1);
                     $printer->text($product['sucursal']."\n");
+                    $printer->text("S-> Texcoco CJ: ");
+                    $printer->setTextSize(1,1);
+                    $printer->text($product['texcoco']."\n");
+                    $printer->text("S-> Cedis CJ: ");
+                    $printer->setTextSize(1,1);
+                    $printer->text($product['cedis']."\n");
+                    $printer->text("S-> Brasil CJ: ");
+                    $printer->setTextSize(1,1);
+                    $printer->text($product['brasil']."\n");
                     // if($product->pivot->comments){
                     //     $printer->setTextSize(1,1);
                     //     $printer->text("Notas: ".$product->pivot->comments."\n");
