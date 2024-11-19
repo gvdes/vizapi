@@ -5,6 +5,11 @@ namespace App\Http\Controllers;
 use App\CycleCount;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
+use App\Celler;
+use App\Sales;
+use App\CashRegister;
+use App\WorkPoint;
+use App\CellerSection;
 use App\Http\Resources\Inventory as InventoryResource;
 use App\Product;
 use App\Requisition;
@@ -19,11 +24,8 @@ use App\Exports\ArrayExport;
 use App\Account;
 use Carbon\Carbon;
 use App\RequisitionProcess as Process;
-use App\Celler;
-use App\Sales;
-use App\CashRegister;
-use App\CellerSection;
-use App\Workpoint;
+
+
 
 
 
@@ -323,7 +325,7 @@ class CiclicosController extends Controller{
     }
 
     public function getCedis(){
-        $cedis = Workpoint::where([['_type',1],['active',1]])->get();
+        $cedis = WorkPoint::where([['_type',1],['active',1]])->get();
         return response()->json($cedis,200);
     }
 
