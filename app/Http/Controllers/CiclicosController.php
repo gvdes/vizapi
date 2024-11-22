@@ -421,11 +421,11 @@ class CiclicosController extends Controller{
             });
             }
 
-            $res = $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
-                $query->whereIn('_workpoint', [1, 2, 16])
-                        ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
-            })
-            ->where('_status','!=',4)->get();
+            // $res = $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+            //     $query->whereIn('_workpoint', [1, 2, 16])
+            //             ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+            // })
+            $res = $products->where('_status','!=',4)->get();
         return response()->json($res);
     }
 
@@ -679,10 +679,10 @@ class CiclicosController extends Controller{
                 $query->whereIn('id',$categoria);
             });
         }
-        $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
-                $query->whereIn('_workpoint', [1, 2, 16])
-                        ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
-        });
+        // $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
+        //         $query->whereIn('_workpoint', [1, 2, 16])
+        //                 ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
+        // });
         $result = $products->where('_status','!=',4)->get();
         return response()->json($result);
     }
