@@ -1529,23 +1529,23 @@ class LocationController extends Controller{
         switch($_workpoint){
             case 1: return ["Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos"]; break;//cedis
             case 2: return ["Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos"]; break;//cedis
-            case 3: return ["Navidad"]; break;//san pablo 1
-            case 4: return ["Navidad"]; break;//san pablo 2
-            case 5: return ["Navidad"]; break;// correo 1
+            case 3: return ["Juguete"]; break;//san pablo 1
+            case 4: return ["Juguete"]; break;//san pablo 2
+            case 5: return ["Juguete"]; break;// correo 1
             case 6: return ["Calculadora", "Electronicos", "Hogar","Papeleria"]; break;//correo 2
-            case 7: return ["Navidad"]; break;// apartado 1
+            case 7: return ["Juguete"]; break;// apartado 1
             case 8: return ["Calculadora", "Juguete"]; break;//apartado dos
-            case 9: return ["Navidad"]; break;//ramon c 1
+            case 9: return ["Juguete"]; break;//ramon c 1
             case 10: return ["Calculadora", "Electronicos", "Hogar","Papeleria"]; break;//ramon c 2
             case 11: return ["Juguete"]; break;//brasil 1
-            case 12: return ["Navidad"]; break;
-            case 13: return ["Navidad"]; break;//bolivia
-            case 16: return ["Navidad","Juguete"]; break;//bolivia
+            case 12: return ["Juguete"]; break;
+            case 13: return ["Juguete"]; break;//bolivia
+            case 16: return ["Juguete","Juguete"]; break;//bolivia
             case 17: return ["Calculadora", "Electronicos", "Hogar","Papeleria","Mochila"]; break;//san pablo c
-            case 18: return ["Navidad"]; break;//puebla
+            case 18: return ["Juguete"]; break;//puebla
             case 19: return ["Juguete"]; break;//sotano
-            case 22: return ["Navidad"]; break;//braasil 3
-            case 23: return ["Navidad"]; break;//corregidora
+            case 22: return ["Juguete"]; break;//braasil 3
+            case 23: return ["Juguete"]; break;//corregidora
             case 24: return ["Juguete"]; break;//cedis bolivia
         }
     }
