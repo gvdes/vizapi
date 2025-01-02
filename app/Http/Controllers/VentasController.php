@@ -67,7 +67,7 @@ class VentasController extends Controller{
         })->sum("total");
         return $method;
       });
-      
+
       $tickets = $workpoint->cash->sum(function($cash){
         return $cash->sales->count();
       });
@@ -186,13 +186,13 @@ class VentasController extends Controller{
       $date_to = new \DateTime();
       $date_to->setTime(23,59,59);
     }
-    
+
     $workpoint = WorkPoint::find($request->_workpoint);
 
     $cash = CashRegister::where('_workpoint', $request->_workpoint)->with(['sales' => function($query) use($date_from, $date_to){
       $query->with('products', 'client')->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to);
     }])->get();
-    
+
     $paid_methods = PaidMethod::all();
     $formas_pago = $paid_methods->map(function($method){
       $method->total = 0;
@@ -239,9 +239,9 @@ class VentasController extends Controller{
       $date_to = new \DateTime();
       $date_to->setTime(23,59,59);
     }
-    
+
     $workpoint = WorkPoint::find($request->_workpoint);
-    
+
     $paid_methods = PaidMethod::all();
 
     $sales = Sales::with('seller', 'client')->withCount('products')->whereHas("cash", function($query) use($workpoint){
@@ -299,7 +299,7 @@ class VentasController extends Controller{
       $costos = $product->sales->sum(function($product){
         return $product->pivot->costo;
       });
-      
+
       $tickets = count($product->sales);
 
       $costoPromedio = $costos/$tickets;
@@ -330,7 +330,7 @@ class VentasController extends Controller{
     $resumen = [];
     foreach($products as $key => $category){
     array_push($resumen, [
-      "Categoría" => $key, 
+      "Categoría" => $key,
       "venta" => collect($category)->sum('venta'),
       "Unidades vendidas" => collect($category)->sum('Unidades vendidas')
       ]);
@@ -340,7 +340,7 @@ class VentasController extends Controller{
     $unidades = $resumen->sum('Unidades vendidas');
     $resumen = $resumen->toArray();
     array_push($resumen, [
-      "Categoría" => "", 
+      "Categoría" => "",
       "venta" => $total,
       "Unidades vendidas" => $unidades
     ]);
@@ -354,7 +354,7 @@ class VentasController extends Controller{
       "alias" => $workpoint->alias,
       "products" => $products,
     ]);
-    
+
     return response()->json($result);
   }
 
@@ -386,13 +386,13 @@ class VentasController extends Controller{
         $piezas = $product->sales->sum(function($product){
           return $product->pivot->amount;
         });
-  
+
         $costos = $product->sales->sum(function($product){
           return $product->pivot->costo;
         });
-        
+
         $tickets = count($product->sales);
-  
+
         $costoPromedio = $costos/$tickets;
         $precioPromedio = $venta/$tickets;
         if($product->category->deep == 0){
@@ -421,7 +421,7 @@ class VentasController extends Controller{
       $resumen = [];
       foreach($products as $key => $category){
       array_push($resumen, [
-        "Categoría" => $key, 
+        "Categoría" => $key,
         "venta" => collect($category)->sum('venta'),
         "Unidades vendidas" => collect($category)->sum('Unidades vendidas')
         ]);
@@ -431,7 +431,7 @@ class VentasController extends Controller{
       $unidades = $resumen->sum('Unidades vendidas');
       $resumen = $resumen->toArray();
       array_push($resumen, [
-        "Categoría" => "", 
+        "Categoría" => "",
         "venta" => $total,
         "Unidades vendidas" => $unidades
       ]);
@@ -511,7 +511,7 @@ class VentasController extends Controller{
         });
 
         $tickets = count($product->sales);
-  
+
         $costoPromedio = $costos/abs($piezas);
         $precioPromedio = $venta/$piezas;
         if($product->category->deep == 0){
@@ -586,7 +586,7 @@ class VentasController extends Controller{
         });
 
         $tickets = count($product->sales);
-  
+
         $costoPromedio = $costos/abs($piezas);
         $precioPromedio = $venta/$piezas;
         if($product->category->deep == 0){
@@ -656,7 +656,7 @@ class VentasController extends Controller{
               "num_ticket" => $venta['num_ticket'],
               "_cash" => $_cash,
               "total" => $venta['total'],
-              "created_at" => $venta['created_at'], 
+              "created_at" => $venta['created_at'],
               "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
               "_paid_by" => $venta['_paid_by'],
               "name" => $venta['name'],
@@ -924,11 +924,11 @@ class VentasController extends Controller{
         $query->where('created_at',">=", $date_from)->where('created_at',"<=", $date_to)->with('cash');
       }, 'stocks'])->get();
     }
-    
+
     $workpoints = Workpoint::all();
     $categories = \App\ProductCategory::all();
     $arr_categories = array_column($categories->toArray(), "id");
-    
+
     $result = $products->map(function($product) use($workpoints, $arr_categories, $categories){
       $vendidos = $product->sales->reduce(function($total, $sale){
         return $total + $sale->pivot->amount;
@@ -967,7 +967,7 @@ class VentasController extends Controller{
   }
 
   public function getStocks(Request $request){
-    
+
     $workpoint = WorkPoint::find($request->_workpoint);
     $workpoints = Workpoint::all();
 
@@ -1103,15 +1103,15 @@ class VentasController extends Controller{
     foreach ($colNames as $curCol) {
       $updateCols[] = $curCol . " = VALUES($curCol)";
     }
-  
+
     $onDup = implode(', ', $updateCols);
-  
+
     // setup the placeholders - a fancy way to make the long "(?, ?, ?)..." string
     $rowPlaces = '(' . implode(', ', array_fill(0, count($colNames), '?')) . ')';
     $allPlaces = implode(', ', array_fill(0, count($result), $rowPlaces));
-    
+
     $query = "INSERT INTO F_ALB (" . implode(', ', $colNames) . ") VALUES " . $allPlaces;
-  
+
     $exec_insert = $con->prepare($query);
     $res = $exec_insert->execute($dataToInsert);
     array_push($a, $res);

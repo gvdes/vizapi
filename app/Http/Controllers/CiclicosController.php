@@ -445,8 +445,6 @@ class CiclicosController extends Controller{
         return $this->getAllDescendantLocations($children, $descendants);
     }
 
-
-
     public function create(Request $request){//creacion de pedido
         $_workpoint_from = $request->workpoint_from;//hacia donde
         $_workpoint_to = $request->workpoint_to;//de donde
@@ -685,5 +683,33 @@ class CiclicosController extends Controller{
         // });
         $result = $products->where('_status','!=',4)->get();
         return response()->json($result);
+    }
+
+    public function getProductsReport(){
+        $families = ProductCategory::with('familia.seccion')->where([['alias','!=',null]])
+        ->get();
+        $products = Product::with([
+            'categories.familia.seccion'
+            ])
+            ->select('*')
+            ->selectSub(function ($query) {
+                $query->from('product_stock')
+                    ->selectRaw('SUM(gen) + SUM(exh) + SUM(fdt) +  SUM(in_transit)')
+                    ->whereColumn('product_stock._product', 'products.id');
+            }, 'total_stock')
+            ->selectSub(function ($query) {
+                $query->from('product_sold')
+                    ->selectRaw('IF(SUM(product_sold.amount) IS NULL, 0 ,SUM(product_sold.amount)) ')
+                    ->join('sales', 'product_sold._sale', '=', 'sales.id')
+                    ->whereYear('sales.created_at', 2024)
+                    ->whereColumn('product_sold._product', 'products.id');
+            }, 'total_venta')->where('_status','!=',4)->get();
+
+        $res = [
+            'families'=>$families,
+            'products'=>$products
+        ];
+
+        return response()->json($res);
     }
 }
