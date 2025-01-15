@@ -879,26 +879,26 @@ class RequisitionController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos" '; break;//cedis
-            case 2: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos" '; break;//cedis
-            case 3: return '"Juguete"'; break;//san pablo 1
-            case 4: return '"Juguete"'; break;//san pablo 2
-            case 5: return '"Juguete"'; break;// correo 1
+            case 1: return '"Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila" '; break;//cedis
+            case 2: return '"Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila" '; break;//cedis
+            case 3: return '"Paraguas"'; break;//san pablo 1
+            case 4: return '"Mochila"'; break;//san pablo 2
+            case 5: return '"Mochila"'; break;// correo 1
             case 6: return '"Calculadora", "Electronicos", "Hogar","Papeleria"'; break;//correo 2
-            case 7: return '"Juguete"'; break;// apartado 1
+            case 7: return '"Mochila"'; break;// apartado 1
             case 8: return '"Calculadora", "Juguete"'; break;//apartado dos
-            case 9: return '"Juguete"'; break;//ramon c 1
+            case 9: return '"Mochila"'; break;//ramon c 1
             case 10: return '"Calculadora", "Electronicos", "Hogar","Papeleria"'; break;//ramon c 2
             case 11: return '"Juguete"'; break;//brasil 1
             case 12: return '"Juguete"'; break;
-            case 13: return '"Juguete"'; break;//bolivia
-            case 16: return '"Juguete"'; break;//bolivia
+            case 13: return '"Mochila"'; break;//bolivia
+            case 16: return '"Mochila"'; break;//bolivia
             case 17: return '"Calculadora", "Electronicos", "Hogar","Papeleria","Mochila"'; break;//san pablo c
-            case 18: return '"Juguete"'; break;//puebla
+            case 18: return '"Mochila"'; break;//puebla
             case 19: return '"Juguete"'; break;//sotano
             case 22: return '"Juguete"'; break;//braasil 3
-            case 23: return '"Juguete"'; break;//corregidora
-            case 24: return '"Juguete"'; break;//cedis bolivia
+            case 23: return '"Mochila"'; break;//corregidora
+            case 24: return '"Mochila"'; break;//cedis bolivia
         }
     }
 

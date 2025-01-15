@@ -868,26 +868,25 @@ class LRestockController extends Controller{
         /* IMPORTANTE */
         /* En este lugar se establecen las secciones que puede solicitar una sucursal */
         switch($_workpoint){
-            case 1: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete"'; break;
-            case 2: return '"Detalles", "Peluche", "Hogar","Calculadora","Navidad","Papeleria","Juguete"'; break;
-            case 3: return '"Juguete"'; break;
-            case 4: return '"Juguete"'; break;
-            case 5: return '"Juguete"'; break;
+            case 1: return '"Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"'; break;
+            case 2: return '"Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"'; break;
+            case 3: return '"Paraguas"'; break;
+            case 4: return '"Mochila"'; break;
+            case 5: return '"Mochila"'; break;
             case 6: return '"Calculadora", "Electronicos", "Hogar","Papeleria"'; break;
-            case 7: return '"Juguete"'; break;
+            case 7: return '"Mochila"'; break;
             case 8: return '"Calculadora", "Juguete", "Papeleria"'; break;
             case 9: return '"Juguete"'; break;
             case 10: return '"Calculadora", "Electronicos", "Hogar","Papeleria"'; break;
             case 11: return '"Juguete"'; break;
             case 12: return '"Juguete"'; break;
-            case 13: return '"Juguete"'; break;
-            case 13: return '"Juguete","Juguete"'; break;
+            case 13: return '"Mochila"'; break;
             case 17: return '"Calculadora", "Electronicos", "Hogar","Papeleria","Mochila"'; break;//san pablo c
-            case 18: return '"Juguete", "Electronico", "Hogar"'; break;
+            case 18: return '"Mochila", "Electronico", "Hogar"'; break;
             case 19: return '"Juguete"'; break;
-            case 22: return '"Juguete"'; break;
-            case 23: return '"Juguete"'; break;
-            case 24: return '"Juguete"'; break;
+            case 22: return '"Mochila"'; break;
+            case 23: return '"Mochila"'; break;
+            case 24: return '"Mochila"'; break;
         }
     }
 
