@@ -49,34 +49,34 @@ class Kernel extends ConsoleKernel
         /* Actualización de stock cada 3 minutos */
         //$schedule->call('App\Http\Controllers\LocationController@updateStocks')->everyThreeMinutes()->between('9:00', '23:00');
         /* Almacenar los stocks al cierre del día */
-        $schedule->call('App\Http\Controllers\LocationController@saveStocks')->dailyAt('23:00');
+        // $schedule->call('App\Http\Controllers\LocationController@saveStocks')->dailyAt('23:00');
 
         /****************
         *   RECEPCIÓN   *
         *****************/
         /* Actualización de salidas cada hora */
-        $schedule->call('App\Http\Controllers\SalidasController@LastSalidas')->hourly()->between('9:00', '22:00');
-        $schedule->call('App\Http\Controllers\SalidasController@missingPrint')->everyFiveMinutes();
+        // $schedule->call('App\Http\Controllers\SalidasController@LastSalidas')->hourly()->between('9:00', '22:00');
+        // $schedule->call('App\Http\Controllers\SalidasController@missingPrint')->everyFiveMinutes();
 
         /**************
         *   COMPRAS   *
         ***************/
         /* Actualización de las compras de CEDIS al termino del día */
-        $schedule->call('App\Http\Controllers\InvoicesReceivedController@newOrders')->dailyAt('23:00');
+        // $schedule->call('App\Http\Controllers\InvoicesReceivedController@newOrders')->dailyAt('23:00');
         /* Depuración de compras fin de semana */
-        $schedule->call('App\Http\Controllers\InvoicesReceivedController@restore')->weeklyOn(7, '8:00');
+        // $schedule->call('App\Http\Controllers\InvoicesReceivedController@restore')->weeklyOn(7, '8:00');
         /* Se solicita la actualización de los compras despues de ser eliminados */
-        $schedule->call('App\Http\Controllers\InvoicesReceivedController@newOrders')->weeklyOn(7,'8:05');
+        // $schedule->call('App\Http\Controllers\InvoicesReceivedController@newOrders')->weeklyOn(7,'8:05');
 
         /***************
         *    GASTOS    *
         ****************/
         /* Actualización de gastos CEDIS al termino del día */
-        $schedule->call('App\Http\Controllers\AccountingController@getNew')->dailyAt('23:00');
+        // $schedule->call('App\Http\Controllers\AccountingController@getNew')->dailyAt('23:00');
         /* Depuración de gastos fin de semana */
-        $schedule->call('App\Http\Controllers\AccountingController@restore')->weeklyOn(7, '8:00');
+        // $schedule->call('App\Http\Controllers\AccountingController@restore')->weeklyOn(7, '8:00');
         /* Se solicita la actualización de los gastos despues de ser eliminados */
-        $schedule->call('App\Http\Controllers\AccountingController@getNew')->weeklyOn(7,'8:05');
+        // $schedule->call('App\Http\Controllers\AccountingController@getNew')->weeklyOn(7,'8:05');
 
 
 
