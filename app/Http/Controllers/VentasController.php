@@ -769,7 +769,7 @@ class VentasController extends Controller{
       "success" => true,
       "time" => microtime(true) - $start,
       "resumen" => $resumen,
-      "resultado"=>$res;
+      "resultado"=>$res
     ]);
   }
 
