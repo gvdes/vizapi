@@ -66,7 +66,7 @@ class ClientController extends Controller{
         //   "Tiendas actualizadas" => $store_success,
         //   "Tiendas no actualizadas" => $store_fail,
           "updated" => $rows,
-          "raw" => count($raw_clients)
+        //   "raw" => count($raw_clients)
         ]);
       }
       return response()->json(["message" => "No se obtuvo respuesta del servidor de factusol"]);
