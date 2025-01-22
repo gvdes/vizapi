@@ -702,7 +702,9 @@ class VentasController extends Controller{
   }
 
   public function getLastVentas(){ // Función para actualizar las ventas (trae las ultimas ventas)
-    $workpoints = WorkPoint::where([['active', true], ['_type', 2]])->orWhere('id', 1)->get();
+    // $workpoints = WorkPoint::where([['active', true], ['_type', 2]])->orWhere('id', 1)->get();
+    $workpoints = WorkPoint::Where('id', 5)->get();
+
     $resumen = [];
     $start = microtime(true);
     $a = 0;
@@ -714,16 +716,16 @@ class VentasController extends Controller{
       if(count($cash_registers)>0){
         foreach($cash_registers as $cash){
           $sale = Sales::where('_cash', $cash->id)->max('created_at');
-          if($sale){
+        //   if($sale){
+        //     $ticket = $sale ? : 0;
+        //     $date = explode(' ', $sale);
+        //     $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
+        //   }else{
+            $sale = "2025-01-01 00:00:00";
             $ticket = $sale ? : 0;
             $date = explode(' ', $sale);
             $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
-          }else{
-            $sale = "2021-01-27 00:00:00";
-            $ticket = $sale ? : 0;
-            $date = explode(' ', $sale);
-            $caja_x_ticket[] = ["_cash" => $cash->num_cash, "num_ticket" => $ticket, "date" => $date[0], 'last_date' => $sale];
-          }
+        //   }
         }
         if(count($caja_x_ticket)>0){
           $access = new AccessController($workpoint->dominio);
