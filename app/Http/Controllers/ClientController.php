@@ -43,28 +43,28 @@ class ClientController extends Controller{
           );
         }
         //Obtener las sucursales que estan activas y son de tipo tienda
-        $stores = \App\Workpoint::whereIn([["active", true], ["_type", 2]])->get();
-        $raw_clients = $access->getRawClients($date);
-        if($raw_clients){
-          foreach($stores as $store){ //Para cada una de las tiendas se enviaran los clientes
-            $access_store = new AccessController($store->dominio); // Conexión a la sucursal
-            $result = $access_store->syncClients($raw_clients); // Sincronizar clientes
-            if($result){
-              if($result["success"]){ // Evaluación de si se ha logrado enviar los clientes
-                $store_success[] = $store->alias;
-              }else{
-                $store_fail[] = $store->alias;
-              }
-            }else{
-              $store_fail[] = $store->alias;
-            }
-          }
-        }
+        // $stores = \App\Workpoint::whereIn([["active", true], ["_type", 2]])->get();
+        // $raw_clients = $access->getRawClients($date);
+        // if($raw_clients){
+        //   foreach($stores as $store){ //Para cada una de las tiendas se enviaran los clientes
+        //     $access_store = new AccessController($store->dominio); // Conexión a la sucursal
+        //     $result = $access_store->syncClients($raw_clients); // Sincronizar clientes
+        //     if($result){
+        //       if($result["success"]){ // Evaluación de si se ha logrado enviar los clientes
+        //         $store_success[] = $store->alias;
+        //       }else{
+        //         $store_fail[] = $store->alias;
+        //       }
+        //     }else{
+        //       $store_fail[] = $store->alias;
+        //     }
+        //   }
+        // }
 
         return response()->json([
           "clients" => count($clients),
-          "Tiendas actualizadas" => $store_success,
-          "Tiendas no actualizadas" => $store_fail,
+        //   "Tiendas actualizadas" => $store_success,
+        //   "Tiendas no actualizadas" => $store_fail,
           "updated" => $rows,
           "raw" => count($raw_clients)
         ]);
