@@ -775,7 +775,7 @@ class VentasController extends Controller{
 
   public function restoreSales(){ // Función para eliminar las ventas del día de operación
     $today = date("Y-m-d");
-    $sales = Sales::where('created_at', '>=', $today)->get();
+    $sales = Sales::all();
     $ids_sales = array_column($sales->toArray(), "id");
     $success = DB::transaction(function() use($ids_sales, $today){
       $delete_body = DB::table('product_sold')->whereIn('_sale', $ids_sales)->delete();
