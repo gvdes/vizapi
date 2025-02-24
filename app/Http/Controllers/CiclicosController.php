@@ -712,4 +712,24 @@ class CiclicosController extends Controller{
 
         return response()->json($res);
     }
+
+    public function getChangePrices($wid){
+        $workpoint_from = $wid;
+        $now = Carbon::now()->toDateString(); ;
+        $products = Product::with([
+        'categories.familia.seccion',
+        'prices'  => function($query){
+            $query->whereIn('_type',[1,2,3,4])->distinct();
+        },
+        'locations'  => function($query) use($workpoint_from ) {
+            $query->whereHas('celler', function($query)use($workpoint_from){
+                $query->where('_workpoint', $workpoint_from );
+            });
+        },
+        'stocks' => function($query) use ($workpoint_from) { //Se obtiene el stock de la sucursal
+            $query->where('_workpoint',$workpoint_from)->distinct();
+        }])
+        ->where('_status','!=',4)->whereDate('updated_at',$now)->get();
+        return response($products,200);
+    }
 }
