@@ -1544,6 +1544,8 @@ class LocationController extends Controller{
             case 17: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//san pablo c
             case 18: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//puebla
             case 19: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//sotano
+            case 20: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//Ecommerce
+
             case 22: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//braasil 3
             case 23: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//corregidora
             case 24: return ["Detalles", "Peluches", "Hogar","Calculadora","Navidad","Papeleria","Juguete","Paraguas","Electronicos","Mochila"]; break;//cedis bolivia
