@@ -291,6 +291,10 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             $router->group(['prefix' => 'vfy'], function() use($router){
                 $router->get('/index', 'LVerificatorController@index');
             });
+            $router->group(['prefix' => 'product'], function () use ($router){
+                $router->get('/{id}', 'LRestockController@getProduct');
+                $router->post('/', 'CiclicosController@getProducts');
+            });
         });
 
         $router->group(['prefix' => 'LVH'], function() use($router){

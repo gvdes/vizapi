@@ -1091,4 +1091,9 @@ class LRestockController extends Controller{
         $id = $request->id;
         return $this->nextStep($id);
     }
+
+    public function getProduct($id){
+        $product = Product::with('variants')->where('id',$id)->first();
+        return response($product);
+    }
 }
