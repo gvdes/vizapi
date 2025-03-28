@@ -353,17 +353,44 @@ class LRestockController extends Controller{
 
     public function newentry(Request $request){
         try {
+            $res = [];
             $oid = $request->route("oid");
-            $requisition = RequisitionPartition::with(["requisition.from"])->find($oid);
+            $requisition = RequisitionPartition::with(["requisition.from","products"])->find($oid);
+            $products = $requisition->products;
+            foreach($products as $product){
+                $pivot = $product['pivot'];
+                $envia = $pivot->toDelivered;
+                $recibe = $pivot->toReceived;
+                if($envia != $recibe){
+                    $mul = 1;
+                    switch($pivot->_supply_by){
+                        case 1:
+                            $mul = 1;
+                            break;
+                        case 2:
+                            $mul = 12;
+                            break;
+                        case 3:
+                            $mul = $product['pieces'];
+                            break;
+                    };
+                    $res [] = "{$product['code']}:\nSalida: " . ($envia * $mul) . "\nEntrada: " . ($recibe * $mul);
+                }
+            }
             $requi = $requisition->requisition['id'];
             $suply = $requisition->_suplier_id;
             $cstate = $requisition->_status;
 
-            if($cstate==6){
+            // if($cstate==6){
+            if($cstate==10){
+
                 $ip = $requisition->requisition['from']["dominio"];
+                // $ip = '192.168.10.160:1619';
 
                 $resp = $this->accessGenEntry($requi, $ip, $suply);
+                // return $resp['done']->folio;
                 // $resp = $this->accessGenEntry($requi, '192.168.10.112:1619', $suply);
+
 
                 if($resp["error"]){
                     return response()->json($resp["error"],500);
@@ -378,9 +405,14 @@ class LRestockController extends Controller{
                         // $prevstate = $end['pivot']['_status'];
                         // $prevstate ? $requisition->log()->syncWithoutDetaching([$prevstate => [ 'updated_at' => $now->format("Y-m-m H:m:s")]]) : null;
                         // $requisition->log()->attach(10, [ 'details'=>json_encode([ "responsable"=>"VizApp" ]) ]);
-                        $requisition->_status=6; // se actualiza el status del pedido
+                        $requisition->_status=10; // se actualiza el status del pedido
                         $requisition->save(); //  guardan los cambios
                         // $requisition->fresh(['log']); // se refresca el log del pedido
+                        if(count($res) > 0){
+                            $message = "Hay diferencias en la particion ".$requisition->id." P-(".$requisition->requisition['id'].") \nSalida: ".$requisition->invoice." \nEntrada: ".$resp['done']->folio." \nSucursal: ".$requisition->requisition['from']['name']."\n"."Diferencias: \n".implode("\n\n", $res) ;
+                            $to = '120363419230539005@g.us';
+                            $sendMessage = $this->sendWhatsapp($to,$message);
+                        }
 
                         return response()->json(["invoice"=>$resp['done'], "requisition"=>$requisition]);
                     }else{ return response()->json($resp["done"],$resp["httpcode"],500); }
@@ -1095,5 +1127,221 @@ class LRestockController extends Controller{
     public function getProduct($id){
         $product = Product::with('variants')->where('id',$id)->first();
         return response($product);
+    }
+
+    public function getDifferences(Request $request){
+        $fechas = $request->date;
+
+        $now = CarbonImmutable::now();
+        if(isset($fechas['from'])){
+            $from = $fechas['from'];
+            $to = $fechas['to'];
+        }else{
+            $from = $fechas;
+            $to = $fechas;
+        }
+        $resume = [];
+        $workpoint = Workpoint::with([
+            'to_supply' => function ($q) use ($from, $to) {
+                $q->with([
+                    'partition' => function ($q) {
+                        $q->with('products')
+                          ->whereHas('products', function ($q) {
+                              $q->whereRaw('`product_required`.`toReceived` - `product_required`.`toDelivered` != 0');
+                          });
+                    }
+                ])
+                ->whereHas('partition', function ($q) {
+                    $q->where('_status', 10)
+                      ->whereHas('products', function ($q) {
+                          $q->whereRaw('`product_required`.`toReceived` - `product_required`.`toDelivered` != 0');
+                      });
+                })
+                ->whereBetween(DB::raw('DATE(created_at)'), [$from, $to]);
+            },
+            'to_supply.partition.products',
+            'to_supply.created_by'
+        ])
+        ->whereHas('to_supply', function ($q) use ($from, $to) {
+            $q->whereHas('partition', function ($q) {
+                $q->where('_status', 10)
+                  ->whereHas('products', function ($q) {
+                      $q->whereRaw('`product_required`.`toReceived` - `product_required`.`toDelivered` != 0');
+                  });
+            })
+            ->whereBetween(DB::raw('DATE(created_at)'), [$from, $to]);
+        })
+        ->get();
+        return response()->json($workpoint,200);
+    }
+
+    public function correction(Request $request){
+        $response = [
+            "Eliminar"=>[],
+            "Salida"=>[],
+            "Entrada"=>[],
+        ];
+        $originalIndexed = [];
+        $deletedProducts = [];
+        $changedToReceived = [];
+        $changedToDelivered = [];
+
+        $partition = RequisitionPartition::with(["requisition.from","products"])->find($request->id);
+        $ip = $partition->requisition->from->dominio;
+        // $ip = '192.168.10.160:1619';
+
+        if($partition){
+            $produtsOri = $partition->products->toArray();
+            $productDes = $request->products;
+
+
+            foreach ($produtsOri as $product) {
+                $originalIndexed[$product['id']] = [
+                '_product' => $product['id'],
+                'code'=>$product['code'],
+                '_requisition'=>$partition->_requisition,
+                'toReceived' => $product['pivot']['toReceived'],
+                'invoice' => $partition->invoice,
+                'pivot'=>$product['pivot']
+            ];
+            }
+            foreach ($productDes as $product) {
+                $id = $product['id'];
+                if (isset($originalIndexed[$id])) {
+                    $originalPivot = $originalIndexed[$id]['pivot'];
+                    $modifiedPivot = $product['pivot'];
+                    if ($originalPivot['toReceived'] != $modifiedPivot['toReceived']) {
+                        $changedToReceived[] = [
+                            '_product' => $id,
+                            'code'=>$product['code'],
+                            '_supply_by'=> $modifiedPivot['_supply_by'],
+                            'pxc' => $product['pieces'],
+                            'toReceived' => $modifiedPivot['toReceived'],
+                            'invoice' => $partition->invoice_received,
+                            '_requisition'=>$partition->_requisition
+                        ];
+                    }
+                    if ($originalPivot['toDelivered'] != $modifiedPivot['toDelivered']) {
+                        $changedToDelivered[] = [
+                            '_product' => $id,
+                            'code'=>$product['code'],
+                            '_supply_by'=> $modifiedPivot['_supply_by'],
+                            'pxc' => $product['pieces'],
+                            'toDelivered' => $modifiedPivot['toDelivered'],
+                            'invoice' => $partition->invoice,
+                            '_requisition'=>$partition->_requisition
+                        ];
+                    }
+                    unset($originalIndexed[$id]);
+                }
+            }
+
+            $deletedProducts = array_values($originalIndexed);
+            if(count($deletedProducts) > 0){//eliminar productos solo en salida
+                foreach($deletedProducts as $delete){
+                    $requisition = Requisition::find($delete['_requisition']);
+                    $requisition->products()->detach([$delete['_product']]);
+                }
+                $eliminar = $this->DeleteProdAccess($deletedProducts);
+                if($eliminar){
+                    $response['Eliminar'] = $deletedProducts;
+                }
+            }
+
+            if(count($changedToDelivered) > 0){//cambiar total solo en salida
+                foreach($changedToDelivered as $delivered){
+                    $requisition = Requisition::find($delivered['_requisition']);
+                    $requisition->products()->updateExistingPivot($delivered['_product'], ['toDelivered' =>  $delivered['toDelivered']]);
+                }
+                $ModDelivered = $this->ChangeDelivered($changedToDelivered);
+                if($ModDelivered){
+                    $response['Salida'] = $ModDelivered;
+                }
+            }
+
+            if(count($changedToReceived) > 0){//cambiar total solo en entrada
+                foreach($changedToReceived as $received){
+                    $requisition = Requisition::find($received['_requisition']);
+                    $requisition->products()->updateExistingPivot($received['_product'], ['toReceived' =>  $received['toReceived']]);
+                }
+                $ModReceived = $this->ChangeReceived($changedToReceived, $ip);
+                if($ModReceived){
+                    $response['Entrada'] = $ModReceived;
+                }
+            }
+            $result = [
+                'toReceived' => $changedToReceived,
+                'toDelivered' => $changedToDelivered,
+                'deleted' => $deletedProducts,
+                'res' => $response,
+            ];
+
+
+            return response()->json($result,200);
+        }else{
+            return resonse()->json('No se encontro la particion',400);
+        }
+    }
+
+    public function DeleteProdAccess($products){
+        $data = json_encode($products);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Modification/deleteProduct");
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+        $exec = curl_exec($curl);
+        $info = curl_getinfo($curl);
+
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
+
+        curl_close($curl);
+    }
+
+    public function ChangeDelivered($products){
+        $data = json_encode($products);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, env("URL_INVOICE")."/storetools/public/api/Modification/changeDelivered");
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+        $exec = curl_exec($curl);
+        $info = curl_getinfo($curl);
+
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
+
+        curl_close($curl);
+    }
+    public function ChangeReceived($products,$ip){
+        $data = json_encode($products);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, "http://$ip/storetools/public/api/Modification/changeReceived");
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+        $exec = curl_exec($curl);
+        $info = curl_getinfo($curl);
+
+        return curl_errno($curl) ? [ "error"=>curl_error($curl) ] : [ "error"=>false, "done"=>$exec, "httpcode"=>$info["http_code"] ];
+
+        curl_close($curl);
     }
 }

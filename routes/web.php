@@ -279,6 +279,8 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->post('/print/forsupply', 'LRestockController@printforsupply');
                 $router->post('/print/Partition', 'LRestockController@pritnforPartition');
                 $router->post('/nextStep', 'LRestockController@changeStatus');
+                $router->post('/getDifferences', 'LRestockController@getDifferences');
+                $router->post('/correction', 'LRestockController@correction');
 
             });
 
