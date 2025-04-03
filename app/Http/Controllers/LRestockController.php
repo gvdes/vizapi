@@ -358,23 +358,25 @@ class LRestockController extends Controller{
             $requisition = RequisitionPartition::with(["requisition.from","products"])->find($oid);
             $products = $requisition->products;
             foreach($products as $product){
-                $pivot = $product['pivot'];
-                $envia = $pivot->toDelivered;
-                $recibe = $pivot->toReceived;
-                if($envia != $recibe){
-                    $mul = 1;
-                    switch($pivot->_supply_by){
-                        case 1:
-                            $mul = 1;
-                            break;
-                        case 2:
-                            $mul = 12;
-                            break;
-                        case 3:
-                            $mul = $product['pieces'];
-                            break;
-                    };
-                    $res [] = "{$product['code']}:\nSalida: " . ($envia * $mul) . "\nEntrada: " . ($recibe * $mul);
+                if($product->checkout){
+                    $pivot = $product['pivot'];
+                    $envia = $pivot->toDelivered;
+                    $recibe = $pivot->toReceived;
+                    if($envia != $recibe){
+                        $mul = 1;
+                        switch($pivot->_supply_by){
+                            case 1:
+                                $mul = 1;
+                                break;
+                            case 2:
+                                $mul = 12;
+                                break;
+                            case 3:
+                                $mul = $product['pieces'];
+                                break;
+                        };
+                        $res [] = "{$product['code']}:\nSalida: " . ($envia * $mul) . "\nEntrada: " . ($recibe * $mul);
+                    }
                 }
             }
             $requi = $requisition->requisition['id'];
