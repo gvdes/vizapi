@@ -358,7 +358,7 @@ class LRestockController extends Controller{
             $requisition = RequisitionPartition::with(["requisition.from","products"])->find($oid);
             $products = $requisition->products;
             foreach($products as $product){
-                if($product->checkout){
+                if($product->checkout == 1){
                     $pivot = $product['pivot'];
                     $envia = $pivot->toDelivered;
                     $recibe = $pivot->toReceived;
