@@ -713,9 +713,17 @@ class CiclicosController extends Controller{
         return response()->json($res);
     }
 
-    public function getChangePrices($wid){
+    public function getChangePrices(Request $request,$wid){
+        $fechas = $request->fechas;
+        // return $fechas;
+        if(isset($fechas['from'])){
+            $from = $fechas['from'];
+            $to = $fechas['to'];
+        }else{
+            $from = $fechas;
+            $to = $fechas;
+        }
         $workpoint_from = $wid;
-        $now = Carbon::now()->toDateString(); ;
         $products = Product::with([
         'categories.familia.seccion',
         'prices'  => function($query){
@@ -729,7 +737,9 @@ class CiclicosController extends Controller{
         'stocks' => function($query) use ($workpoint_from) { //Se obtiene el stock de la sucursal
             $query->where('_workpoint',$workpoint_from)->distinct();
         }])
-        ->where('_status','!=',4)->whereDate('updated_at',$now)->get();
+        ->where('_status','!=',4)
+        ->whereBetween(DB::raw('DATE(updated_at)'),[$from,$to])
+        ->get();
         return response($products,200);
     }
 }
