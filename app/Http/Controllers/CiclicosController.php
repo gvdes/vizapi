@@ -742,4 +742,15 @@ class CiclicosController extends Controller{
         ->get();
         return response($products,200);
     }
+
+    public function getAssortmentInsumos(Request $request){
+        $products = Product::with([
+            'categories.familia.seccion'
+            ])
+            ->whereHas('categories.familia.seccion', function($query)  { // Aplicamos el filtro en la relación seccion
+                $query->whereIn('id',[1011]);
+            })
+            ->where('_status','!=',4)->get();
+        return response()->json($products);
+    }
 }
