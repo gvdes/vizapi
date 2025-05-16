@@ -317,6 +317,14 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
             });
 
 
+            $router->group(['prefix' => 'reports'], function() use($router){
+                $router->get('/', 'ReportVHController@index');
+                $router->post('/getReport', 'ReportVHController@getReport');
+
+            });
+
+
+
             $router->group(['prefix' => 'product'], function () use ($router){
                 $router->post('/', 'CiclicosController@getProducts');
                 $router->post('/getMassive', 'CiclicosController@getMassiveProducts');
