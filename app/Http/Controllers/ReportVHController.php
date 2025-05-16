@@ -368,7 +368,9 @@ class ReportVHController extends Controller{
 
     public function cedisStock($workpoint,$seccion){
         $products = Product::with([
-            'categories.familia.seccion',
+            'category.familia.seccion',
+            'maker',
+            'provider',
             'status',
             'locations' => function($query)use($workpoint){
                 $query->whereHas('celler', function($query) use($workpoint) {
