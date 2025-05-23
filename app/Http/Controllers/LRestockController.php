@@ -57,19 +57,16 @@ class LRestockController extends Controller{
                         PS._workpoint=1 AND
                         PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
-            $pndcs = DB::select("SELECT
-                        COUNT(*) AS total
+            $pndcs = DB::select("
+                SELECT COUNT(*) as total FROM (
+                    SELECT
+                        P.id
                     FROM products P
-                        INNER JOIN product_stock PS ON PS._product = P.id AND PS._workpoint IN (1)
-                        LEFT JOIN product_status S ON S.id = PS._status AND PS._workpoint = 1
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                        INNER JOIN product_status S ON S.id = PS._status
                         INNER JOIN product_categories PC ON PC.id = P._category
-                    WHERE
-                        PS._status NOT IN (1,4)
-                        AND
-                        P._status != 4
-                    HAVING
-                        ((SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) +  PS.stock ) > 0
-                    ;");
+                    WHERE PS._workpoint = 1 AND PS._status NOT IN (1,4) AND PS.stock > 0
+                ) AS subquery");
 
 
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
@@ -583,18 +580,12 @@ class LRestockController extends Controller{
                         GETCATEGORY(PC.id) AS CATEGORIA,
                         S.name AS ESTADO,
                         PS.stock AS CEDIS,
-                        (SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) AS PANTACO
+                        (SELECT sum(stock) FROM product_stock WHERE _workpoint = 2 and _product = P.id) as PANTACO
                     FROM products P
-                        INNER JOIN product_stock PS ON PS._product = P.id AND PS._workpoint IN (1)
-                        LEFT JOIN product_status S ON S.id = PS._status AND PS._workpoint = 1
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                        INNER JOIN product_status S ON S.id = PS._status
                         INNER JOIN product_categories PC ON PC.id = P._category
-                    WHERE
-                        PS._status NOT IN (1,4)
-                        AND
-                        P._status != 4
-                    HAVING
-                        ((SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = P.id) +  PS.stock ) > 0
-                    ;");
+                    WHERE PS._workpoint = 1 AND PS._status NOT IN (1,4) AND PS.stock > 0;");
                     $name = "Productos no disponibles con stock";
                     $key = "pndcs";
                 break;
