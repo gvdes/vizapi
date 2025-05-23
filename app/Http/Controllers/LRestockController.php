@@ -605,7 +605,7 @@ class LRestockController extends Controller{
 
         switch ($action) {
             case 'pndcs':
-                $query = 'UPDATE product_stock PS SET PS._status=1 WHERE  PS._workpoint IN (1,2) AND PS._status NOT IN (1,4) AND PS.stock>0;';
+                $query = 'UPDATE product_stock PS SET PS._status  = 1  WHERE  PS._status NOT IN (1,4) AND PS._workpoint = 1 AND ((SELECT SUM(stock) FROM product_stock WHERE _workpoint = 2 AND _product = PS._product) +  PS.stock ) > 0;';
                 break;
 
             case 'pdss':
