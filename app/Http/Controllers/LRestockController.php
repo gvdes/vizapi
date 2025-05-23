@@ -58,7 +58,7 @@ class LRestockController extends Controller{
                         PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
             $pndcs = DB::select("SELECT
-                        COUNT(P.id) AS PANTACO
+                        COUNT(*) AS total
                     FROM products P
                         INNER JOIN product_stock PS ON PS._product = P.id AND PS._workpoint IN (1)
                         LEFT JOIN product_status S ON S.id = PS._status AND PS._workpoint = 1
