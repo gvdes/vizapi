@@ -70,7 +70,7 @@ class LRestockController extends Controller{
 
 
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
-            $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
+            $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs[0]->total ];
 
             $printers = WorkPoint::with("printers")->whereIn("id",[1,2,13,16])->get();
 
