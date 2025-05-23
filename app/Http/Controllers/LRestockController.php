@@ -57,7 +57,7 @@ class LRestockController extends Controller{
                         PS._workpoint=1 AND
                         PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
-            $pndcs = DB::selectOne("
+            $pndcs = DB::select("
                 SELECT COUNT(*) as total FROM (
                     SELECT
                         P.id
