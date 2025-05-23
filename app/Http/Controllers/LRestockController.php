@@ -57,11 +57,18 @@ class LRestockController extends Controller{
                         PS._workpoint=1 AND
                         PS.stock=0 AND (SELECT sum(stock) FROM product_stock WHERE _workpoint=2 and _product=PS._product)=0; ");
 
-            $pndcs = Product::whereHas("stocks", function($qb){
-                    $qb->whereIn("_workpoint",[1,2,13])
-                        ->whereNotIn("_status",[1,4])
-                        ->where("stock",">",0);
-                    })->count();
+            $pndcs = DB::selectOne("
+                SELECT COUNT(*) as total FROM (
+                    SELECT
+                        P.id
+                    FROM products P
+                        INNER JOIN product_stock PS ON PS._product = P.id
+                        INNER JOIN product_status S ON S.id = PS._status
+                        INNER JOIN product_categories PC ON PC.id = P._category
+                    WHERE PS._workpoint = 1 AND PS._status NOT IN (1,4) AND PS.stock > 0
+                ) AS subquery");
+
+
             $resume[] = [ "key"=>"pdss", "name"=>"Productos disponibles sin stock", "total"=>$pdss[0]->total ];
             $resume[] = [ "key"=>"pndcs", "name"=>"Productos no disponibles con stock", "total"=>$pndcs ];
 
