@@ -323,7 +323,21 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
 
             });
 
-
+            $router->group(['prefix' => 'preorders'], function() use($router){
+                $router->get('/getRules', 'OrderLVHController@getRules');
+                $router->get('/getOrder/{ord}', 'OrderLVHController@getOrder');
+                $router->get('/getOrderVerify/{ord}', 'OrderLVHController@getOrderVerify');
+                $router->get('/getOrderAdd/{ord}', 'OrderLVHController@getOrderAdd');
+                $router->post('/editProduct', 'OrderLVHController@editProduct');
+                $router->post('/addProduct', 'OrderLVHController@addProduct');
+                $router->post('/deleteProduct', 'OrderLVHController@deleteProduct');
+                $router->post('/updateProductPrices', 'OrderLVHController@updateProductPrices');
+                $router->post('/getClient', 'OrderLVHController@getClient');
+                $router->post('/changeClientOrder', 'OrderLVHController@changeClientOrder');
+                $router->post('/nextState', 'OrderLVHController@nextState');
+                $router->post('/nextStateFinish', 'OrderLVHController@nextStateFinish');
+                $router->post('/getOrderCash', 'OrderLVHController@getOrderCash');
+            });
 
             $router->group(['prefix' => 'product'], function () use ($router){
                 $router->post('/', 'CiclicosController@getProducts');

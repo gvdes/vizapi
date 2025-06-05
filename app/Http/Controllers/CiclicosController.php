@@ -91,7 +91,9 @@ class CiclicosController extends Controller{
         $workpoint = $request->_workpoint;
         // return 'hjos';
         //Se obtienen todo los datos del producto y se le agrega la sección, familia y categoría
-        $query = Product::query()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy');
+        // $query = Product::query()->selectRaw('products.*, getSection(products._category) AS section, getFamily(products._category) AS family, getCategory(products._category) AS categoryy');
+        $query = Product::with(['categories.familia.seccion','prices']);
+
         if(isset($request->autocomplete) && $request->autocomplete){ //Valida si se utilizara la función de autocompletado ?
             $codes = explode('ID-', $request->autocomplete); // Si el codigo tiene ID- al inicio la busqueda sera por el id que se le asigno en el catalog maestro (tabla products)
             if(count($codes)>1){
