@@ -475,13 +475,13 @@ class RequisitionController extends Controller{
         //         $storePrinter = new MiniPrinterController($printer['domain'], $printer['port']);
         //         $storePrinter->requisitionTicket($requisition);
         //     break;
-        //     case 10:
-        //         $requisition->log()->attach(10, [ 'details' => json_encode([
-        //             "responsable" => $responsable
-        //         ])]);
-        //         $requisition->_status = 10;
-        //         $requisition->save();
-        //     break;
+            case 10:
+                $requisition->log()->attach(10, [ 'details' => json_encode([
+                    "responsable" => $responsable
+                ])]);
+                $requisition->_status = 10;
+                $requisition->save();
+            break;
         //     case 100:
         //         $requisition->log()->attach(100, [ 'details' => json_encode([
         //             "responsable" => $responsable
