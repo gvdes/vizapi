@@ -373,15 +373,17 @@ class LocationController extends Controller{
                 "ip"=>$ip,
                 "type"=>null,
                 "product"=>$request->_product,
-                "section"=>$request->_section,
+                "section"=>null,
                 "created" => Carbon::now()->format('Y-m-d'),
                 "hora"    => Carbon::now()->format('H:i:s'),
             ];
 
             if (count($changes['attached'])>0) {
+                $details['section']=$request->_section;
                 $details['type']='Add';
             }
             if (count($changes['detached'])>0) {
+                $details['section']=$request->_section[0];
                 $details['type']='delete';
             }
 
