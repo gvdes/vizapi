@@ -374,14 +374,17 @@ class LocationController extends Controller{
                 "type"=>null,
                 "product"=>$request->_product,
                 "section"=>$request->_section,
-                "created"=>Carbon::now()
+                "created" => Carbon::now()->format('Y-m-d'),
+                "hora"    => Carbon::now()->format('H:i:s'),
             ];
-            if (empty($changes['attached'])) {
+
+            if (count($changes['attached'])>0) {
                 $details['type']='Add';
             }
-            if (empty($changes['detached'])) {
+            if (count($changes['detached'])>0) {
                 $details['type']='delete';
             }
+
             $celler = CellerSection::where('id',$request->_section)->first();
             $log = new CellerLog;
             $log->details = json_encode($details);
