@@ -11,6 +11,8 @@ use App\Product;
 use App\Celler;
 use App\Sales;
 use App\CashRegister;
+use App\User;
+use App\CellerLog;
 use App\CellerSection;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -359,10 +361,33 @@ class LocationController extends Controller{
      * @param int request._section
      */
     public function setLocation(Request $request){ // Función para poner o quitar una ubicación a un articulo
+        $ip = $request->ip(); // se obtiene el id de el dispositivo que realiza el cambio
+        $account = $this->account->_account;//se obtiene id de la cuenta
+        $user = User::find($this->account->_account); // se obtiene el usuario que realiza el cambio
+
         $product = \App\Product::find($request->_product); // Se valida si existe el producto
         if($product && !is_null($request->_section)){ // Se valida si existe el producto
-            return response()->json([
-                'success' => $product->locations()->toggle($request->_section) // Se pone o quita la ubicación
+            $changes = $product->locations()->toggle($request->_section);
+            $details = [
+                "user"=>$user,
+                "ip"=>$ip,
+                "type"=>null,
+                "product"=>$request->_product,
+                "section"=>$request->_section
+            ];
+            if (!empty($changes['attached'])) {
+                $details['type']='Add';
+            }
+            if (!empty($changes['detached'])) {
+                $details['type']='delete';
+            }
+            $celler = CellerSection::where('id',$request->_section)->first();
+            $log = new CellerLog;
+            $log->details = json_encode($details);
+            $log->_celler = $celler->_celler;
+            $log->save();
+           return response()->json([
+                'success' => $changes
             ]);
         }
         return response()->json([
