@@ -373,12 +373,13 @@ class LocationController extends Controller{
                 "ip"=>$ip,
                 "type"=>null,
                 "product"=>$request->_product,
-                "section"=>$request->_section
+                "section"=>$request->_section,
+                "created"=>Carbon::now()
             ];
-            if (!empty($changes['attached'])) {
+            if (empty($changes['attached'])) {
                 $details['type']='Add';
             }
-            if (!empty($changes['detached'])) {
+            if (empty($changes['detached'])) {
                 $details['type']='delete';
             }
             $celler = CellerSection::where('id',$request->_section)->first();
