@@ -741,7 +741,7 @@ class VentasController extends Controller{
                   "_cash" => $cash_registers[$index_caja]['id'],
                   "total" => $venta['total'],
                   "created_at" => $venta['created_at'],
-                  "_client" => (array_search($venta['_client'], $ids_clients) > 0 || array_search($venta['_client'], $ids_clients) === 0) ? $venta['_client'] : 3,
+                  "_client" => (in_array($venta['_client'], $ids_clients) && $venta['_client'] !== 0) ? $venta['_client'] : 1,
                   "_paid_by" => $venta['_paid_by'],
                   "name" => $venta['name'],
                   "_seller" => $venta['_seller']
