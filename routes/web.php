@@ -304,6 +304,12 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
                 $router->get('/', 'CiclicosController@index');
                 $router->get('/{folio}', 'CiclicosController@find');
             });
+            $router->group(['prefix' => 'restock'], function() use($router){
+                $router->post('/create', 'LRestockController@create');
+                $router->post('/nextStep', 'LRestockController@changeStatus');
+            });
+
+
 
             $router->group(['prefix' => 'resources'], function() use($router){
                 $router->get('/getCedis', 'CiclicosController@getCedis');

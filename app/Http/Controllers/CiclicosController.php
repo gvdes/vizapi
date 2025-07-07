@@ -234,6 +234,9 @@ class CiclicosController extends Controller{
                 //Los demas precios no seran mostrados por regla de negocio
             }]);
         }
+        if(isset($request->with_prices_Invoice) && $request->with_prices_Invoice){
+            $query = $query->with(['prices' => function($q) { $q->where('id',7); } ]);
+        }
 
         if(isset($request->limit) && $request->limit){ //Se puede agregar un limite de los resultados mostrados
             $query = $query->limit($request->limit);

@@ -686,14 +686,12 @@ class LRestockController extends Controller{
         }else{
             $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
         }
-
         if(isset($data['msg'])){
             return response()->json([
                 "success" => false,
                 "msg" => $data['msg']
             ]);
         }
-
         $now = new \DateTime();
         $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
                                     ->whereDate('created_at', $now)
@@ -718,65 +716,12 @@ class LRestockController extends Controller{
         if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
 
         if($request->_type != 1){ $this->refreshStocks($requisition); }
-
         $requisition->load('type', 'status', 'products.categories.familia.seccion', 'to', 'from', 'created_by', 'log');
-
-        // try{
-            // return $request;
-            // $requisition = DB::transaction(function() use ($request){
-                // $_workpoint_from = $request->_workpoint_from;
-                // $_workpoint_to = $request->_workpoint_to;
-                // $request->_type;
-                // $seccion = isset($request->cats) ? $request->cats : null;
-                // if( isset($request->cats)){
-                //     $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to,$request->cats );
-                // }else{
-                //     $data = $this->getToSupplyFromStore($_workpoint_from, $_workpoint_to);
-                // }
-
-                // if(isset($data['msg'])){
-                //     return response()->json([
-                //         "success" => false,
-                //         "msg" => $data['msg']
-                //     ]);
-                // }
-
-                // $now = new \DateTime();
-                // $num_ticket = Requisition::where('_workpoint_to', $_workpoint_to)
-                //                             ->whereDate('created_at', $now)
-                //                             ->count()+1;
-                // $num_ticket_store = Requisition::where('_workpoint_from', $_workpoint_from)
-                //                                 ->whereDate('created_at', $now)
-                //                                 ->count()+1;
-                // $requisition =  Requisition::create([
-                //     "notes" => $request->notes,
-                //     "num_ticket" => $num_ticket,
-                //     "num_ticket_store" => $num_ticket_store,
-                //     "_created_by" => 1,
-                //     "_workpoint_from" => $_workpoint_from,
-                //     "_workpoint_to" => $_workpoint_to,
-                //     "_type" => $request->_type,
-                //     "printed" => 0,
-                //     "time_life" => "00:15:00",
-                //     "_status" => 1
-                // ]);
-
-                // $this->log(1, $requisition);
-
-                // if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
-
-                // if($request->_type != 1){ $this->refreshStocks($requisition); }
-
-                // return $requisition->fresh('type', 'status', 'products', 'to', 'from', 'created_by', 'log');
-            // });
-            $this->nextStep($requisition->id);
+            // $this->nextStep($requisition->id);
             return response()->json([
                 "success" => true,
                 "order" => $requisition
             ]);
-        // }catch(\Exception $e){
-        //     return response()->json(["message" => "No se ha podido crear el pedido", "Error"=>$e]);
-        // }
     }
 
     public function getToSupplyFromStore($workpoint_id, $workpoint_to, $seccion = null){ // Función para hacer el pedido de minimos y máximos de la sucursal
@@ -848,40 +793,11 @@ class LRestockController extends Controller{
 
         $rows = DB::select($pquery);
         $tosupply = [];
-        // return array_map(function ($val) use ($workpoint_id){
-        //     $tosupply = [];
-        //     $stock = $val->stock;
-        //     $min = $val->min;
-        //     $max = $val->max;
-        //     $transit = $val->transito;
-        //     if($workpoint_id == 1){
-        //         if( $val->unitsupply==3 ){
-        //             $required = ($stock<=$min) ? ($max-$stock)-$transit : 0;
-        //             $ipack = $val->ipack == 0 ? 1 : $val->ipack;
-        //             $boxes = floor($required/$ipack);
-
-        //             ($boxes>=1) ? $tosupply[$val->id] = [ 'units'=>$required, "cost"=>$val->cost, 'amount'=>$boxes, "_supply_by"=>3, 'comments'=>'', "stock"=>0 ] : null;
-        //         }else if( $val->unitsupply==1){
-        //             $required = ($max-$stock) - $transit;
-        //             if($required >= 6){
-        //                 ($stock<=$min) ? $tosupply[$val->id] = [ 'units'=>$required, "cost"=>$val->cost, 'amount'=>$required,  "_supply_by"=>1 , 'comments'=>'', "stock"=>0] : null ;
-        //             }
-
-        //         }
-
-        //     }
-        //     return $tosupply;
-        // }, $rows);
-
         foreach ($rows as $product) {
             $stock = $product->stock;
             $min = $product->min;
             $max = $product->max;
             $transit = $product->transito;
-
-            // $required = ($stock<=$min) ? ($max-$stock) : 0;
-
-            // if($required){
                 if($workpoint_id == 1){
                     if( $product->unitsupply==3 ){
                         $required = ($stock<=$min) ? ($max-$stock)-$transit : 0;
@@ -896,7 +812,6 @@ class LRestockController extends Controller{
                         }
 
                     }
-
                 }else{
                     if( $product->unitsupply==3 ){
                         $required = ($stock<=$min) ? ($max-$stock) : 0;
@@ -912,7 +827,6 @@ class LRestockController extends Controller{
 
                     }
                 }
-            // }
         }
 
         return ["products" => $tosupply];
@@ -1098,11 +1012,11 @@ class LRestockController extends Controller{
             $msg = "Pedido no encontrado";
             $server_status = 404;
         }
-
         return response()->json([
             "success" => isset($result) ? $result["success"] : false,
             "serve_status" => $server_status,
             "msg" => $msg,
+            "requisition"=>$requisition,
             "updates" =>[
                 "status" => isset($result) ? $result["status"] : null,
                 "log" => isset($result) ? $result["log"] : null,
