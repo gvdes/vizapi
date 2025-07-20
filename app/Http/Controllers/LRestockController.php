@@ -814,7 +814,7 @@ class LRestockController extends Controller{
                     }
                 }else{
                     if( $product->unitsupply==3 ){
-                        $required = ($stock<=$min) ? ($max-$stock) : 0;
+                        $required = ($stock<=$min) ? ($max-$stock)-$transit : 0;
                         $ipack = $product->ipack == 0 ? 1 : $product->ipack;
                         $boxes = floor($required/$ipack);
 
