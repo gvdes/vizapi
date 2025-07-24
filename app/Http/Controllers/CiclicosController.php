@@ -22,6 +22,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Resources\Product as ProductResource;
 use App\Exports\ArrayExport;
 use App\Account;
+use App\Printer;
 use Carbon\Carbon;
 use App\RequisitionProcess as Process;
 
@@ -330,7 +331,7 @@ class CiclicosController extends Controller{
     }
 
     public function getCedis(){
-        $cedis = WorkPoint::where([['_type',1],['active',1]])->get();
+        $cedis = WorkPoint::where([['active',1]])->get();
         return response()->json($cedis,200);
     }
 
@@ -425,11 +426,6 @@ class CiclicosController extends Controller{
                     $query->whereIn('id',$loc);
             });
             }
-
-            // $res = $products->whereHas('stocks', function($query) { // Solo productos con stock mayor a 0 en el workpoint
-            //     $query->whereIn('_workpoint', [1, 2, 16])
-            //             ->where('stock', '>', 0); // Filtra solo aquellos con stock positivo
-            // })
             $res = $products->where('_status','!=',4)->get();
         return response()->json($res);
     }
@@ -454,8 +450,9 @@ class CiclicosController extends Controller{
         $_workpoint_from = $request->workpoint_from;//hacia donde
         $_workpoint_to = $request->workpoint_to;//de donde
         $products = $request->products;
+        $supply = $request->supply_by;
         // return $products;
-        $data = $this->getToSupplyFromStore($products);
+        $data = $this->getToSupplyFromStore($products,$supply);
 
         if(isset($data['msg'])){
             return response()->json([
@@ -497,11 +494,11 @@ class CiclicosController extends Controller{
             ]);
     }
 
-    public function getToSupplyFromStore($products){ // Función para hacer el pedido de productos de familia
+    public function getToSupplyFromStore($products,$supply){ // Función para hacer el pedido de productos de familia
 
         $tosupply = [];
         foreach ($products as $product) {
-                $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>$product['required'], "_supply_by"=>3, 'comments'=>'', "stock"=>0 ];
+                $tosupply[$product['id']] = [ 'units'=>$product['pieces'], "cost"=>$product['cost'], 'amount'=>$product['required'], "_supply_by"=>$supply, 'comments'=>'', "stock"=>0 ];
         }
         return ["products" => $tosupply];
     }
@@ -545,9 +542,13 @@ class CiclicosController extends Controller{
                     $ipprinter = env("PRINTERBOL");
                 }else if($requisition->_workpoint_to == 16){
                     $ipprinter = env("PRINTERBRASIL");
-                }else{
+                }else if($requisition->_workpoint_to == 1){
                     $ipprinter = env("PRINTER_P3") ;
+                }else{
+                    $ipprinter = Printer::where([['_workpoint',$requisition->_workpoint_to],['_type',2]])->value('ip');
+                    // $ipprinter = env("PRINTER_P3") ;
                 }
+
 
                 $miniprinter = new MiniPrinterController($ipprinter, $port);
                 $printed_provider = $miniprinter->requisitionTicket($requisition);
