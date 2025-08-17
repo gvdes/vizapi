@@ -107,6 +107,10 @@ class Product extends Model{
                     ->withPivot('min', 'max', 'stock', 'gen', 'exh', 'des', 'fdt', 'V23', 'LRY', 'in_transit', '_status');
     }
 
+    public function historicPrices(){
+        return $this->hasMany('App\HistoryPrice', '_product', 'id');
+    }
+
     /**
      * MUTATORS
      */

@@ -186,8 +186,10 @@ class CiclicosController extends Controller{
             });
         }
 
-        if(isset($request->check_sales)){
-            //OBTENER FUNCIÓN DE CHECAR STOCKS
+        if(isset($request->withHistoric)){
+            $query->with(['historicPrices' => function($q) {
+                $q->latest('created_at')->limit(1);
+            }]);
         }
 
         $query = $query->with(['units', 'status', 'variants']); // por default se obtienen las unidades y el status general
@@ -272,8 +274,8 @@ class CiclicosController extends Controller{
             'locations' => function($query) use ($workpoint) {
                 $query->whereHas('celler', function($query) use ($workpoint) {
                     $query->where([['_workpoint', $workpoint],['_type',2]]);
-                });
-            }
+                });},
+            'historicPrices' => function($q) {$q->latest('created_at')->limit(1);}
             ])
             ->whereHas('variants', function(Builder $query) use ($code){
                 $query->where('barcode', $code);
@@ -758,5 +760,26 @@ class CiclicosController extends Controller{
             })
             ->where('_status','!=',4)->get();
         return response()->json($products);
+    }
+    public function sendWhatsapp($tel, $msg){
+        $token = env('WATO');
+        $curl = curl_init();//inicia el curl para el envio de el mensaje via whats app
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => "https://api.ultramsg.com/instance93858/messages/chat",
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_SSL_VERIFYHOST => 0,
+          CURLOPT_SSL_VERIFYPEER => 0,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => "token=$token&to=$tel&body=$msg&priority=1&referenceId=",//se redacta el mensaje que se va a enviar con los modelos y las piezas y el numero de salida
+          CURLOPT_HTTPHEADER => array("content-type: application/x-www-form-urlencoded"),));
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        return $response;
+        curl_close($curl);
     }
 }
