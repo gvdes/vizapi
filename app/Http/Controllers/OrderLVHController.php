@@ -158,11 +158,19 @@ class OrderLVHController extends Controller{
 
     public function getClient(Request $request){
         $val = $request->val;
-        $buscar = Client::where('name', 'like', '%' . $val . '%')
-            ->orWhere('phone', 'like', '%' . $val . '%')
-            ->orWhere('store_name', 'like', '%' . $val . '%')
-            ->orWhere('id', $val)
-            ->get();
+        $buscar = Client::where(function($query) use ($val) {
+        $query->where('name', 'like', '%' . $val . '%')
+              ->orWhere('phone', 'like', '%' . $val . '%')
+              ->orWhere('store_name', 'like', '%' . $val . '%');
+        })
+        ->where(function($query) {
+            $query->where('id', 0)
+                ->orWhere('id', '>=', 36);
+        })
+        ->get();
+        if($buscar->isEmpty()){
+            $buscar = Client::where('id', 0)->get();
+        }
 
         return response()->json($buscar,200);
     }
