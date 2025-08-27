@@ -716,7 +716,14 @@ class LRestockController extends Controller{
         if(isset($data['products'])){ $requisition->products()->attach($data['products']); }
 
         if($request->_type != 1){ $this->refreshStocks($requisition); }
-        $requisition->load('type', 'status', 'products.categories.familia.seccion', 'to', 'from', 'created_by', 'log');
+        $requisition->load(['type',
+        'status',
+        'products.categories.familia.seccion',
+        'to',
+        'from',
+        'created_by',
+        'log',
+        'products.stocks' => fn($q) => $q->where('_workpoint', $_workpoint_from)]);
             // $this->nextStep($requisition->id);
             return response()->json([
                 "success" => true,
