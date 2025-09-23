@@ -197,7 +197,7 @@ class CiclicosController extends Controller{
         if(isset($request->_workpoint_status) && $request->_workpoint_status){ // Se obtiene el stock de la tienda se se aplica el filtro
 
             if($request->_workpoint_status == "all"){
-                $query = $query->with(['stocks']);
+                $query = $query->with(['stocks'  => function($query){ $query->where('active',1);} ]);
             }else{
                 $workpoints = $request->_workpoint_status;
                 $workpoints[] = 1; // Siempre se agrega el status de la sucursal
