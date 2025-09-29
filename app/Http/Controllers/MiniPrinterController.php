@@ -1645,9 +1645,9 @@ class MiniPrinterController extends Controller{
         $y = 1;
         $products = $requisition['products'];
             foreach($products as $product){
-                    $locations = collect($product['locations'])->reduce(function($res, $location){
+                    $locations = isset($product['locations']) ? collect($product['locations'])->reduce(function($res, $location){
                         return $res.$location['path'].",";
-                    }, '');
+                    }, '') : '';
                     $printer->setJustification(Printer::JUSTIFY_LEFT);
                     $printer->setTextSize(2,1);
                     // $printer->text($y."█ "."\n█ ".$product['code']." █\n");
@@ -1701,7 +1701,7 @@ class MiniPrinterController extends Controller{
                     $printer->text($product['cedis']."\n");
                     $printer->text("S-> Brasil CJ: ");
                     $printer->setTextSize(1,1);
-                    $printer->text($product['brasil']."\n");
+                    $printer->text(isset($product['brasil']) ? $product['brasil'] : 0 ."\n");
                     // if($product->pivot->comments){
                     //     $printer->setTextSize(1,1);
                     //     $printer->text("Notas: ".$product->pivot->comments."\n");
