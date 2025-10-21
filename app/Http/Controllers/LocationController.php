@@ -1534,23 +1534,27 @@ class LocationController extends Controller{
     }
 
     public function saveStocks(){ // Función para almacenar el cierre de stocks del día
-        $products = Product::whereHas('stocks')->with('stocks')->get(); // Se traen todos los productos que tienen stock
-        $created_at = new \DateTime(); // Se obtiene la fecha y hora del momento para guardarla como fecha de registro
-        $stocks = $products->map(function($product) use($created_at){
-            // Se le da formato para insertarla
-            $a = $product->stocks->unique('id')->values()->map(function($stock) use($created_at){
-                $res = $stock->pivot;
-                $res->created_at = $created_at;
-                return $res;
-            });
-            return $a;
-        })->toArray();
-        $insert = array_merge(...$stocks);
-        // Se insertan los registros de 1000 en 1000 debido a que son muchos registros
-        foreach(array_chunk($insert, 1000) as $toInsert){
-            DB::table('stock_history')->insert($toInsert);
-        }
-        return response()->json(["Filas insertadas" => count($insert)]);
+    $created_at = new \DateTime();
+    $totalInserted = 0;
+    Product::whereHas('stocks')
+        ->with('stocks')
+        ->chunk(10000, function ($products) use ($created_at, &$totalInserted) {
+            $stocksToInsert = [];
+            foreach ($products as $product) {
+                foreach ($product->stocks->unique('id') as $stock) {
+                    $res = $stock->pivot->toArray();
+                    $res['created_at'] = $created_at;
+                    $stocksToInsert[] = $res;
+                }
+            }
+            foreach (array_chunk($stocksToInsert, 10000) as $batch) {
+                DB::table('stock_history')->insert($batch);
+                $totalInserted += count($batch);
+            }
+            unset($stocksToInsert);
+        });
+
+    return response()->json(["Filas insertadas" => $totalInserted]);
     }
 
     public function categoriesByStore($_workpoint){
