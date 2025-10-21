@@ -50,7 +50,7 @@ class Kernel extends ConsoleKernel
         /* Actualización de stock cada 3 minutos */
         //$schedule->call('App\Http\Controllers\LocationController@updateStocks')->everyThreeMinutes()->between('9:00', '23:00');
         /* Almacenar los stocks al cierre del día */
-        $schedule->call('App\Http\Controllers\LocationController@saveStocks')->dailyAt('23:00');
+        $schedule->call('App\Http\Controllers\VentasController@saveStocks')->dailyAt('23:00');
 
         /****************
         *   RECEPCIÓN   *

@@ -79,7 +79,7 @@ $router->group(['middleware' => 'auth'], function() use($router){ // Modulo de a
         $router->post('/massiveLocations', 'LocationController@setMassiveLocations'); // Función para insertar ubicaciones de forma masiva, se tiene que modificar para cada caso
         $router->get('/sinMaximos', 'LocationController@sinMaximos'); // Función que retorna todos los productos que no tiene máximo y si stock
         $router->post('/getLocations', 'LocationController@getLocations'); // Función para obtener todas las ubicaciones de los productos
-        $router->post('/saveHistoric', 'LocationController@saveStocks'); // Función para almacenar el cierre de stocks del día
+        $router->post('/saveHistoric', 'VentasController@saveStocks'); // Función para almacenar el cierre de stocks del día
     });
 
     $router->group([ 'prefix'=>'C' ], function() use($router){

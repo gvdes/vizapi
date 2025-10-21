@@ -1225,4 +1225,28 @@ class VentasController extends Controller{
     $export = new WithMultipleSheetsExport($sales, $format);
     return Excel::download($export, "pedidos_proveedor".date("d-m-Y_H:m:s").".xlsx");
   }
+
+    public function saveStocks(){ // Función para almacenar el cierre de stocks del día
+        $created_at = new \DateTime();
+        $totalInserted = 0;
+        Product::whereHas('stocks')
+            ->with('stocks')
+            ->chunk(500, function ($products) use ($created_at, &$totalInserted) {
+                $stocksToInsert = [];
+                foreach ($products as $product) {
+                    foreach ($product->stocks->unique('id') as $stock) {
+                        $res = $stock->pivot->toArray();
+                        $res['created_at'] = $created_at;
+                        $stocksToInsert[] = $res;
+                    }
+                }
+                foreach (array_chunk($stocksToInsert, 1000) as $batch) {
+                    DB::table('stock_history')->insert($batch);
+                    $totalInserted += count($batch);
+                }
+                unset($stocksToInsert);
+            });
+
+    return response()->json(["Filas insertadas" => $totalInserted]);
+    }
 }
