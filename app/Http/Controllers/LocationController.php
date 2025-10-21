@@ -1538,7 +1538,7 @@ class LocationController extends Controller{
     $totalInserted = 0;
     Product::whereHas('stocks')
         ->with('stocks')
-        ->chunk(10000, function ($products) use ($created_at, &$totalInserted) {
+        ->chunk(500, function ($products) use ($created_at, &$totalInserted) {
             $stocksToInsert = [];
             foreach ($products as $product) {
                 foreach ($product->stocks->unique('id') as $stock) {
@@ -1547,7 +1547,7 @@ class LocationController extends Controller{
                     $stocksToInsert[] = $res;
                 }
             }
-            foreach (array_chunk($stocksToInsert, 10000) as $batch) {
+            foreach (array_chunk($stocksToInsert, 1000) as $batch) {
                 DB::table('stock_history')->insert($batch);
                 $totalInserted += count($batch);
             }
