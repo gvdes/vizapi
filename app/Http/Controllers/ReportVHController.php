@@ -50,9 +50,9 @@ class ReportVHController extends Controller{
         $cedisStock = $this->cedisStock($workpoint,$secciones);
 
         $res = [
-            "catalogo"=>$catalogo,
-            "conStock"=>$conStock,
-            "conStockUbicados"=>$conStockUbicados,
+            "catalogo"=>$catalogo,//ok
+            "conStock"=>$conStock,//ok
+            "conStockUbicados"=>$conStockUbicados,//ok
             "conStockSinUbicar"=>$conStockSinUbicar,
             "sinStock"=>$sinStock,
             "sinStockUbicados"=>$sinStockUbicados,
@@ -175,7 +175,7 @@ class ReportVHController extends Controller{
         ->whereHas('category.familia.seccion', function($query) use ($seccion) {
             $query->whereIn('id',$seccion);
             })
-        ->get();
+        ->where('_status', '!=', 4)->get();
         return $productos;
     }
 
