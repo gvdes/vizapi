@@ -242,7 +242,7 @@ class LocationController extends Controller{
                     return $query->whereIn('_location', $sections);
                 })->with(['locations' => function($query) use ($sections){
                     return $query->whereIn('_location', $sections);
-                }])->paginate($paginate);
+                }])->where('_status','!=',4)->paginate($paginate);
             }
         }else{
             $section->sections = CellerSection::where('root', $section->id)->get();
@@ -252,7 +252,7 @@ class LocationController extends Controller{
                     return $query->whereIn('_location', $sections);
                 })->with(['locations' => function($query) use ($sections){
                     return $query->whereIn('_location', $sections);
-                }])->paginate($paginate);
+                }])->where('_status','!=',4)->paginate($paginate);
             }
         }
         return response()->json([
