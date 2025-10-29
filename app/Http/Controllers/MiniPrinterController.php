@@ -336,62 +336,62 @@ class MiniPrinterController extends Controller{
                 $printer->text("Complemento █ ".$piso_num." █ ".$piso_num."/".count($groupBy)."\n");
                 $printer->feed(1);
             }
-            foreach($products as $product){
-                if(intval($product->pivot->stock)>0){
-                    $locations = $product->locations->reduce(function($res, $location){
-                        return $res.$location->path.",";
-                    }, '');
-                    $printer->setJustification(Printer::JUSTIFY_LEFT);
-                    $printer->setTextSize(2,1);
-                    $printer->text($y."█ ".trim($locations)."\n█ ".$product->code." █\n");
-                    $printer->setTextSize(1,1);
-                    $printer->text($product->description." \n");
-                    $amount = '';
-                    $multiple = "";
-                    switch($product->pivot->_supply_by){
-                        case 1:
-                            $printer->text("UNIDADES SOLICITADAS: ");
-                            break;
-                        case 2:
-                            $printer->text("DOCENAS SOLICITADAS: ");
-                            $multiple = 'x12';
-                            break;
-                        case 3:
-                            $printer->text("CAJAS SOLICITADAS: ");
-                            $multiple = 'x'.$product->pieces;
-                            break;
-                        case 4:
-                            $printer->text("MEDIAS CAJAS SOLICITADAS: ");
-                            $multiple = "x".($product->pieces/2)."";
-                            break;
-                    }
-                    $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->amount."".$multiple);
-                    $printer->setTextSize(2,2);
-                    $printer->text("[  ]");
-                    $printer->setJustification(Printer::JUSTIFY_RIGHT);
-                    $printer->setTextSize(2,2);
-                    $printer->text("{  }\n");
-                    $printer->setTextSize(1,1);
-                    $printer->text("UF: ");
-                    $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->units);
-                    $printer->setTextSize(1,1);
-                    $printer->text(" - UD: ");
-                    $printer->setTextSize(2,1);
-                    $printer->text($product->pivot->stock."\n");
-                    if($product->pivot->comments){
-                        $printer->setTextSize(1,1);
-                        $printer->text("Notas: ".$product->pivot->comments."\n");
-                    }
-                    $printer->feed(1);
-                    $y++;
-                }
-            }
-            $piso_num++;
-        }
-        if($requisition->_type==3 || $requisition->_type==4 || $requisition->_type==1){
-            $printer->setTextSize(1,1);
+        //     foreach($products as $product){
+        //         if(intval($product->pivot->stock)>0){
+        //             $locations = $product->locations->reduce(function($res, $location){
+        //                 return $res.$location->path.",";
+        //             }, '');
+        //             $printer->setJustification(Printer::JUSTIFY_LEFT);
+        //             $printer->setTextSize(2,1);
+        //             $printer->text($y."█ ".trim($locations)."\n█ ".$product->code." █\n");
+        //             $printer->setTextSize(1,1);
+        //             $printer->text($product->description." \n");
+        //             $amount = '';
+        //             $multiple = "";
+        //             switch($product->pivot->_supply_by){
+        //                 case 1:
+        //                     $printer->text("UNIDADES SOLICITADAS: ");
+        //                     break;
+        //                 case 2:
+        //                     $printer->text("DOCENAS SOLICITADAS: ");
+        //                     $multiple = 'x12';
+        //                     break;
+        //                 case 3:
+        //                     $printer->text("CAJAS SOLICITADAS: ");
+        //                     $multiple = 'x'.$product->pieces;
+        //                     break;
+        //                 case 4:
+        //                     $printer->text("MEDIAS CAJAS SOLICITADAS: ");
+        //                     $multiple = "x".($product->pieces/2)."";
+        //                     break;
+        //             }
+        //             $printer->setTextSize(2,1);
+        //             $printer->text($product->pivot->amount."".$multiple);
+        //             $printer->setTextSize(2,2);
+        //             $printer->text("[  ]");
+        //             $printer->setJustification(Printer::JUSTIFY_RIGHT);
+        //             $printer->setTextSize(2,2);
+        //             $printer->text("{  }\n");
+        //             $printer->setTextSize(1,1);
+        //             $printer->text("UF: ");
+        //             $printer->setTextSize(2,1);
+        //             $printer->text($product->pivot->units);
+        //             $printer->setTextSize(1,1);
+        //             $printer->text(" - UD: ");
+        //             $printer->setTextSize(2,1);
+        //             $printer->text($product->pivot->stock."\n");
+        //             if($product->pivot->comments){
+        //                 $printer->setTextSize(1,1);
+        //                 $printer->text("Notas: ".$product->pivot->comments."\n");
+        //             }
+        //             $printer->feed(1);
+        //             $y++;
+        //         }
+        //     }
+        //     $piso_num++;
+        // }
+        // if($requisition->_type==3 || $requisition->_type==4 || $requisition->_type==1){
+        //     $printer->setTextSize(1,1);
             $agotados = $product2->filter(function($product){
                 return $product->pivot->stock<=0;
             })->map(function($product){
@@ -501,8 +501,8 @@ class MiniPrinterController extends Controller{
                 }
             }
         }
-        $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setTextSize(1,1);
+        // $printer->setJustification(Printer::JUSTIFY_CENTER);
+        // $printer->setTextSize(1,1);
         $printer->text("--------------------------------------------\n");
         $printer->text("Modelos: ");
         $printer->setTextSize(2,1);

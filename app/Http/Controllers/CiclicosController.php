@@ -88,7 +88,6 @@ class CiclicosController extends Controller{
     }
 
     public function getProducts(Request $request){ // Función autocomplete 2.0
-
         $workpoint = $request->_workpoint;
         // return 'hjos';
         //Se obtienen todo los datos del producto y se le agrega la sección, familia y categoría
@@ -206,9 +205,16 @@ class CiclicosController extends Controller{
                 }]);
             }
         }else{
-            $query = $query->with(['stocks' => function($query) use($workpoint){ //Se obtiene el stock de la sucursal
-                $query->where('_workpoint', $workpoint)->distinct();
-            }]);
+            if(isset($request->with_stock_cedis) && $request->with_stock_cedis){
+                $query = $query->with(['stocks' => function($query) use($request){
+                    $query->whereIn('_workpoint',[$request->with_stock_cedis,$request->_workpoint]); //Con stock
+                }]);
+            }else{
+                $query = $query->with(['stocks' => function($query) use($workpoint){ //Se obtiene el stock de la sucursal
+                    $query->where('_workpoint', $workpoint)->distinct();
+                }]);
+            }
+
         }
 
         if(isset($request->with_locations) && $request->with_locations){ //Se puede agregar todas las ubicaciones de la sucursal
@@ -240,6 +246,7 @@ class CiclicosController extends Controller{
         if(isset($request->with_prices_Invoice) && $request->with_prices_Invoice){
             $query = $query->with(['prices' => function($q) { $q->where('id',7); } ]);
         }
+
 
         if(isset($request->limit) && $request->limit){ //Se puede agregar un limite de los resultados mostrados
             $query = $query->limit($request->limit);
