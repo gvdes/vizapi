@@ -1014,12 +1014,19 @@ class MiniPrinterController extends Controller{
         }
 
         $printer->setTextSize(1,2);
-        $printer->text("Pedido para: \n");
+        $printer->text("Pedido para : \n");
         $printer->setTextSize(2,2);
         $printer->text($order->name." \n");
         // $printer->text("Pedido para:".$order->name." \n");
         $printer->setTextSize(1,1);
         $printer->text(" Vendedor: ".$order->created_by->names. " ".$order->created_by->surname_pat." \n");
+        // $printer->setTextSize(1,1);
+        if($order->created_by->id_tpv){
+            $printer->setBarcodeHeight(30);
+            $printer->setBarcodeWidth(2);
+            $printer->barcode($order->created_by->id_tpv);
+            $printer->text("(".$order->created_by->id_tpv.")"." \n");
+        }
         $printer->setTextSize(2,2);
         $printer->text("--  ".$cash->pivot->responsable->name."  --\n");
         $printer->setTextSize(1,1);
