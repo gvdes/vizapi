@@ -19,8 +19,8 @@ class WithdrawalsController extends Controller{
 
     public function seeder(){
         //Obtener las retiradas de todos los puntos de trabajo de tipo sucursal activas
-        // $workpoints = \App\WorkPoint::where([['_type',2], ['active', true]])->get();
-        $workpoints = \App\WorkPoint::where('id',1)->get();
+        $workpoints = \App\WorkPoint::where([['_type',2], ['active', true]])->get();
+        // $workpoints = \App\WorkPoint::where('id',1)->get();
 
         $success = [];
         foreach($workpoints as $workpoint){
