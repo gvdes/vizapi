@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Wildrawals;
+use Carbon\Carbon;
 
 class WithdrawalsController extends Controller{
     /**
@@ -18,18 +19,34 @@ class WithdrawalsController extends Controller{
 
     public function seeder(){
         //Obtener las retiradas de todos los puntos de trabajo de tipo sucursal activas
-        $workpoints = \App\WorkPoint::where([['_type',2], ['active', true]])->get();
+        // $workpoints = \App\WorkPoint::where([['_type',2], ['active', true]])->get();
+        $workpoints = \App\WorkPoint::where('id',1)->get();
+
         $success = [];
         foreach($workpoints as $workpoint){
             $access = new AccessController($workpoint->dominio); //Conexión al servidor de la sucursal
             $wildrawals = $access->getAllWithdrawals(); //Obtener todas las retiradas
-            $toInsert = $this->toInsertFormat($wildrawals); //Se formatean los datos para su inserción
-            $result = DB::transaction(
-                function() use($toInsert){
-                    $success = Wildrawals::insert($toInsert);
-                    return $success ? true : false;
-                }
-            );
+            // return $wildrawals;
+            $toInsert = $this->toInsertFormat(collect($wildrawals),$workpoint); //Se formatean los datos para su inserción
+            // return $toInsert;
+            // $result = DB::transaction(
+            //     function() use($toInsert){
+            //         $success = Wildrawals::insert($toInsert);
+            //         return $success ? true : false;
+            //     }
+            // );
+
+            $result = DB::transaction(function () use ($toInsert) {
+                $inserted = true;
+                collect($toInsert)->chunk(1000)->each(function ($chunk) use (&$inserted) {
+                    $ok = Wildrawals::insert($chunk->toArray());
+                    if (!$ok) {
+                        $inserted = false;
+                    }
+                });
+
+                return $inserted;
+            });
             $success[] = [
                 "workpoint" => $workpoint->name,
                 "success" => $result
@@ -88,7 +105,8 @@ class WithdrawalsController extends Controller{
                     "total" => $row["total"],
                     "_provider" => $row["_provider"],
                     "_workpoint" => $workpoint->id,
-                    "created_at" => $row["created_at"]
+                    "created_at" =>  \Carbon\Carbon::parse(trim($row["created_at"]))->format('Y-m-d H:i:s')
+                    // "created_at" => $row["created_at"] \Carbon\Carbon::parse(trim($item['created_at']))->format('Y-m-d H:i:s');
                 ];
             }else{
                 return [
@@ -98,7 +116,8 @@ class WithdrawalsController extends Controller{
                     "total" => $row["total"],
                     "_provider" => 404,
                     "_workpoint" => $workpoint->id,
-                    "created_at" => $row["created_at"]
+                    // "created_at" => $row["created_at"]
+                    "created_at" =>  \Carbon\Carbon::parse(trim($row["created_at"]))->format('Y-m-d H:i:s')
                 ];
             }
         })->toArray();

@@ -45,7 +45,9 @@ class AccountingController extends Controller{
         $clouster = \App\WorkPoint::find(1); // Se busca CEDIS
         $access_clouster = new AccessController($clouster->dominio); // Se hace la conexión a CEDISSP
         $gastos = $access_clouster->getAllGastos(); // Se obtienen todos los gastos
+        // return $gastos;
         $success = $this->insert($gastos); // Se insertan los gastos mediante la siguiente función
+        // return $success;.
         return response()->json([
             "success" => $success,
             "gastos" => count($gastos)
@@ -104,7 +106,7 @@ class AccountingController extends Controller{
                     "total" => $order["total"],
                     "received_at" => $order["received_at"],
                     "created_at" => $order["created_at"]
-                    
+
                 ]);
                 $insert = [];
                 foreach($order['body'] as $row){
