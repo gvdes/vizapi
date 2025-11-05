@@ -85,10 +85,10 @@ class Kernel extends ConsoleKernel
             // $schedule->call('App\Http\Controllers\LRestockController@automate')->everyTwoMinutes();
 
         /* Actualización de retiradas de las sucursales al termino del día */
-       $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00'); // a peticion del nachotas
+       $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->dailyAt('23:00');
         /* Depuración de retiradas fin de semana */
-       $schedule->call('App\Http\Controllers\WithdrawalsController@restore')->weeklyOn(7,'8:00'); // a peticion del nacho
+       $schedule->call('App\Http\Controllers\WithdrawalsController@restore')->weeklyOn(7,'8:00');
         /* Se solicita la actualización de las retirafas despues de ser eliminadas */
-       $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->weeklyOn(7,'8:05'); // a peticion del nacho
+       $schedule->call('App\Http\Controllers\WithdrawalsController@getLatest')->weeklyOn(7,'8:05');
     }
 }
