@@ -179,7 +179,6 @@ class ProductController extends Controller{
             y se manejan otras tarifas.
             Nota: El precio AAA de CEDIS es el Costo de las sucursales, por lo que este no es replicado a las sucursales
          */
-
         try {
             $start = microtime(true);
             $date = isset($request->date) ? $request->date : null;
@@ -257,6 +256,7 @@ class ProductController extends Controller{
                     foreach($stores as $store){
                         $access_store = new AccessController($store->dominio);
                         $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
+                        return $result;
                         if($result){
                             $store_success[] = $store->alias;
                         }else{
