@@ -256,7 +256,7 @@ class ProductController extends Controller{
                     foreach($stores as $store){
                         $access_store = new AccessController($store->dominio);
                         $result = $access_store->syncProducts($raw_data["prices"], $raw_data["products"]);
-                        return $result;
+                        // return $result;
                         if($result){
                             $store_success[] = $store->alias;
                         }else{
