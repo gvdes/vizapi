@@ -552,7 +552,7 @@ class LRestockController extends Controller{
                             $instance->updated_at = new \DateTime();
                             $instance->save();
                             $prices = [];
-                            if($required_prices && count($products)<1000){
+                            if($required_prices && count($products)){
                                 foreach($product['prices'] as $price){
                                     $prices[$price['_type']] = ['price' => $price['price']];
                                 }
