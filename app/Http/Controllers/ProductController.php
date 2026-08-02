@@ -183,7 +183,7 @@ class ProductController extends Controller{
         try {
             $start = microtime(true);
             $date = isset($request->date) ? $request->date : null;
-            $_cedis = env("CEDIS") ? env("CEDIS") : 1; //Se valida quien es la sucursal de CEDIS del cual se tomaran los datos
+            $_cedis = env("CEDIS") ? env("CEDIS") : 2; //Se valida quien es la sucursal de CEDIS del cual se tomaran los datos
             $workpoint = \App\WorkPoint::find($_cedis); // Se busca la instancia de CEDIS
             $access = new AccessController($workpoint->dominio); // Se hace la conexión al ACCESS de la sucursal
             $required_products = $request->products ? : false; // define si se actualizara la tabla de productos
